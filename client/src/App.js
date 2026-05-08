@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Dashboard from './components/Dashboard';
+import GroupSelector from './components/GroupSelector';
+import MultiGroupDashboard from './components/MultiGroupDashboard';
 import './App.css';
 
 function App() {
@@ -9,12 +11,54 @@ function App() {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
 
+  // Multi-group state
+  const [groups, setGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [showAllGroups, setShowAllGroups] = useState(false);
+  const [allGroupsData, setAllGroupsData] = useState([]);
+  const [multiGroupMode, setMultiGroupMode] = useState(false);
+
+  // Fetch available groups
+  const fetchGroups = async () => {
+    try {
+      const response = await axios.get('/api/groups');
+      setGroups(response.data);
+
+      if (response.data.length > 1) {
+        setMultiGroupMode(true);
+        setSelectedGroup(response.data[0].id);
+      } else if (response.data.length === 1) {
+        setMultiGroupMode(false);
+        setSelectedGroup(response.data[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to fetch groups:', err);
+      setMultiGroupMode(false);
+    }
+  };
+
   const fetchUsageData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('/api/usage/summary');
-      setUsageData(response.data);
+
+      if (showAllGroups && multiGroupMode) {
+        // Fetch all groups data
+        const response = await axios.get('/api/groups/all/usage');
+        setAllGroupsData(response.data);
+        setUsageData(null);
+      } else if (selectedGroup && multiGroupMode) {
+        // Fetch single group data
+        const response = await axios.get(`/api/groups/${selectedGroup}/usage`);
+        setUsageData(response.data);
+        setAllGroupsData([]);
+      } else {
+        // Fallback to default endpoint (backward compatible)
+        const response = await axios.get('/api/usage/summary');
+        setUsageData(response.data);
+        setAllGroupsData([]);
+      }
+
       setLastUpdate(new Date());
       setLoading(false);
     } catch (err) {
@@ -24,10 +68,16 @@ function App() {
   };
 
   useEffect(() => {
-    fetchUsageData();
-    const interval = setInterval(fetchUsageData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    fetchGroups();
   }, []);
+
+  useEffect(() => {
+    if (groups.length > 0) {
+      fetchUsageData();
+      const interval = setInterval(fetchUsageData, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedGroup, showAllGroups, groups]);
 
   const handleRefresh = () => {
     fetchUsageData();
@@ -69,11 +119,23 @@ function App() {
         </div>
       )}
 
-      {loading && !usageData ? (
+      {multiGroupMode && groups.length > 0 && (
+        <GroupSelector
+          groups={groups}
+          selectedGroup={selectedGroup}
+          onGroupChange={setSelectedGroup}
+          showAllGroups={showAllGroups}
+          onShowAllToggle={setShowAllGroups}
+        />
+      )}
+
+      {loading && !usageData && !allGroupsData.length ? (
         <div className="loading-container">
           <div className="spinner"></div>
           <p>Loading usage data...</p>
         </div>
+      ) : showAllGroups && allGroupsData.length > 0 ? (
+        <MultiGroupDashboard groupsData={allGroupsData} />
       ) : usageData ? (
         <Dashboard data={usageData} />
       ) : null}

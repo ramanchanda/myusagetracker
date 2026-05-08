@@ -9,6 +9,7 @@ require('dotenv').config();
 const herokuService = require('./services/herokuService');
 const notificationService = require('./services/notificationService');
 const usageMonitor = require('./services/usageMonitor');
+const multiGroupService = require('./services/multiGroupService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,6 +91,54 @@ app.post('/api/test-notification', async (req, res) => {
     res.json({ message: 'Test notification sent successfully' });
   } catch (error) {
     console.error('Error sending test notification:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Multi-group endpoints
+app.get('/api/groups', async (req, res) => {
+  try {
+    const groups = multiGroupService.getGroupsList();
+    res.json(groups);
+  } catch (error) {
+    console.error('Error fetching groups:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/groups/discover', async (req, res) => {
+  try {
+    const suggestions = await multiGroupService.discoverGroups();
+    res.json(suggestions);
+  } catch (error) {
+    console.error('Error discovering groups:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/groups/:groupId/usage', async (req, res) => {
+  try {
+    const groups = multiGroupService.getGroupsConfig();
+    const group = groups.find(g => g.id === req.params.groupId);
+
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const usage = await multiGroupService.getGroupUsage(group);
+    res.json(usage);
+  } catch (error) {
+    console.error('Error fetching group usage:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/groups/all/usage', async (req, res) => {
+  try {
+    const allUsage = await multiGroupService.getAllGroupsUsage();
+    res.json(allUsage);
+  } catch (error) {
+    console.error('Error fetching all groups usage:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,0 +1,143 @@
+.group-selector {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selector-header h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.view-toggle button {
+  flex: 1;
+  padding: 10px 20px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.view-toggle button:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.view-toggle button.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.group-dropdown {
+  margin-bottom: 20px;
+}
+
+.group-dropdown label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.group-dropdown select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.group-dropdown select:hover {
+  border-color: #007bff;
+}
+
+.group-dropdown select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.groups-summary {
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.summary-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.summary-value {
+  color: #333;
+  font-weight: 600;
+}
+
+.summary-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.type-badge.personal {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.type-badge.team {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.type-badge.enterprise {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+@media (max-width: 768px) {
+  .group-selector {
+    padding: 15px;
+  }
+
+  .view-toggle {
+    flex-direction: column;
+  }
+
+  .summary-breakdown {
+    flex-direction: column;
+  }
+
+  .type-badge {
+    text-align: center;
+  }
+}
