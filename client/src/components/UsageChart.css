@@ -1,0 +1,19 @@
+.usage-chart {
+  background: white;
+}
+
+.chart-header {
+  padding: 25px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.chart-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.chart-container {
+  padding: 25px;
+}

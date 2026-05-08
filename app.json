@@ -1,0 +1,59 @@
+{
+  "name": "Heroku Usage Tracker",
+  "description": "Track Heroku resource usage and get notified about overages",
+  "repository": "https://github.com/yourusername/heroku-usage-tracker",
+  "keywords": ["heroku", "monitoring", "usage", "notifications", "dashboard"],
+  "env": {
+    "HEROKU_API_KEY": {
+      "description": "Your Heroku API key (get it with: heroku auth:token)",
+      "required": true
+    },
+    "HEROKU_ACCOUNT_EMAIL": {
+      "description": "Your Heroku account email address",
+      "required": true
+    },
+    "NOTIFICATION_EMAIL": {
+      "description": "Email address to receive notifications",
+      "required": true
+    },
+    "SMTP_HOST": {
+      "description": "SMTP server hostname (e.g., smtp.gmail.com)",
+      "value": "smtp.gmail.com"
+    },
+    "SMTP_PORT": {
+      "description": "SMTP server port",
+      "value": "587"
+    },
+    "SMTP_USER": {
+      "description": "SMTP username (email address)",
+      "required": true
+    },
+    "SMTP_PASS": {
+      "description": "SMTP password or app password",
+      "required": true
+    },
+    "DYNO_THRESHOLD": {
+      "description": "Dyno usage percentage threshold for alerts",
+      "value": "80"
+    },
+    "CONNECT_THRESHOLD": {
+      "description": "Connect usage percentage threshold for alerts",
+      "value": "80"
+    },
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
