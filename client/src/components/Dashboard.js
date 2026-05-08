@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ResourceSummary from './ResourceSummary';
 import UsageCard from './UsageCard';
 import AddonsList from './AddonsList';
+import CategorizedAddons from './CategorizedAddons';
 import UsageChart from './UsageChart';
 import './Dashboard.css';
 
 function Dashboard({ data }) {
   const { dynos, addons, connect } = data;
+  const [addonsView, setAddonsView] = useState('categorized'); // 'categorized' or 'list'
 
   const dynoPercentage = parseFloat(dynos.usagePercentage);
   const connectPercentage = parseFloat(connect.usagePercentage);
@@ -29,6 +32,8 @@ function Dashboard({ data }) {
 
   return (
     <div className="dashboard">
+      <ResourceSummary data={data} />
+
       <div className="cards-container">
         <UsageCard
           title="Dyno Hours"
@@ -74,7 +79,26 @@ function Dashboard({ data }) {
       </div>
 
       <div className="addons-section">
-        <AddonsList addons={addons.addons} />
+        <div className="addons-view-toggle">
+          <button
+            className={addonsView === 'categorized' ? 'active' : ''}
+            onClick={() => setAddonsView('categorized')}
+          >
+            📊 Categorized View
+          </button>
+          <button
+            className={addonsView === 'list' ? 'active' : ''}
+            onClick={() => setAddonsView('list')}
+          >
+            📋 List View
+          </button>
+        </div>
+
+        {addonsView === 'categorized' ? (
+          <CategorizedAddons addonsData={addons} />
+        ) : (
+          <AddonsList addons={addons.addons} />
+        )}
       </div>
     </div>
   );

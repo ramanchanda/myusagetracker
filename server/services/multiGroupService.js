@@ -114,12 +114,16 @@ async function getGroupUsage(group) {
     dynoData.usagePercentage = ((dynoData.used / dynoData.limit) * 100).toFixed(2);
     dynoData.remaining = dynoData.limit - dynoData.used;
 
+    // Import categorization function
+    const { categorizeAddon } = require('./herokuService');
+
     // Addon usage
     const addons = [];
     for (const app of apps) {
       try {
         const appAddons = await client.get(`/apps/${app.id}/addons`);
         for (const addon of appAddons.data) {
+          const categorization = categorizeAddon(addon.addon_service.name);
           addons.push({
             appName: app.name,
             name: addon.name,
@@ -127,7 +131,10 @@ async function getGroupUsage(group) {
             plan: addon.plan.name,
             price: addon.plan.price,
             state: addon.state,
-            createdAt: addon.created_at
+            createdAt: addon.created_at,
+            category: categorization.category,
+            categoryType: categorization.type,
+            categoryIcon: categorization.icon
           });
         }
       } catch (error) {
@@ -140,10 +147,35 @@ async function getGroupUsage(group) {
       return sum + (price / 100);
     }, 0);
 
+    // Group addons by category
+    const addonsByCategory = addons.reduce((acc, addon) => {
+      const cat = addon.category;
+      if (!acc[cat]) {
+        acc[cat] = {
+          category: cat,
+          count: 0,
+          addons: [],
+          totalCost: 0
+        };
+      }
+      acc[cat].count++;
+      acc[cat].addons.push(addon);
+      acc[cat].totalCost += (addon.price?.cents || 0) / 100;
+      return acc;
+    }, {});
+
+    // Convert to array and sort by cost
+    const categorySummary = Object.values(addonsByCategory).map(cat => ({
+      ...cat,
+      totalCost: cat.totalCost.toFixed(2)
+    })).sort((a, b) => parseFloat(b.totalCost) - parseFloat(a.totalCost));
+
     const addonData = {
       totalAddons: addons.length,
       addons,
-      totalMonthlyCost: totalMonthlyCost.toFixed(2)
+      totalMonthlyCost: totalMonthlyCost.toFixed(2),
+      addonsByCategory: addonsByCategory,
+      categorySummary: categorySummary
     };
 
     // Connect usage

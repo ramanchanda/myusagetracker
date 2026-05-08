@@ -66,6 +66,97 @@ async function getDynoUsage() {
   }
 }
 
+// Categorize add-ons by type
+function categorizeAddon(addonServiceName) {
+  const serviceName = addonServiceName.toLowerCase();
+
+  // Data stores
+  if (serviceName.includes('postgres') || serviceName.includes('heroku-postgresql')) {
+    return { category: 'data', type: 'PostgreSQL Database', icon: '🐘' };
+  }
+  if (serviceName.includes('redis') || serviceName.includes('heroku-redis')) {
+    return { category: 'data', type: 'Redis Cache', icon: '🔴' };
+  }
+  if (serviceName.includes('mongo') || serviceName.includes('mongodb')) {
+    return { category: 'data', type: 'MongoDB Database', icon: '🍃' };
+  }
+  if (serviceName.includes('mysql')) {
+    return { category: 'data', type: 'MySQL Database', icon: '🐬' };
+  }
+
+  // Connect
+  if (serviceName.includes('connect')) {
+    return { category: 'connect', type: 'Heroku Connect', icon: '🔌' };
+  }
+
+  // Monitoring & Logging
+  if (serviceName.includes('papertrail')) {
+    return { category: 'monitoring', type: 'Logging (Papertrail)', icon: '📋' };
+  }
+  if (serviceName.includes('newrelic') || serviceName.includes('new-relic')) {
+    return { category: 'monitoring', type: 'APM (New Relic)', icon: '📊' };
+  }
+  if (serviceName.includes('sentry')) {
+    return { category: 'monitoring', type: 'Error Tracking (Sentry)', icon: '🐛' };
+  }
+  if (serviceName.includes('logentries')) {
+    return { category: 'monitoring', type: 'Logging (Logentries)', icon: '📝' };
+  }
+
+  // Email
+  if (serviceName.includes('sendgrid')) {
+    return { category: 'email', type: 'Email (SendGrid)', icon: '📧' };
+  }
+  if (serviceName.includes('mailgun')) {
+    return { category: 'email', type: 'Email (Mailgun)', icon: '✉️' };
+  }
+  if (serviceName.includes('mailtogo')) {
+    return { category: 'email', type: 'Email (Mailtogo)', icon: '📮' };
+  }
+
+  // Search
+  if (serviceName.includes('elasticsearch') || serviceName.includes('bonsai')) {
+    return { category: 'search', type: 'Search (Elasticsearch)', icon: '🔍' };
+  }
+  if (serviceName.includes('searchbox')) {
+    return { category: 'search', type: 'Search (Searchbox)', icon: '🔎' };
+  }
+
+  // Queue & Workers
+  if (serviceName.includes('cloudamqp') || serviceName.includes('rabbitmq')) {
+    return { category: 'queue', type: 'Message Queue (RabbitMQ)', icon: '📬' };
+  }
+  if (serviceName.includes('iron') || serviceName.includes('worker')) {
+    return { category: 'queue', type: 'Background Jobs', icon: '⚙️' };
+  }
+
+  // Scheduler
+  if (serviceName.includes('scheduler')) {
+    return { category: 'scheduler', type: 'Heroku Scheduler', icon: '⏰' };
+  }
+
+  // Storage
+  if (serviceName.includes('bucketeer') || serviceName.includes('s3')) {
+    return { category: 'storage', type: 'File Storage (S3)', icon: '🗄️' };
+  }
+
+  // Analytics
+  if (serviceName.includes('segment')) {
+    return { category: 'analytics', type: 'Analytics (Segment)', icon: '📈' };
+  }
+  if (serviceName.includes('keen')) {
+    return { category: 'analytics', type: 'Analytics (Keen)', icon: '📉' };
+  }
+
+  // SSL/Security
+  if (serviceName.includes('ssl') || serviceName.includes('expedited')) {
+    return { category: 'security', type: 'SSL/Security', icon: '🔒' };
+  }
+
+  // Default
+  return { category: 'other', type: 'Other Service', icon: '🔧' };
+}
+
 async function getAddonUsage() {
   try {
     const apps = await getApps();
@@ -75,6 +166,7 @@ async function getAddonUsage() {
       try {
         const appAddons = await herokuClient.get(`/apps/${app.id}/addons`);
         for (const addon of appAddons.data) {
+          const categorization = categorizeAddon(addon.addon_service.name);
           addons.push({
             appName: app.name,
             name: addon.name,
@@ -82,7 +174,10 @@ async function getAddonUsage() {
             plan: addon.plan.name,
             price: addon.plan.price,
             state: addon.state,
-            createdAt: addon.created_at
+            createdAt: addon.created_at,
+            category: categorization.category,
+            categoryType: categorization.type,
+            categoryIcon: categorization.icon
           });
         }
       } catch (error) {
@@ -95,10 +190,35 @@ async function getAddonUsage() {
       return sum + (price / 100);
     }, 0);
 
+    // Group addons by category
+    const addonsByCategory = addons.reduce((acc, addon) => {
+      const cat = addon.category;
+      if (!acc[cat]) {
+        acc[cat] = {
+          category: cat,
+          count: 0,
+          addons: [],
+          totalCost: 0
+        };
+      }
+      acc[cat].count++;
+      acc[cat].addons.push(addon);
+      acc[cat].totalCost += (addon.price?.cents || 0) / 100;
+      return acc;
+    }, {});
+
+    // Convert to array and sort by cost
+    const categorySummary = Object.values(addonsByCategory).map(cat => ({
+      ...cat,
+      totalCost: cat.totalCost.toFixed(2)
+    })).sort((a, b) => parseFloat(b.totalCost) - parseFloat(a.totalCost));
+
     return {
       totalAddons: addons.length,
       addons,
-      totalMonthlyCost: totalMonthlyCost.toFixed(2)
+      totalMonthlyCost: totalMonthlyCost.toFixed(2),
+      addonsByCategory: addonsByCategory,
+      categorySummary: categorySummary
     };
   } catch (error) {
     throw new Error(`Failed to fetch addon usage: ${error.message}`);
@@ -154,5 +274,6 @@ module.exports = {
   getDynoUsage,
   getAddonUsage,
   getConnectUsage,
-  getQuotaInfo
+  getQuotaInfo,
+  categorizeAddon
 };
