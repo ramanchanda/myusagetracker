@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DailyUsageChart from './DailyUsageChart';
 import './EnterpriseView.css';
@@ -8,14 +8,8 @@ function EnterpriseView({ selectedMonth }) {
   const [dailyUsage, setDailyUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTeam, setSelectedTeam] = useState(null);
 
-  useEffect(() => {
-    fetchEnterpriseStructure();
-    fetchDailyUsage();
-  }, [selectedMonth]);
-
-  const fetchEnterpriseStructure = async () => {
+  const fetchEnterpriseStructure = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -28,9 +22,9 @@ function EnterpriseView({ selectedMonth }) {
       setError(err.response?.data?.error || err.message);
       setLoading(false);
     }
-  };
+  }, [selectedMonth]);
 
-  const fetchDailyUsage = async () => {
+  const fetchDailyUsage = useCallback(async () => {
     try {
       const response = await axios.get('/api/enterprise/daily-usage', {
         params: { month: selectedMonth }
@@ -39,19 +33,14 @@ function EnterpriseView({ selectedMonth }) {
     } catch (err) {
       console.error('Error fetching daily usage:', err);
     }
-  };
+  }, [selectedMonth]);
 
-  const getTeamIcon = (teamType) => {
-    if (teamType === 'personal') return '👤';
-    if (teamType === 'enterprise') return '🏢';
-    return '👥';
-  };
+  useEffect(() => {
+    fetchEnterpriseStructure();
+    fetchDailyUsage();
+  }, [fetchDailyUsage, fetchEnterpriseStructure]);
 
-  const getTeamTypeLabel = (teamType) => {
-    if (teamType === 'personal') return 'Personal';
-    if (teamType === 'enterprise') return 'Enterprise';
-    return 'Team';
-  };
+  const formatCurrency = (value) => Number(value || 0).toLocaleString();
 
   if (loading) {
     return (
@@ -77,13 +66,13 @@ function EnterpriseView({ selectedMonth }) {
 
   if (!structure) return null;
 
-  const allTeams = structure.teams.map(team => ({
+  const enterpriseTeams = structure.teams
+    .filter(team => team.type === 'enterprise')
+    .map(team => ({
     name: team.name,
     type: team.type,
     resources: team.resources
   }));
-
-  const displayTeam = selectedTeam !== null ? allTeams[selectedTeam] : null;
 
   return (
     <div className="enterprise-view">
@@ -111,15 +100,8 @@ function EnterpriseView({ selectedMonth }) {
         <div className="summary-card">
           <div className="summary-icon">👥</div>
           <div className="summary-content">
-            <div className="summary-value">{structure.summary.totalTeams}</div>
-            <div className="summary-label">Teams</div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-icon">📱</div>
-          <div className="summary-content">
-            <div className="summary-value">{structure.summary.totalApps}</div>
-            <div className="summary-label">Applications</div>
+            <div className="summary-value">{enterpriseTeams.length}</div>
+            <div className="summary-label">Enterprise Teams</div>
           </div>
         </div>
         <div className="summary-card">
@@ -146,7 +128,7 @@ function EnterpriseView({ selectedMonth }) {
         <div className="summary-card highlight">
           <div className="summary-icon">💰</div>
           <div className="summary-content">
-            <div className="summary-value">${structure.summary.totalMonthlyCost}</div>
+            <div className="summary-value">${formatCurrency(structure.summary.totalMonthlyCost)}</div>
             <div className="summary-label">Monthly Cost</div>
           </div>
         </div>
@@ -154,29 +136,21 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Teams Grid */}
       <div className="teams-section">
-        <h2>📊 Enterprise Teams</h2>
+        <h2>Enterprise Teams Usage</h2>
         <div className="teams-grid">
-          {allTeams.map((team, index) => {
+          {enterpriseTeams.map((team, index) => {
             const resources = team.resources;
             return (
-              <div
-                key={index}
-                className={`team-card ${selectedTeam === index ? 'selected' : ''}`}
-                onClick={() => setSelectedTeam(selectedTeam === index ? null : index)}
-              >
+              <div key={index} className="team-card">
                 <div className="team-header">
-                  <div className="team-icon">{getTeamIcon(team.type)}</div>
+                  <div className="team-icon">🏢</div>
                   <div className="team-info">
                     <h3>{team.name}</h3>
-                    <span className="team-type">{getTeamTypeLabel(team.type)}</span>
+                    <span className="team-type">Enterprise</span>
                   </div>
                 </div>
 
                 <div className="team-stats">
-                  <div className="stat-row">
-                    <span className="stat-label">📱 Apps</span>
-                    <span className="stat-value">{resources.totalApps}</span>
-                  </div>
                   <div className="stat-row">
                     <span className="stat-label">⚡ Dynos</span>
                     <span className="stat-value">{resources.dynos.count}</span>
@@ -191,105 +165,14 @@ function EnterpriseView({ selectedMonth }) {
                   </div>
                   <div className="stat-row total">
                     <span className="stat-label">💰 Monthly Cost</span>
-                    <span className="stat-value cost">${resources.totalMonthlyCost}</span>
+                    <span className="stat-value cost">${formatCurrency(resources.totalMonthlyCost)}</span>
                   </div>
-                </div>
-
-                <div className="team-footer">
-                  <button className="details-btn">
-                    {selectedTeam === index ? '▼ Hide Details' : '▶ Show Details'}
-                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Team Details Panel */}
-      {displayTeam && (
-        <div className="team-details-panel">
-          <div className="panel-header">
-            <h2>
-              {getTeamIcon(displayTeam.type)} {displayTeam.name} - Detailed Resources
-            </h2>
-            <button onClick={() => setSelectedTeam(null)} className="close-btn">✕</button>
-          </div>
-
-          <div className="resources-grid">
-            {/* Dynos Section */}
-            <div className="resource-section">
-              <h3>⚡ Dynos ({displayTeam.resources.dynos.count})</h3>
-              {displayTeam.resources.dynos.formations.length > 0 ? (
-                <div className="resource-list">
-                  {displayTeam.resources.dynos.formations.map((dyno, idx) => (
-                    <div key={idx} className="resource-item">
-                      <div className="resource-name">{dyno.appName}</div>
-                      <div className="resource-details">
-                        {dyno.type} • {dyno.size} • Qty: {dyno.quantity}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-resources">No dynos configured</p>
-              )}
-            </div>
-
-            {/* Data Add-ons Section */}
-            <div className="resource-section">
-              <h3>💾 Data Add-ons ({displayTeam.resources.dataAddons.count})</h3>
-              <div className="section-cost">${displayTeam.resources.dataAddons.totalCost}/mo</div>
-              {displayTeam.resources.dataAddons.addons.length > 0 ? (
-                <div className="resource-list">
-                  {displayTeam.resources.dataAddons.addons.map((addon, idx) => (
-                    <div key={idx} className="resource-item addon">
-                      <div className="addon-header">
-                        <div className="resource-name">{addon.name}</div>
-                        <div className="addon-cost">${addon.cost.toFixed(2)}</div>
-                      </div>
-                      <div className="resource-details">
-                        App: {addon.appName}
-                      </div>
-                      <div className="resource-details">
-                        {addon.service} • {addon.plan}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-resources">No data add-ons</p>
-              )}
-            </div>
-
-            {/* Other Add-ons Section */}
-            <div className="resource-section">
-              <h3>🔧 Other Add-ons ({displayTeam.resources.otherAddons.count})</h3>
-              <div className="section-cost">${displayTeam.resources.otherAddons.totalCost}/mo</div>
-              {displayTeam.resources.otherAddons.addons.length > 0 ? (
-                <div className="resource-list">
-                  {displayTeam.resources.otherAddons.addons.map((addon, idx) => (
-                    <div key={idx} className="resource-item addon">
-                      <div className="addon-header">
-                        <div className="resource-name">{addon.name}</div>
-                        <div className="addon-cost">${addon.cost.toFixed(2)}</div>
-                      </div>
-                      <div className="resource-details">
-                        App: {addon.appName}
-                      </div>
-                      <div className="resource-details">
-                        {addon.service} • {addon.plan}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-resources">No other add-ons</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
