@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import DailyUsageChart from './DailyUsageChart';
 import EnterpriseAccountSelector from './EnterpriseAccountSelector';
 import './EnterpriseView.css';
 
 function EnterpriseView({ selectedMonth }) {
   const [structure, setStructure] = useState(null);
-  const [dailyUsage, setDailyUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
-  const [showDailyUsage, setShowDailyUsage] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -56,17 +53,6 @@ function EnterpriseView({ selectedMonth }) {
     }
   }, [selectedMonth, selectedAccountId, showAllAccounts]);
 
-  const fetchDailyUsage = useCallback(async () => {
-    try {
-      const response = await axios.get('/api/enterprise/daily-usage', {
-        params: { month: selectedMonth }
-      });
-      setDailyUsage(response.data);
-    } catch (err) {
-      console.error('Error fetching daily usage:', err);
-    }
-  }, [selectedMonth]);
-
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
@@ -74,9 +60,8 @@ function EnterpriseView({ selectedMonth }) {
   useEffect(() => {
     if (accounts.length > 0) {
       fetchEnterpriseStructure();
-      fetchDailyUsage();
     }
-  }, [fetchDailyUsage, fetchEnterpriseStructure, accounts]);
+  }, [fetchEnterpriseStructure, accounts]);
 
   const formatCurrency = (value) => Number(value || 0).toLocaleString();
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
@@ -131,14 +116,12 @@ function EnterpriseView({ selectedMonth }) {
     });
   } else {
     // Single account structure
-    enterpriseTeams = (structure.teams || [])
-      .filter(team => team.type === 'enterprise')
-      .map(team => ({
-        name: team.name,
-        type: team.type,
-        resources: team.resources,
-        accountName: structure.enterpriseAccount?.name
-      }));
+    enterpriseTeams = (structure.teams || []).map(team => ({
+      name: team.name,
+      type: team.type,
+      resources: team.resources,
+      accountName: structure.enterpriseAccount?.name
+    }));
 
     if (structure.enterpriseAccount && !structure.enterpriseAccount.has_billing_access) {
       billingRestrictions.push(structure.enterpriseAccount);
@@ -196,11 +179,6 @@ function EnterpriseView({ selectedMonth }) {
             </p>
           </div>
         </div>
-      )}
-
-      {/* Daily Usage Chart */}
-      {dailyUsage && dailyUsage.dailyUsage && (
-        <DailyUsageChart dailyData={dailyUsage.dailyUsage} />
       )}
 
       {/* Overall Summary */}

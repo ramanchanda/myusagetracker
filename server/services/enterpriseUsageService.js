@@ -350,6 +350,7 @@ async function getAllEnterpriseAccountsStructure(month) {
           totalTeams: 0,
           totalApps: 0,
           totalDynos: 0,
+          totalConnect: 0,
           totalDataAddons: 0,
           totalOtherAddons: 0,
           totalMonthlyCost: 0
@@ -423,6 +424,7 @@ async function getAllEnterpriseAccountsStructure(month) {
           // Update summary
           accountStructure.summary.totalApps += teamResources.totalApps;
           accountStructure.summary.totalDynos += teamResources.dynos.count;
+          accountStructure.summary.totalConnect += teamResources.connect.used;
           accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
           accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
           accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
@@ -444,6 +446,7 @@ async function getAllEnterpriseAccountsStructure(month) {
       totalTeams: allAccountsData.reduce((sum, a) => sum + a.summary.totalTeams, 0),
       totalApps: allAccountsData.reduce((sum, a) => sum + a.summary.totalApps, 0),
       totalDynos: allAccountsData.reduce((sum, a) => sum + a.summary.totalDynos, 0),
+      totalConnect: allAccountsData.reduce((sum, a) => sum + a.summary.totalConnect, 0),
       totalDataAddons: allAccountsData.reduce((sum, a) => sum + a.summary.totalDataAddons, 0),
       totalOtherAddons: allAccountsData.reduce((sum, a) => sum + a.summary.totalOtherAddons, 0),
       totalMonthlyCost: allAccountsData.reduce((sum, a) => sum + parseFloat(a.summary.totalMonthlyCost || 0), 0).toFixed(2)
