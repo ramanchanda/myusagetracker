@@ -4,11 +4,16 @@ const HEROKU_API_BASE = 'https://api.heroku.com';
 
 // Create Heroku client
 function createHerokuClient(apiKey) {
+  const resolvedApiKey = apiKey || process.env.HEROKU_API_KEY;
+  if (!resolvedApiKey || resolvedApiKey === 'your_heroku_api_key_here') {
+    throw new Error('HEROKU_API_KEY is not configured. Update your .env with a valid Heroku API key.');
+  }
+
   return axios.create({
     baseURL: HEROKU_API_BASE,
     headers: {
       'Accept': 'application/vnd.heroku+json; version=3',
-      'Authorization': `Bearer ${apiKey || process.env.HEROKU_API_KEY}`,
+      'Authorization': `Bearer ${resolvedApiKey}`,
       'Content-Type': 'application/json'
     }
   });
@@ -161,52 +166,27 @@ function categorizeAddonType(addonServiceName) {
 
 // Parse daily usage data into aggregated format
 function parseDailyUsage(dailyUsageData) {
-  if (!dailyUsageData || !dailyUsageData.data) {
+  if (!dailyUsageData || !Array.isArray(dailyUsageData)) {
     return { days: [], summary: { totalCost: 0, avgDailyCost: 0 } };
   }
 
-  // Group by date
-  const dailyMap = {};
+  const days = dailyUsageData.map(day => {
+    const dynoCost = Number(day.dynos || 0);
+    const dataCost = Number(day.data || 0);
+    const partnerCost = Number(day.partner || 0);
+    const addonCost = Number(day.addons || 0);
+    const otherCost = Math.max(addonCost - dataCost, partnerCost, 0);
+    const totalCost = dynoCost + addonCost + Number(day.space || 0);
 
-  dailyUsageData.data.forEach(item => {
-    const date = item.date;
-
-    if (!dailyMap[date]) {
-      dailyMap[date] = {
-        date: date,
-        totalCost: 0,
-        dynoCost: 0,
-        addonCost: 0,
-        dataCost: 0,
-        otherCost: 0,
-        items: []
-      };
-    }
-
-    const dayData = dailyMap[date];
-    dayData.totalCost += item.cost;
-    dayData.items.push(item);
-
-    // Categorize costs
-    if (item.type === 'dyno') {
-      dayData.dynoCost += item.cost;
-    } else if (item.type === 'addon') {
-      dayData.addonCost += item.cost;
-
-      // Further categorize addons
-      const addonType = categorizeAddonType(item.addon_service_name || '');
-      if (addonType.isData) {
-        dayData.dataCost += item.cost;
-      } else {
-        dayData.otherCost += item.cost;
-      }
-    }
-  });
-
-  // Convert to sorted array
-  const days = Object.values(dailyMap).sort((a, b) =>
-    new Date(a.date) - new Date(b.date)
-  );
+    return {
+      date: day.date,
+      totalCost,
+      dynoCost,
+      addonCost,
+      dataCost,
+      otherCost
+    };
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // Format costs
   days.forEach(day => {
@@ -228,7 +208,7 @@ function parseDailyUsage(dailyUsageData) {
       avgDailyCost: parseFloat(avgDailyCost.toFixed(2)),
       totalDays: days.length,
       maxDailyCost: Math.max(...days.map(d => d.totalCost), 0),
-      minDailyCost: Math.min(...days.map(d => d.totalCost), 0)
+      minDailyCost: days.length > 0 ? Math.min(...days.map(d => d.totalCost)) : 0
     }
   };
 }
@@ -271,28 +251,31 @@ async function getEnterpriseDailyUsageStructure(month) {
 
     structure.dailyUsage = parseDailyUsage(enterpriseUsage);
 
-    // Get teams and their daily usage
-    const teams = await getTeams(client);
+    // Build team daily usage from enterprise payload directly
+    const teamMap = new Map();
+    (enterpriseUsage || []).forEach(day => {
+      (day.teams || []).forEach(team => {
+        if (!teamMap.has(team.id)) {
+          teamMap.set(team.id, { id: team.id, name: team.name, days: [] });
+        }
 
-    for (const team of teams) {
-      try {
-        const teamUsage = await getTeamDailyUsage(
-          client,
-          team.id,
-          dateRange.start,
-          dateRange.end
-        );
-
-        structure.teams.push({
-          id: team.id,
-          name: team.name,
-          type: team.type,
-          dailyUsage: parseDailyUsage(teamUsage)
+        teamMap.get(team.id).days.push({
+          date: day.date,
+          dynos: Number(team.dynos || 0),
+          addons: Number(team.addons || 0),
+          data: Number(team.data || 0),
+          partner: Number(team.partner || 0),
+          space: Number(team.space || 0)
         });
-      } catch (error) {
-        console.error(`Error processing team ${team.name}:`, error.message);
-      }
-    }
+      });
+    });
+
+    structure.teams = Array.from(teamMap.values()).map(team => ({
+      id: team.id,
+      name: team.name,
+      type: 'enterprise',
+      dailyUsage: parseDailyUsage(team.days)
+    }));
 
     return structure;
   } catch (error) {

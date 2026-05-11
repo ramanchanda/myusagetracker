@@ -10,11 +10,16 @@ function getCurrentMonth() {
 
 // Create Heroku client
 function createHerokuClient(apiKey) {
+  const resolvedApiKey = apiKey || process.env.HEROKU_API_KEY;
+  if (!resolvedApiKey || resolvedApiKey === 'your_heroku_api_key_here') {
+    throw new Error('HEROKU_API_KEY is not configured. Update your .env with a valid Heroku API key.');
+  }
+
   return axios.create({
     baseURL: HEROKU_API_BASE,
     headers: {
       'Accept': 'application/vnd.heroku+json; version=3',
-      'Authorization': `Bearer ${apiKey || process.env.HEROKU_API_KEY}`,
+      'Authorization': `Bearer ${resolvedApiKey}`,
       'Content-Type': 'application/json'
     }
   });
@@ -29,10 +34,13 @@ async function getAccountInfo(client) {
 // Get enterprise account
 async function getEnterpriseAccount(client) {
   try {
-    // First get the account to find enterprise account ID
-    const account = await getAccountInfo(client);
+    const configuredEnterpriseId = process.env.ENTERPRISE_ACCOUNT_ID_OR_NAME;
+    if (configuredEnterpriseId) {
+      const configuredResponse = await client.get(`/enterprise-accounts/${configuredEnterpriseId}`);
+      return configuredResponse.data;
+    }
 
-    // Try to get enterprise accounts
+    // Otherwise, resolve from the list of enterprise accounts
     const response = await client.get('/enterprise-accounts');
 
     if (response.data && response.data.length > 0) {
@@ -46,17 +54,26 @@ async function getEnterpriseAccount(client) {
   }
 }
 
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 // Get enterprise account monthly usage
 async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
   try {
-    const year = month.split('-')[0];
-    const monthNum = month.split('-')[1];
-
     const response = await client.get(
-      `/enterprise-accounts/${enterpriseAccountId}/monthly-usage/${year}/${monthNum}`
+      `/enterprise-accounts/${enterpriseAccountId}/usage/monthly`,
+      {
+        params: {
+          start: month,
+          end: month
+        }
+      }
     );
 
-    return response.data;
+    const usageRows = Array.isArray(response.data) ? response.data : [];
+    return usageRows.find(row => row.month === month) || usageRows[0] || null;
   } catch (error) {
     console.error(`Error fetching enterprise monthly usage for ${month}:`, error.message);
     throw error;
@@ -147,127 +164,55 @@ function categorizeAddonType(addonServiceName) {
 }
 
 // Parse team usage data into our structure
-async function parseTeamUsage(client, team, teamUsage) {
+function parseTeamUsage(team) {
+  const dynosUsage = toNumber(team.dynos);
+  const dataUsage = toNumber(team.data);
+  const partnerUsage = toNumber(team.partner);
+  const addonsUsage = toNumber(team.addons);
+  const connectUsage = toNumber(team.connect);
+  const spaceUsage = toNumber(team.space);
+  const otherAddonsUsage = Math.max(addonsUsage - dataUsage, partnerUsage, 0);
+
+  const teamApps = Array.isArray(team.apps) ? team.apps : [];
+
   const resources = {
     teamName: team.name,
     teamType: team.type || 'team',
-    totalApps: 0,
+    totalApps: teamApps.length,
 
     dynos: {
-      count: 0,
+      count: dynosUsage,
       totalQuantity: 0,
       formations: [],
-      cost: 0
+      cost: dynosUsage
     },
 
     dataAddons: {
-      count: 0,
+      count: dataUsage,
       addons: [],
-      totalCost: 0
+      totalCost: dataUsage
     },
 
     otherAddons: {
-      count: 0,
+      count: otherAddonsUsage,
       addons: [],
-      totalCost: 0
+      totalCost: otherAddonsUsage
     },
 
-    totalMonthlyCost: 0
+    connect: {
+      used: connectUsage
+    },
+
+    space: {
+      used: spaceUsage
+    },
+
+    totalMonthlyCost: dynosUsage + addonsUsage + connectUsage + spaceUsage
   };
 
-  if (!teamUsage) {
-    return resources;
-  }
-
-  // Get team apps for details
-  const apps = await getTeamApps(client, team.id);
-  resources.totalApps = apps.length;
-
-  // Map to store app details
-  const appDetailsMap = {};
-
-  // Fetch detailed info for each app
-  for (const app of apps) {
-    try {
-      const [dynos, addons] = await Promise.all([
-        getAppDynos(client, app.id),
-        getAppAddons(client, app.id)
-      ]);
-
-      appDetailsMap[app.id] = {
-        name: app.name,
-        dynos: dynos,
-        addons: addons
-      };
-    } catch (error) {
-      console.error(`Error fetching details for app ${app.name}:`, error.message);
-    }
-  }
-
-  // Process data from team usage API
-  if (teamUsage.data) {
-    resources.totalMonthlyCost = teamUsage.data.reduce((sum, item) => sum + item.cost, 0);
-
-    // Process each usage item
-    for (const item of teamUsage.data) {
-      const appDetails = appDetailsMap[item.app_id] || { name: 'Unknown' };
-
-      // Dyno usage
-      if (item.type === 'dyno') {
-        resources.dynos.cost += item.cost;
-        resources.dynos.count++;
-
-        // Add formation details if available
-        if (appDetails.dynos) {
-          appDetails.dynos.forEach(dyno => {
-            resources.dynos.formations.push({
-              appName: appDetails.name,
-              type: dyno.type,
-              quantity: dyno.quantity,
-              size: dyno.size,
-              cost: item.cost / appDetails.dynos.length // Split cost evenly
-            });
-            resources.dynos.totalQuantity += dyno.quantity;
-          });
-        }
-      }
-
-      // Add-on usage
-      else if (item.type === 'addon') {
-        // Find the addon details to categorize
-        let addonService = 'unknown';
-        let addonPlan = 'unknown';
-
-        if (appDetails.addons) {
-          const addon = appDetails.addons.find(a => a.id === item.addon_id);
-          if (addon) {
-            addonService = addon.addon_service.name;
-            addonPlan = addon.plan.name;
-          }
-        }
-
-        const addonType = categorizeAddonType(addonService);
-
-        const addonData = {
-          name: item.addon_name || 'Unknown',
-          service: addonService,
-          plan: addonPlan,
-          cost: item.cost,
-          appName: appDetails.name,
-          quantity: item.quantity || 1
-        };
-
-        if (addonType.isData) {
-          resources.dataAddons.addons.push(addonData);
-          resources.dataAddons.count++;
-          resources.dataAddons.totalCost += item.cost;
-        } else {
-          resources.otherAddons.addons.push(addonData);
-          resources.otherAddons.count++;
-          resources.otherAddons.totalCost += item.cost;
-        }
-      }
-    }
+  // Fallback if addon total is missing in API response
+  if (addonsUsage === 0 && resources.totalMonthlyCost === dynosUsage + connectUsage + spaceUsage) {
+    resources.totalMonthlyCost += dataUsage + partnerUsage;
   }
 
   // Format costs
@@ -312,32 +257,28 @@ async function getEnterpriseStructure(month) {
     };
 
     // Get enterprise-level monthly usage
-    try {
-      const enterpriseUsage = await getEnterpriseMonthlyUsage(
-        client,
-        enterpriseAccount.id,
-        targetMonth
-      );
+    const enterpriseUsage = await getEnterpriseMonthlyUsage(
+      client,
+      enterpriseAccount.id,
+      targetMonth
+    );
 
-      console.log(`Enterprise usage for ${targetMonth}:`, JSON.stringify(enterpriseUsage, null, 2));
-    } catch (error) {
-      console.error('Could not fetch enterprise-level usage:', error.message);
+    if (!enterpriseUsage || !Array.isArray(enterpriseUsage.teams)) {
+      return structure;
     }
 
-    // Get all teams
-    const teams = await getTeams(client);
-    structure.summary.totalTeams = teams.length;
+    const enterpriseTeams = enterpriseUsage.teams;
+    structure.summary.totalTeams = enterpriseTeams.length;
 
-    // Get usage for each team
-    for (const team of teams) {
+    // Build team resources from enterprise monthly usage payload
+    for (const team of enterpriseTeams) {
       try {
-        const teamUsage = await getTeamMonthlyUsage(client, team.id, targetMonth);
-        const teamResources = await parseTeamUsage(client, team, teamUsage);
+        const teamResources = parseTeamUsage(team);
 
         structure.teams.push({
           id: team.id,
           name: team.name,
-          type: team.type,
+          type: 'enterprise',
           resources: teamResources
         });
 
@@ -365,5 +306,6 @@ module.exports = {
   getEnterpriseAccount,
   getEnterpriseMonthlyUsage,
   getTeamMonthlyUsage,
-  getTeams
+  getTeams,
+  createHerokuClient
 };

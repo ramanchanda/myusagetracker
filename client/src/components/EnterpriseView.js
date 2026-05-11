@@ -41,6 +41,10 @@ function EnterpriseView({ selectedMonth }) {
   }, [fetchDailyUsage, fetchEnterpriseStructure]);
 
   const formatCurrency = (value) => Number(value || 0).toLocaleString();
+  const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 
   if (loading) {
     return (
@@ -79,7 +83,10 @@ function EnterpriseView({ selectedMonth }) {
       {/* Account Header */}
       <div className="account-header">
         <div className="account-info">
-          <h1>🏢 Enterprise Account</h1>
+          <h1>Heroku Enterprise Teams Usage</h1>
+          <p className="account-email">
+            {structure.account.enterpriseAccountName || 'Enterprise Account'}
+          </p>
           <p className="account-email">{structure.account.email}</p>
           <p className="selected-month">
             📅 Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
@@ -107,22 +114,22 @@ function EnterpriseView({ selectedMonth }) {
         <div className="summary-card">
           <div className="summary-icon">⚡</div>
           <div className="summary-content">
-            <div className="summary-value">{structure.summary.totalDynos}</div>
-            <div className="summary-label">Dynos</div>
+            <div className="summary-value">{formatUsage(structure.summary.totalDynos)}</div>
+            <div className="summary-label">Dynos Usage</div>
           </div>
         </div>
         <div className="summary-card">
           <div className="summary-icon">💾</div>
           <div className="summary-content">
-            <div className="summary-value">{structure.summary.totalDataAddons}</div>
-            <div className="summary-label">Data Add-ons</div>
+            <div className="summary-value">{formatUsage(structure.summary.totalDataAddons)}</div>
+            <div className="summary-label">Data Add-ons Usage</div>
           </div>
         </div>
         <div className="summary-card">
           <div className="summary-icon">🔧</div>
           <div className="summary-content">
-            <div className="summary-value">{structure.summary.totalOtherAddons}</div>
-            <div className="summary-label">Other Add-ons</div>
+            <div className="summary-value">{formatUsage(structure.summary.totalOtherAddons)}</div>
+            <div className="summary-label">Other Add-ons Usage</div>
           </div>
         </div>
         <div className="summary-card highlight">
@@ -136,7 +143,7 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Teams Grid */}
       <div className="teams-section">
-        <h2>Enterprise Teams Usage</h2>
+        <h2>{(structure.account.enterpriseAccountName || 'Enterprise Account')} &gt; Enterprise Teams</h2>
         <div className="teams-grid">
           {enterpriseTeams.map((team, index) => {
             const resources = team.resources;
@@ -152,16 +159,16 @@ function EnterpriseView({ selectedMonth }) {
 
                 <div className="team-stats">
                   <div className="stat-row">
-                    <span className="stat-label">⚡ Dynos</span>
-                    <span className="stat-value">{resources.dynos.count}</span>
+                    <span className="stat-label">⚡ Dynos Usage</span>
+                    <span className="stat-value">{formatUsage(resources.dynos.count)}</span>
                   </div>
                   <div className="stat-row">
-                    <span className="stat-label">💾 Data Add-ons</span>
-                    <span className="stat-value">{resources.dataAddons.count}</span>
+                    <span className="stat-label">💾 Data Add-ons Usage</span>
+                    <span className="stat-value">{formatUsage(resources.dataAddons.count)}</span>
                   </div>
                   <div className="stat-row">
-                    <span className="stat-label">🔧 Other Add-ons</span>
-                    <span className="stat-value">{resources.otherAddons.count}</span>
+                    <span className="stat-label">🔧 Other Add-ons Usage</span>
+                    <span className="stat-value">{formatUsage(resources.otherAddons.count)}</span>
                   </div>
                   <div className="stat-row total">
                     <span className="stat-label">💰 Monthly Cost</span>

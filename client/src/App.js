@@ -44,7 +44,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Enterprise Teams Usage</h1>
+        <h1>Heroku Enterprise Teams Usage</h1>
         <div className="header-actions">
           <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
