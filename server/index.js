@@ -13,6 +13,8 @@ const multiGroupService = require('./services/multiGroupService');
 const enterpriseService = require('./services/enterpriseService');
 const personalService = require('./services/personalService');
 const invoiceService = require('./services/invoiceService');
+const enterpriseUsageService = require('./services/enterpriseUsageService');
+const personalUsageService = require('./services/personalUsageService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -146,11 +148,11 @@ app.get('/api/groups/all/usage', async (req, res) => {
   }
 });
 
-// Personal apps endpoints
+// Personal apps endpoints (using Monthly Usage API)
 app.get('/api/personal/structure', async (req, res) => {
   try {
     const month = req.query.month;
-    const structure = await personalService.getPersonalAppsStructure(month);
+    const structure = await personalUsageService.getPersonalAppsStructure(month);
     res.json(structure);
   } catch (error) {
     console.error('Error fetching personal apps structure:', error.message);
@@ -158,11 +160,11 @@ app.get('/api/personal/structure', async (req, res) => {
   }
 });
 
-// Enterprise endpoints
+// Enterprise endpoints (using Enterprise Monthly Usage API)
 app.get('/api/enterprise/structure', async (req, res) => {
   try {
     const month = req.query.month;
-    const structure = await enterpriseService.getEnterpriseStructure(month);
+    const structure = await enterpriseUsageService.getEnterpriseStructure(month);
     res.json(structure);
   } catch (error) {
     console.error('Error fetching enterprise structure:', error.message);
@@ -172,10 +174,22 @@ app.get('/api/enterprise/structure', async (req, res) => {
 
 app.get('/api/enterprise/teams', async (req, res) => {
   try {
-    const teams = await enterpriseService.getTeams();
+    const teams = await enterpriseUsageService.getTeams();
     res.json(teams);
   } catch (error) {
     console.error('Error fetching teams:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Enterprise account info
+app.get('/api/enterprise/account', async (req, res) => {
+  try {
+    const client = require('./services/enterpriseUsageService').createHerokuClient();
+    const enterpriseAccount = await enterpriseUsageService.getEnterpriseAccount();
+    res.json(enterpriseAccount);
+  } catch (error) {
+    console.error('Error fetching enterprise account:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
