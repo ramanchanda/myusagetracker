@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import EnterpriseAccountSelector from './EnterpriseAccountSelector';
 import {
   EnterpriseIcon,
@@ -20,6 +21,9 @@ function EnterpriseView({ selectedMonth }) {
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [showAllTeamsInAccount, setShowAllTeamsInAccount] = useState(false);
   const [expandedTeams, setExpandedTeams] = useState({});
+  const [reportView, setReportView] = useState('summary12');
+  const [trendSummary, setTrendSummary] = useState(null);
+  const [trendLoading, setTrendLoading] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -72,6 +76,30 @@ function EnterpriseView({ selectedMonth }) {
       fetchEnterpriseStructure();
     }
   }, [fetchEnterpriseStructure, accounts]);
+
+  const fetchTrendSummary = useCallback(async () => {
+    try {
+      setTrendLoading(true);
+      const response = await axios.get('/api/enterprise/trend-summary', {
+        params: {
+          month: selectedMonth,
+          accountId: selectedAccountId,
+          allAccounts: showAllAccounts
+        }
+      });
+      setTrendSummary(response.data);
+    } catch (err) {
+      console.error('Error fetching trend summary:', err);
+    } finally {
+      setTrendLoading(false);
+    }
+  }, [selectedMonth, selectedAccountId, showAllAccounts]);
+
+  useEffect(() => {
+    if (accounts.length > 0 && reportView === 'summary12') {
+      fetchTrendSummary();
+    }
+  }, [accounts, reportView, fetchTrendSummary]);
 
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -148,21 +176,11 @@ function EnterpriseView({ selectedMonth }) {
 
   return (
     <div className="enterprise-view">
-      {/* Account Header */}
-      <div className="account-header">
-        <div className="account-info">
-          <h1>Heroku Enterprise Teams Usage</h1>
-          <p className="account-email">
-            {structure.account.enterpriseAccountName || 'Enterprise Account'}
-          </p>
-          <p className="account-email">{structure.account.email}</p>
-          <p className="selected-month">
-            Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </p>
-        </div>
-        <button onClick={fetchEnterpriseStructure} className="refresh-btn">
-          Refresh
-        </button>
+      <div className="account-meta-strip">
+        <p className="account-email">{structure.account.email}</p>
+        <p className="selected-month">
+          Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
+        </p>
       </div>
 
       {/* Enterprise Account Selector */}
@@ -174,6 +192,84 @@ function EnterpriseView({ selectedMonth }) {
           showAllAccounts={showAllAccounts}
           onShowAllToggle={setShowAllAccounts}
         />
+      )}
+
+      <div className="report-options">
+        <button
+          type="button"
+          className={`report-option-btn ${reportView === 'summary12' ? 'active' : ''}`}
+          onClick={() => setReportView('summary12')}
+        >
+          Summary of past 12 months - trend, analysis
+        </button>
+        <button
+          type="button"
+          className={`report-option-btn ${reportView === 'monthly' ? 'active' : ''}`}
+          onClick={() => setReportView('monthly')}
+        >
+          Monthly Report
+        </button>
+        <button
+          type="button"
+          className={`report-option-btn ${reportView === 'daily' ? 'active' : ''}`}
+          onClick={() => setReportView('daily')}
+        >
+          Daily - Datewise Report
+        </button>
+      </div>
+
+      {reportView === 'summary12' && (
+        <div className="trend-summary-panel">
+          <h3>Summary of past 12 months - trend, analysis</h3>
+          {trendLoading ? (
+            <p className="trend-loading">Loading trend summary...</p>
+          ) : trendSummary ? (
+            <>
+              <div className="trend-analysis-grid">
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Avg Teams / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgTeamsPerMonth)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Avg Dyno Units / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgDynoUnitsPerMonth)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Avg Connect Rows / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgConnectRowsPerMonth)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Dyno Trend (12M)</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.dynoTrendPct)}%</span>
+                </div>
+              </div>
+              <div className="trend-chart-wrap">
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={trendSummary.monthly}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="dynoUnits" stroke="#6f42c1" strokeWidth={2} />
+                    <Line type="monotone" dataKey="connectRows" stroke="#0ea5e9" strokeWidth={2} />
+                    <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2} />
+                    <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          ) : (
+            <p className="trend-loading">No trend data available.</p>
+          )}
+        </div>
+      )}
+
+      {reportView === 'monthly' && (
+        <div className="report-placeholder">Monthly Report view coming next.</div>
+      )}
+
+      {reportView === 'daily' && (
+        <div className="report-placeholder">Daily - Datewise Report view coming next.</div>
       )}
 
       {/* Billing Restrictions Warning */}

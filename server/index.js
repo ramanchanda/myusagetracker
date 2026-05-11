@@ -186,6 +186,23 @@ app.get('/api/enterprise/all-accounts', async (req, res) => {
   }
 });
 
+app.get('/api/enterprise/trend-summary', async (req, res) => {
+  try {
+    const month = req.query.month;
+    const enterpriseAccountId = req.query.accountId;
+    const includeAllAccounts = req.query.allAccounts === 'true';
+    const trend = await enterpriseUsageService.getEnterpriseTrendSummary(
+      month,
+      enterpriseAccountId,
+      includeAllAccounts
+    );
+    res.json(trend);
+  } catch (error) {
+    console.error('Error fetching enterprise trend summary:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // List enterprise accounts
 app.get('/api/enterprise/accounts', async (req, res) => {
   try {

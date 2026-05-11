@@ -36,6 +36,14 @@ function shiftMonth(month, deltaMonths) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function getPastMonths(endMonth, count) {
+  const months = [];
+  for (let i = count - 1; i >= 0; i--) {
+    months.push(shiftMonth(endMonth, -i));
+  }
+  return months;
+}
+
 // Add delay between API calls to avoid rate limiting
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -604,6 +612,93 @@ async function getAllEnterpriseAccountsStructure(month) {
   }
 }
 
+function extractUsageTeamsFromMonthlyResponse(enterpriseUsage, month) {
+  const usageRows = Array.isArray(enterpriseUsage)
+    ? enterpriseUsage
+    : (enterpriseUsage ? [enterpriseUsage] : []);
+  const monthData = usageRows.find(row => row.month === month) || usageRows[0];
+  return Array.isArray(monthData?.teams) ? monthData.teams : [];
+}
+
+async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllAccounts = false) {
+  const client = createHerokuClient();
+  const targetMonth = month || getCurrentMonth();
+  const months = getPastMonths(targetMonth, 12);
+
+  let accounts = [];
+  if (includeAllAccounts) {
+    accounts = await getAllEnterpriseAccounts(client);
+  } else if (enterpriseAccountId) {
+    const account = await getEnterpriseAccount(client, enterpriseAccountId);
+    if (account) accounts = [account];
+  } else {
+    const all = await getAllEnterpriseAccounts(client);
+    if (all[0]) accounts = [all[0]];
+  }
+
+  const monthly = [];
+  for (const m of months) {
+    const row = {
+      month: m,
+      teams: 0,
+      dynoUnits: 0,
+      connectRows: 0,
+      dataAddons: 0,
+      generalAddons: 0
+    };
+
+    for (const account of accounts) {
+      try {
+        const usage = await getEnterpriseMonthlyUsage(client, account.id, m);
+        const usageTeams = extractUsageTeamsFromMonthlyResponse(usage, m);
+        row.teams += usageTeams.length;
+
+        usageTeams.forEach(team => {
+          const dynos = toNumber(team.dynos);
+          const connect = toNumber(team.connect);
+          const data = toNumber(team.data);
+          const addons = toNumber(team.addons);
+          const partner = toNumber(team.partner);
+          const general = Math.max(addons - data, partner, 0);
+
+          row.dynoUnits += dynos;
+          row.connectRows += connect;
+          row.dataAddons += data;
+          row.generalAddons += general;
+        });
+      } catch (error) {
+        console.error(`Trend summary fetch failed for ${account.id} ${m}:`, error.message);
+      }
+    }
+
+    monthly.push(row);
+  }
+
+  const total = monthly.reduce((acc, item) => ({
+    teams: acc.teams + item.teams,
+    dynoUnits: acc.dynoUnits + item.dynoUnits,
+    connectRows: acc.connectRows + item.connectRows,
+    dataAddons: acc.dataAddons + item.dataAddons,
+    generalAddons: acc.generalAddons + item.generalAddons
+  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0 });
+
+  const first = monthly[0] || { dynoUnits: 0, connectRows: 0 };
+  const last = monthly[monthly.length - 1] || { dynoUnits: 0, connectRows: 0 };
+  const safePct = (a, b) => (a > 0 ? (((b - a) / a) * 100) : 0);
+
+  return {
+    months,
+    monthly,
+    analysis: {
+      avgTeamsPerMonth: monthly.length ? total.teams / monthly.length : 0,
+      avgDynoUnitsPerMonth: monthly.length ? total.dynoUnits / monthly.length : 0,
+      avgConnectRowsPerMonth: monthly.length ? total.connectRows / monthly.length : 0,
+      dynoTrendPct: safePct(first.dynoUnits, last.dynoUnits),
+      connectTrendPct: safePct(first.connectRows, last.connectRows)
+    }
+  };
+}
+
 // Get structure for single enterprise account (for backward compatibility)
 async function getEnterpriseStructure(month, enterpriseAccountId) {
   const allData = await getAllEnterpriseAccountsStructure(month);
@@ -641,6 +736,7 @@ module.exports = {
   getEnterpriseAccountTeams,
   getTeamSpaces,
   getEnterpriseSpacesSummary,
+  getEnterpriseTrendSummary,
   testBillingAccess,
   createHerokuClient
 };
