@@ -29,6 +29,13 @@ function getCurrentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function shiftMonth(month, deltaMonths) {
+  const [year, monthNum] = month.split('-').map(Number);
+  const date = new Date(year, monthNum - 1, 1);
+  date.setMonth(date.getMonth() + deltaMonths);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 // Add delay between API calls to avoid rate limiting
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -121,8 +128,8 @@ function toNumber(value) {
 }
 
 // Get enterprise account monthly usage
-async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
-  const cacheKey = getCacheKey(`enterprise-${enterpriseAccountId}`, { month });
+async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month, endMonth = month) {
+  const cacheKey = getCacheKey(`enterprise-${enterpriseAccountId}`, { month, endMonth });
   const cached = getFromCache(cacheKey);
   if (cached) {
     console.log(`✅ Using cached enterprise usage for ${enterpriseAccountId}`);
@@ -130,7 +137,7 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
   }
 
   try {
-    console.log(`Fetching monthly usage: /enterprise-accounts/${enterpriseAccountId}/usage/monthly?start=${month}&end=${month}`);
+    console.log(`Fetching monthly usage: /enterprise-accounts/${enterpriseAccountId}/usage/monthly?start=${month}&end=${endMonth}`);
 
     await delay(100); // Small delay to avoid rate limiting
 
@@ -139,7 +146,7 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
       {
         params: {
           start: month,
-          end: month
+          end: endMonth
         }
       }
     );
@@ -428,8 +435,9 @@ async function getAllEnterpriseAccountsStructure(month) {
         continue;
       }
 
-      // Get enterprise-level monthly usage
-      let enterpriseTeams = [];
+      // Get enterprise-level monthly usage for selected month and historical range
+      let selectedMonthTeams = [];
+      let historicalTeams = [];
 
       try {
         const enterpriseUsage = await getEnterpriseMonthlyUsage(
@@ -438,26 +446,42 @@ async function getAllEnterpriseAccountsStructure(month) {
           targetMonth
         );
 
-        // The /usage/monthly endpoint returns an array of month data
-        if (enterpriseUsage && Array.isArray(enterpriseUsage)) {
-          // Get the first (and should be only) month's data
-          const monthData = enterpriseUsage[0];
-          if (monthData && Array.isArray(monthData.teams)) {
-            enterpriseTeams = monthData.teams;
-            console.log(`✅ Found ${enterpriseTeams.length} teams with usage data`);
-          }
-        } else if (enterpriseUsage && Array.isArray(enterpriseUsage.teams)) {
-          // Fallback for different response structure
-          enterpriseTeams = enterpriseUsage.teams;
-          console.log(`✅ Found ${enterpriseTeams.length} teams with usage data`);
-        }
+        const usageRows = Array.isArray(enterpriseUsage)
+          ? enterpriseUsage
+          : (enterpriseUsage ? [enterpriseUsage] : []);
+        const selectedMonthData = usageRows.find(row => row.month === targetMonth) || usageRows[0];
+        selectedMonthTeams = Array.isArray(selectedMonthData?.teams) ? selectedMonthData.teams : [];
+        console.log(`✅ Found ${selectedMonthTeams.length} teams with selected-month usage data`);
+
+        // Use a wider month range to surface inactive teams (zero usage for selected month).
+        const historicalStartMonth = shiftMonth(targetMonth, -11);
+        const historicalUsage = await getEnterpriseMonthlyUsage(
+          client,
+          enterpriseAccount.id,
+          historicalStartMonth,
+          targetMonth
+        );
+        const historicalRows = Array.isArray(historicalUsage)
+          ? historicalUsage
+          : (historicalUsage ? [historicalUsage] : []);
+
+        const historicalById = new Map();
+        historicalRows.forEach(row => {
+          (row.teams || []).forEach(team => {
+            if (team?.id && !historicalById.has(team.id)) {
+              historicalById.set(team.id, team);
+            }
+          });
+        });
+        historicalTeams = Array.from(historicalById.values());
+        console.log(`✅ Found ${historicalTeams.length} unique teams in last 12 months`);
       } catch (error) {
         console.error(`Error fetching usage for ${enterpriseAccount.name}:`, error.message);
       }
 
-      // Fallback: If no usage data, fetch teams directly (but don't fetch individual team usage to avoid rate limits)
-      if (enterpriseTeams.length === 0) {
-        console.log(`📋 No usage data found for ${enterpriseAccount.name} - skipping team-level calls to avoid rate limits`);
+      // Fallback notice: usage can still be empty for a new or restricted account.
+      if (selectedMonthTeams.length === 0 && historicalTeams.length === 0) {
+        console.log(`📋 No usage data found for ${enterpriseAccount.name} in selected/historical range`);
         console.log(`⚠️  To see data, ensure usage exists for ${targetMonth} or try a different month`);
       }
 
@@ -465,7 +489,12 @@ async function getAllEnterpriseAccountsStructure(month) {
       // This ensures team counts are accurate even when usage payload omits zero-usage teams.
       const canonicalTeams = await getEnterpriseAccountTeams(client, enterpriseAccount.id);
       const usageByTeamId = new Map(
-        enterpriseTeams
+        selectedMonthTeams
+          .filter(team => team && team.id)
+          .map(team => [team.id, team])
+      );
+      const historicalByTeamId = new Map(
+        historicalTeams
           .filter(team => team && team.id)
           .map(team => [team.id, team])
       );
@@ -479,18 +508,20 @@ async function getAllEnterpriseAccountsStructure(month) {
       );
       const allTeamIds = new Set([
         ...Array.from(canonicalById.keys()),
+        ...Array.from(historicalByTeamId.keys()),
         ...Array.from(usageByTeamId.keys())
       ]);
 
       const mergedTeams = Array.from(allTeamIds).map(teamId => {
         const canonicalTeam = canonicalById.get(teamId) || {};
+        const historicalTeam = historicalByTeamId.get(teamId) || {};
         const usageTeam = usageByTeamId.get(teamId) || {};
         const hasDirectAccess = canonicalById.has(teamId);
 
         return {
           id: teamId,
-          name: usageTeam.name || canonicalTeam.name || 'Unknown Team',
-          type: canonicalTeam.type || usageTeam.type || 'enterprise',
+          name: usageTeam.name || historicalTeam.name || canonicalTeam.name || 'Unknown Team',
+          type: canonicalTeam.type || usageTeam.type || historicalTeam.type || 'enterprise',
           hasDirectAccess,
           ...usageTeam
         };
