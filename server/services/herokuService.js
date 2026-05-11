@@ -186,8 +186,17 @@ async function getAddonUsage() {
     }
 
     const totalMonthlyCost = addons.reduce((sum, addon) => {
-      const price = addon.price?.cents || 0;
-      return sum + (price / 100);
+      let cost = 0;
+      if (addon.price) {
+        if (typeof addon.price === 'number') {
+          cost = addon.price;
+        } else if (addon.price.cents !== undefined) {
+          cost = addon.price.cents / 100;
+        } else if (addon.price.unit !== undefined) {
+          cost = parseFloat(addon.price.unit) || 0;
+        }
+      }
+      return sum + cost;
     }, 0);
 
     // Group addons by category

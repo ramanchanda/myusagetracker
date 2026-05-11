@@ -165,6 +165,44 @@ app.get('/api/enterprise/teams', async (req, res) => {
   }
 });
 
+// Debug endpoint to check addon pricing
+app.get('/api/debug/addons', async (req, res) => {
+  try {
+    const apps = await herokuService.getApps();
+    const debugInfo = [];
+
+    for (const app of apps) {
+      try {
+        const axios = require('axios');
+        const response = await axios.get(`https://api.heroku.com/apps/${app.id}/addons`, {
+          headers: {
+            'Accept': 'application/vnd.heroku+json; version=3',
+            'Authorization': `Bearer ${process.env.HEROKU_API_KEY}`
+          }
+        });
+
+        response.data.forEach(addon => {
+          debugInfo.push({
+            app: app.name,
+            addon: addon.name,
+            service: addon.addon_service.name,
+            plan: addon.plan.name,
+            priceStructure: addon.plan.price,
+            state: addon.state
+          });
+        });
+      } catch (error) {
+        console.error(`Error fetching addons for ${app.name}:`, error.message);
+      }
+    }
+
+    res.json(debugInfo);
+  } catch (error) {
+    console.error('Error in debug endpoint:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
 
