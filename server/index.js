@@ -165,10 +165,35 @@ app.get('/api/personal/structure', async (req, res) => {
 app.get('/api/enterprise/structure', async (req, res) => {
   try {
     const month = req.query.month;
-    const structure = await enterpriseUsageService.getEnterpriseStructure(month);
+    const enterpriseAccountId = req.query.accountId; // Optional: specific account
+    const structure = await enterpriseUsageService.getEnterpriseStructure(month, enterpriseAccountId);
     res.json(structure);
   } catch (error) {
     console.error('Error fetching enterprise structure:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all enterprise accounts structure
+app.get('/api/enterprise/all-accounts', async (req, res) => {
+  try {
+    const month = req.query.month;
+    const structure = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
+    res.json(structure);
+  } catch (error) {
+    console.error('Error fetching all enterprise accounts:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// List enterprise accounts
+app.get('/api/enterprise/accounts', async (req, res) => {
+  try {
+    const client = enterpriseUsageService.createHerokuClient();
+    const accounts = await enterpriseUsageService.getAllEnterpriseAccounts(client);
+    res.json(accounts);
+  } catch (error) {
+    console.error('Error fetching enterprise accounts list:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

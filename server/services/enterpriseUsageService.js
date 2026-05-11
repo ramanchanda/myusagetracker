@@ -31,35 +31,60 @@ async function getAccountInfo(client) {
   return response.data;
 }
 
-// Get enterprise account
-async function getEnterpriseAccount(client) {
+// Get all enterprise accounts
+async function getAllEnterpriseAccounts(client) {
   try {
-    const configuredEnterpriseId = process.env.ENTERPRISE_ACCOUNT_ID_OR_NAME;
-    if (configuredEnterpriseId) {
-      console.log(`Using configured enterprise account: ${configuredEnterpriseId}`);
-      const configuredResponse = await client.get(`/enterprise-accounts/${configuredEnterpriseId}`);
-      return configuredResponse.data;
-    }
-
-    // Otherwise, resolve from the list of enterprise accounts
-    console.log('Fetching enterprise accounts list...');
+    console.log('Fetching all enterprise accounts...');
     const response = await client.get('/enterprise-accounts');
 
     console.log(`Found ${response.data?.length || 0} enterprise account(s)`);
 
-    if (response.data && response.data.length > 0) {
-      const account = response.data[0];
-      console.log(`Using enterprise account: ${account.name} (${account.id})`);
-      return account;
-    }
-
-    console.error('No enterprise accounts found. This account may not have enterprise access.');
-    return null;
+    return response.data || [];
   } catch (error) {
-    console.error('Error fetching enterprise account:', error.message);
+    console.error('Error fetching enterprise accounts:', error.message);
     console.error('Status:', error.response?.status);
     console.error('This may indicate no enterprise subscription or insufficient permissions.');
+    return [];
+  }
+}
+
+// Get specific enterprise account by ID
+async function getEnterpriseAccount(client, accountId) {
+  try {
+    console.log(`Fetching enterprise account: ${accountId}`);
+    const response = await client.get(`/enterprise-accounts/${accountId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching enterprise account ${accountId}:`, error.message);
     return null;
+  }
+}
+
+// Test billing access for an enterprise account
+async function testBillingAccess(client, accountId, month) {
+  try {
+    const [year, monthNum] = month.split('-');
+    await client.get(`/enterprise-accounts/${accountId}/monthly-usage/${year}/${monthNum}`);
+    return { hasAccess: true, error: null };
+  } catch (error) {
+    if (error.response?.status === 403) {
+      return {
+        hasAccess: false,
+        error: 'Billing access restricted. You may not have permissions to view billing data for this enterprise account.',
+        status: 403
+      };
+    } else if (error.response?.status === 404) {
+      return {
+        hasAccess: true, // Access is OK, just no data
+        error: 'No usage data available for this month.',
+        status: 404
+      };
+    }
+    return {
+      hasAccess: false,
+      error: error.message,
+      status: error.response?.status
+    };
   }
 }
 
@@ -238,95 +263,176 @@ function parseTeamUsage(team) {
   return resources;
 }
 
-// Get complete enterprise structure using Enterprise APIs
-async function getEnterpriseStructure(month) {
+// Get structure for all enterprise accounts
+async function getAllEnterpriseAccountsStructure(month) {
   const client = createHerokuClient();
   const targetMonth = month || getCurrentMonth();
 
   try {
     const account = await getAccountInfo(client);
-    const enterpriseAccount = await getEnterpriseAccount(client);
+    const enterpriseAccounts = await getAllEnterpriseAccounts(client);
 
-    if (!enterpriseAccount) {
-      throw new Error('No enterprise account found');
+    if (enterpriseAccounts.length === 0) {
+      throw new Error('No enterprise accounts found. This account may not have enterprise access.');
     }
 
-    const structure = {
+    const allAccountsData = [];
+
+    // Process each enterprise account
+    for (const enterpriseAccount of enterpriseAccounts) {
+      console.log(`\n=== Processing Enterprise Account: ${enterpriseAccount.name} ===`);
+
+      // Test billing access first
+      const accessCheck = await testBillingAccess(client, enterpriseAccount.id, targetMonth);
+
+      const accountStructure = {
+        enterpriseAccount: {
+          id: enterpriseAccount.id,
+          name: enterpriseAccount.name,
+          identity_provider: enterpriseAccount.identity_provider,
+          has_billing_access: accessCheck.hasAccess,
+          billing_error: accessCheck.error,
+          billing_status: accessCheck.status
+        },
+        teams: [],
+        summary: {
+          totalTeams: 0,
+          totalApps: 0,
+          totalDynos: 0,
+          totalDataAddons: 0,
+          totalOtherAddons: 0,
+          totalMonthlyCost: 0
+        }
+      };
+
+      // If no billing access, skip usage data
+      if (!accessCheck.hasAccess && accessCheck.status === 403) {
+        console.log(`⚠️  Billing access restricted for ${enterpriseAccount.name}`);
+        accountStructure.summary.error = 'Billing access restricted';
+        allAccountsData.push(accountStructure);
+        continue;
+      }
+
+      // Get enterprise-level monthly usage
+      try {
+        const enterpriseUsage = await getEnterpriseMonthlyUsage(
+          client,
+          enterpriseAccount.id,
+          targetMonth
+        );
+
+        if (!enterpriseUsage) {
+          console.log(`No usage data found for ${enterpriseAccount.name} in ${targetMonth}`);
+          allAccountsData.push(accountStructure);
+          continue;
+        }
+
+        if (!Array.isArray(enterpriseUsage.teams)) {
+          console.log(`No teams data for ${enterpriseAccount.name}`);
+          allAccountsData.push(accountStructure);
+          continue;
+        }
+
+        const enterpriseTeams = enterpriseUsage.teams;
+        accountStructure.summary.totalTeams = enterpriseTeams.length;
+
+        // Build team resources from enterprise monthly usage payload
+        for (const team of enterpriseTeams) {
+          try {
+            const teamResources = parseTeamUsage(team);
+
+            accountStructure.teams.push({
+              id: team.id,
+              name: team.name,
+              type: 'enterprise',
+              enterpriseAccountId: enterpriseAccount.id,
+              enterpriseAccountName: enterpriseAccount.name,
+              resources: teamResources
+            });
+
+            // Update summary
+            accountStructure.summary.totalApps += teamResources.totalApps;
+            accountStructure.summary.totalDynos += teamResources.dynos.count;
+            accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
+            accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
+            accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
+          } catch (error) {
+            console.error(`Error processing team ${team.name}:`, error.message);
+          }
+        }
+
+        accountStructure.summary.totalMonthlyCost = accountStructure.summary.totalMonthlyCost.toFixed(2);
+
+      } catch (error) {
+        console.error(`Error fetching usage for ${enterpriseAccount.name}:`, error.message);
+        accountStructure.summary.error = error.message;
+      }
+
+      allAccountsData.push(accountStructure);
+    }
+
+    // Calculate overall summary across all accounts
+    const overallSummary = {
+      totalEnterpriseAccounts: enterpriseAccounts.length,
+      accountsWithBillingAccess: allAccountsData.filter(a => a.enterpriseAccount.has_billing_access).length,
+      accountsWithoutBillingAccess: allAccountsData.filter(a => !a.enterpriseAccount.has_billing_access).length,
+      totalTeams: allAccountsData.reduce((sum, a) => sum + a.summary.totalTeams, 0),
+      totalApps: allAccountsData.reduce((sum, a) => sum + a.summary.totalApps, 0),
+      totalDynos: allAccountsData.reduce((sum, a) => sum + a.summary.totalDynos, 0),
+      totalDataAddons: allAccountsData.reduce((sum, a) => sum + a.summary.totalDataAddons, 0),
+      totalOtherAddons: allAccountsData.reduce((sum, a) => sum + a.summary.totalOtherAddons, 0),
+      totalMonthlyCost: allAccountsData.reduce((sum, a) => sum + parseFloat(a.summary.totalMonthlyCost || 0), 0).toFixed(2)
+    };
+
+    return {
       account: {
         email: account.email,
         name: account.name,
-        id: account.id,
-        enterpriseAccountId: enterpriseAccount.id,
-        enterpriseAccountName: enterpriseAccount.name
+        id: account.id
       },
-      teams: [],
-      summary: {
-        totalTeams: 0,
-        totalApps: 0,
-        totalDynos: 0,
-        totalDataAddons: 0,
-        totalOtherAddons: 0,
-        totalMonthlyCost: 0
-      }
+      enterpriseAccounts: allAccountsData,
+      summary: overallSummary
     };
 
-    // Get enterprise-level monthly usage
-    console.log(`Fetching enterprise usage for month: ${targetMonth}`);
-    const enterpriseUsage = await getEnterpriseMonthlyUsage(
-      client,
-      enterpriseAccount.id,
-      targetMonth
-    );
-
-    if (!enterpriseUsage) {
-      console.log(`No usage data found for ${targetMonth}. Returning empty structure.`);
-      return structure;
-    }
-
-    if (!Array.isArray(enterpriseUsage.teams)) {
-      console.log('No teams data in enterprise usage response');
-      return structure;
-    }
-
-    const enterpriseTeams = enterpriseUsage.teams;
-    structure.summary.totalTeams = enterpriseTeams.length;
-
-    // Build team resources from enterprise monthly usage payload
-    for (const team of enterpriseTeams) {
-      try {
-        const teamResources = parseTeamUsage(team);
-
-        structure.teams.push({
-          id: team.id,
-          name: team.name,
-          type: 'enterprise',
-          resources: teamResources
-        });
-
-        // Update summary
-        structure.summary.totalApps += teamResources.totalApps;
-        structure.summary.totalDynos += teamResources.dynos.count;
-        structure.summary.totalDataAddons += teamResources.dataAddons.count;
-        structure.summary.totalOtherAddons += teamResources.otherAddons.count;
-        structure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
-      } catch (error) {
-        console.error(`Error processing team ${team.name}:`, error.message);
-      }
-    }
-
-    structure.summary.totalMonthlyCost = structure.summary.totalMonthlyCost.toFixed(2);
-
-    return structure;
   } catch (error) {
     throw new Error(`Failed to fetch enterprise structure: ${error.message}`);
   }
 }
 
+// Get structure for single enterprise account (for backward compatibility)
+async function getEnterpriseStructure(month, enterpriseAccountId) {
+  const allData = await getAllEnterpriseAccountsStructure(month);
+
+  // If specific account requested, return just that one
+  if (enterpriseAccountId) {
+    const specificAccount = allData.enterpriseAccounts.find(
+      acc => acc.enterpriseAccount.id === enterpriseAccountId
+    );
+
+    if (!specificAccount) {
+      throw new Error(`Enterprise account ${enterpriseAccountId} not found`);
+    }
+
+    return {
+      account: allData.account,
+      enterpriseAccount: specificAccount.enterpriseAccount,
+      teams: specificAccount.teams,
+      summary: specificAccount.summary
+    };
+  }
+
+  // Otherwise return all accounts
+  return allData;
+}
+
 module.exports = {
   getEnterpriseStructure,
+  getAllEnterpriseAccountsStructure,
+  getAllEnterpriseAccounts,
   getEnterpriseAccount,
   getEnterpriseMonthlyUsage,
   getTeamMonthlyUsage,
   getTeams,
+  testBillingAccess,
   createHerokuClient
 };

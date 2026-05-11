@@ -1,0 +1,147 @@
+.enterprise-account-selector {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 2px solid #dbeafe;
+}
+
+.enterprise-account-selector.single {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.selector-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.selector-icon {
+  font-size: 1.5rem;
+}
+
+.selector-header label {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.selector-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.account-dropdown {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0f172a;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-dropdown:hover {
+  border-color: #2563eb;
+}
+
+.account-dropdown:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.toggle-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.toggle-btn:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%);
+  border-color: #2563eb;
+  color: white;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+}
+
+.account-count {
+  padding: 8px 16px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.all-accounts-indicator {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 10px;
+  color: #1e3a8a;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.account-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 999px;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.account-icon {
+  font-size: 1.3rem;
+}
+
+.account-name {
+  font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .selector-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-dropdown {
+    width: 100%;
+  }
+
+  .toggle-btn {
+    width: 100%;
+  }
+
+  .account-count {
+    align-self: center;
+  }
+}

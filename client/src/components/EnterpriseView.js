@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DailyUsageChart from './DailyUsageChart';
+import EnterpriseAccountSelector from './EnterpriseAccountSelector';
 import './EnterpriseView.css';
 
 function EnterpriseView({ selectedMonth }) {
@@ -8,21 +9,51 @@ function EnterpriseView({ selectedMonth }) {
   const [dailyUsage, setDailyUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
+
+  // Fetch available enterprise accounts
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/enterprise/accounts');
+      setAccounts(response.data || []);
+      if (response.data && response.data.length > 0 && !selectedAccountId) {
+        setSelectedAccountId(response.data[0].id);
+      }
+    } catch (err) {
+      console.error('Error fetching enterprise accounts:', err);
+    }
+  }, [selectedAccountId]);
 
   const fetchEnterpriseStructure = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('/api/enterprise/structure', {
-        params: { month: selectedMonth }
-      });
+
+      let response;
+      if (showAllAccounts) {
+        // Fetch all accounts structure
+        response = await axios.get('/api/enterprise/all-accounts', {
+          params: { month: selectedMonth }
+        });
+      } else {
+        // Fetch single account structure
+        response = await axios.get('/api/enterprise/structure', {
+          params: {
+            month: selectedMonth,
+            accountId: selectedAccountId
+          }
+        });
+      }
+
       setStructure(response.data);
       setLoading(false);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
       setLoading(false);
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedAccountId, showAllAccounts]);
 
   const fetchDailyUsage = useCallback(async () => {
     try {
@@ -36,9 +67,15 @@ function EnterpriseView({ selectedMonth }) {
   }, [selectedMonth]);
 
   useEffect(() => {
-    fetchEnterpriseStructure();
-    fetchDailyUsage();
-  }, [fetchDailyUsage, fetchEnterpriseStructure]);
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      fetchEnterpriseStructure();
+      fetchDailyUsage();
+    }
+  }, [fetchDailyUsage, fetchEnterpriseStructure, accounts]);
 
   const formatCurrency = (value) => Number(value || 0).toLocaleString();
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
