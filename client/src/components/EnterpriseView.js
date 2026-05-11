@@ -78,15 +78,7 @@ function EnterpriseView({ selectedMonth }) {
     maximumFractionDigits: 2
   });
   const formatCount = (value) => Number(value || 0).toLocaleString();
-  const isTeamActive = (resources) => {
-    if (!resources) return false;
-    return (
-      Number(resources.dynos?.count || 0) > 0 ||
-      Number(resources.connect?.used || 0) > 0 ||
-      Number(resources.dataAddons?.count || 0) > 0 ||
-      Number(resources.otherAddons?.count || 0) > 0
-    );
-  };
+  const isTeamActive = (team) => Boolean(team?.hasDirectAccess);
 
   if (loading) {
     return (
@@ -136,9 +128,7 @@ function EnterpriseView({ selectedMonth }) {
   } else {
     // Single account structure
     enterpriseTeams = (structure.teams || []).map(team => ({
-      name: team.name,
-      type: team.type,
-      resources: team.resources,
+      ...team,
       accountName: structure.enterpriseAccount?.name
     }));
 
@@ -147,7 +137,7 @@ function EnterpriseView({ selectedMonth }) {
     }
   }
 
-  const activeTeams = enterpriseTeams.filter(team => isTeamActive(team.resources));
+  const activeTeams = enterpriseTeams.filter(team => isTeamActive(team));
   const displayedTeams = showAllTeamsInAccount ? enterpriseTeams : activeTeams;
   const toggleTeamDetails = (teamKey) => {
     setExpandedTeams(prev => ({

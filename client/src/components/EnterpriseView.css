@@ -401,12 +401,22 @@
 .apps-usage-table {
   border: 1px solid #ece4fb;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.apps-usage-table::after {
+  content: '';
+  display: block;
+  min-width: 0;
 }
 
 .apps-usage-row {
   display: grid;
   grid-template-columns: 1.4fr repeat(4, minmax(90px, 1fr));
+  min-width: 620px;
   gap: 8px;
   padding: 8px 10px;
   border-bottom: 1px solid #f1ebff;

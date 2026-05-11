@@ -485,11 +485,13 @@ async function getAllEnterpriseAccountsStructure(month) {
       const mergedTeams = Array.from(allTeamIds).map(teamId => {
         const canonicalTeam = canonicalById.get(teamId) || {};
         const usageTeam = usageByTeamId.get(teamId) || {};
+        const hasDirectAccess = canonicalById.has(teamId);
 
         return {
           id: teamId,
           name: usageTeam.name || canonicalTeam.name || 'Unknown Team',
           type: canonicalTeam.type || usageTeam.type || 'enterprise',
+          hasDirectAccess,
           ...usageTeam
         };
       });
@@ -501,6 +503,7 @@ async function getAllEnterpriseAccountsStructure(month) {
       }
 
       accountStructure.summary.totalTeams = mergedTeams.length;
+      accountStructure.summary.totalActiveTeams = canonicalTeams.length;
       const spacesSummary = await getEnterpriseSpacesSummary(client, mergedTeams);
       accountStructure.summary.totalPrivateSpaces = spacesSummary.totalPrivateSpaces;
       accountStructure.summary.totalShieldSpaces = spacesSummary.totalShieldSpaces;
@@ -526,14 +529,6 @@ async function getAllEnterpriseAccountsStructure(month) {
           accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
           accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
           accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
-          if (
-            teamResources.dynos.count > 0 ||
-            teamResources.connect.used > 0 ||
-            teamResources.dataAddons.count > 0 ||
-            teamResources.otherAddons.count > 0
-          ) {
-            accountStructure.summary.totalActiveTeams += 1;
-          }
         } catch (error) {
           console.error(`Error processing team ${team.name}:`, error.message);
         }
