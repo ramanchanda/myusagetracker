@@ -198,6 +198,22 @@ async function getTeams(client) {
   }
 }
 
+// Get canonical teams for a specific enterprise account.
+// Monthly usage can omit zero-usage teams, so we use /teams as source of truth.
+async function getEnterpriseAccountTeams(client, enterpriseAccountId) {
+  const allTeams = await getTeams(client);
+  return allTeams.filter(team => {
+    const enterpriseRef = team.enterprise_account || team.enterpriseAccount || {};
+    const teamEnterpriseId =
+      team.enterprise_account_id ||
+      team.enterpriseAccountId ||
+      enterpriseRef.id ||
+      enterpriseRef.uuid;
+
+    return teamEnterpriseId === enterpriseAccountId;
+  });
+}
+
 // Get team apps for resource details
 async function getTeamApps(client, teamId) {
   try {
@@ -398,17 +414,35 @@ async function getAllEnterpriseAccountsStructure(month) {
         console.log(`⚠️  To see data, ensure usage exists for ${targetMonth} or try a different month`);
       }
 
-      // Process teams
-      if (enterpriseTeams.length === 0) {
+      // Get canonical team list for this account and merge usage teams onto it.
+      // This ensures team counts are accurate even when usage payload omits zero-usage teams.
+      const canonicalTeams = await getEnterpriseAccountTeams(client, enterpriseAccount.id);
+      const usageByTeamId = new Map(
+        enterpriseTeams
+          .filter(team => team && team.id)
+          .map(team => [team.id, team])
+      );
+
+      const mergedTeams =
+        canonicalTeams.length > 0
+          ? canonicalTeams.map(team => ({
+              id: team.id,
+              name: team.name,
+              type: team.type || 'enterprise',
+              ...(usageByTeamId.get(team.id) || {})
+            }))
+          : enterpriseTeams;
+
+      if (mergedTeams.length === 0) {
         console.log(`No teams found for ${enterpriseAccount.name}`);
         allAccountsData.push(accountStructure);
         continue;
       }
 
-      accountStructure.summary.totalTeams = enterpriseTeams.length;
+      accountStructure.summary.totalTeams = mergedTeams.length;
 
       // Build team resources
-      for (const team of enterpriseTeams) {
+      for (const team of mergedTeams) {
         try {
           const teamResources = parseTeamUsage(team);
 
@@ -501,6 +535,7 @@ module.exports = {
   getEnterpriseMonthlyUsage,
   getTeamMonthlyUsage,
   getTeams,
+  getEnterpriseAccountTeams,
   testBillingAccess,
   createHerokuClient
 };
