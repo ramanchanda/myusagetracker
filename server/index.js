@@ -15,6 +15,7 @@ const personalService = require('./services/personalService');
 const invoiceService = require('./services/invoiceService');
 const enterpriseUsageService = require('./services/enterpriseUsageService');
 const personalUsageService = require('./services/personalUsageService');
+const dailyUsageService = require('./services/dailyUsageService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -190,6 +191,29 @@ app.get('/api/enterprise/account', async (req, res) => {
     res.json(enterpriseAccount);
   } catch (error) {
     console.error('Error fetching enterprise account:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Daily usage endpoints
+app.get('/api/enterprise/daily-usage', async (req, res) => {
+  try {
+    const month = req.query.month;
+    const structure = await dailyUsageService.getEnterpriseDailyUsageStructure(month);
+    res.json(structure);
+  } catch (error) {
+    console.error('Error fetching enterprise daily usage:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/personal/daily-usage', async (req, res) => {
+  try {
+    const month = req.query.month;
+    const structure = await dailyUsageService.getPersonalDailyUsageStructure(month);
+    res.json(structure);
+  } catch (error) {
+    console.error('Error fetching personal daily usage:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DailyUsageChart from './DailyUsageChart';
 import './EnterpriseView.css';
 
 function EnterpriseView({ selectedMonth }) {
   const [structure, setStructure] = useState(null);
+  const [dailyUsage, setDailyUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
 
   useEffect(() => {
     fetchEnterpriseStructure();
+    fetchDailyUsage();
   }, [selectedMonth]);
 
   const fetchEnterpriseStructure = async () => {
@@ -24,6 +27,17 @@ function EnterpriseView({ selectedMonth }) {
     } catch (err) {
       setError(err.response?.data?.error || err.message);
       setLoading(false);
+    }
+  };
+
+  const fetchDailyUsage = async () => {
+    try {
+      const response = await axios.get('/api/enterprise/daily-usage', {
+        params: { month: selectedMonth }
+      });
+      setDailyUsage(response.data);
+    } catch (err) {
+      console.error('Error fetching daily usage:', err);
     }
   };
 
@@ -86,6 +100,11 @@ function EnterpriseView({ selectedMonth }) {
           🔄 Refresh
         </button>
       </div>
+
+      {/* Daily Usage Chart */}
+      {dailyUsage && dailyUsage.dailyUsage && (
+        <DailyUsageChart dailyData={dailyUsage.dailyUsage} />
+      )}
 
       {/* Overall Summary */}
       <div className="overall-summary">

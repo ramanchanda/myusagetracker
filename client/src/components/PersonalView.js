@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DailyUsageChart from './DailyUsageChart';
 import './PersonalView.css';
 
 function PersonalView({ selectedMonth }) {
   const [structure, setStructure] = useState(null);
+  const [dailyUsage, setDailyUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
     fetchPersonalStructure();
+    fetchDailyUsage();
   }, [selectedMonth]);
 
   const fetchPersonalStructure = async () => {
@@ -24,6 +27,17 @@ function PersonalView({ selectedMonth }) {
     } catch (err) {
       setError(err.response?.data?.error || err.message);
       setLoading(false);
+    }
+  };
+
+  const fetchDailyUsage = async () => {
+    try {
+      const response = await axios.get('/api/personal/daily-usage', {
+        params: { month: selectedMonth }
+      });
+      setDailyUsage(response.data);
+    } catch (err) {
+      console.error('Error fetching daily usage:', err);
     }
   };
 
@@ -68,6 +82,11 @@ function PersonalView({ selectedMonth }) {
           🔄 Refresh
         </button>
       </div>
+
+      {/* Daily Usage Chart */}
+      {dailyUsage && (
+        <DailyUsageChart dailyData={dailyUsage.summary ? { days: dailyUsage.apps.flatMap(app => app.dailyUsage.days), summary: dailyUsage.summary } : null} />
+      )}
 
       {/* Overall Summary */}
       <div className="overall-summary">

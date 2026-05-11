@@ -4,7 +4,7 @@ This application now uses Heroku's **Enterprise Account Monthly Usage APIs** for
 
 ## APIs Used
 
-### 1. Enterprise Account APIs
+### 1. Enterprise Account Monthly Usage APIs
 
 #### Get Enterprise Accounts
 ```
@@ -21,6 +21,18 @@ Returns aggregated monthly usage for entire enterprise account, including:
 - Usage breakdown by teams
 - Usage breakdown by apps
 - All billable items (dynos, add-ons, etc.)
+
+### 2. Enterprise Account Daily Usage APIs
+
+#### Get Enterprise Account Daily Usage
+```
+GET /enterprise-accounts/{enterprise-account-id}/daily-usage?start={YYYY-MM-DD}&end={YYYY-MM-DD}
+```
+Returns day-by-day cost breakdown for entire enterprise account, including:
+- Daily costs for each day in range
+- Cost breakdown by resource type (dyno, addon)
+- Usage metrics per day
+- Allows tracking cost trends over time
 
 **Response format:**
 ```json
@@ -41,32 +53,54 @@ Returns aggregated monthly usage for entire enterprise account, including:
 }
 ```
 
-### 2. Team Monthly Usage API
+### 3. Team Usage APIs
 
 #### Get Team Monthly Usage
 ```
 GET /teams/{team-id}/monthly-usage/{year}/{month}
 ```
-Returns monthly usage for a specific team, including:
-- All apps in the team
-- Dyno usage and costs
-- Add-on usage and costs
-- Breakdown by resource type
+Returns monthly usage for a specific team.
 
-**Response format:** Same as enterprise account usage
+#### Get Team Daily Usage
+```
+GET /teams/{team-id}/daily-usage?start={YYYY-MM-DD}&end={YYYY-MM-DD}
+```
+Returns day-by-day usage for a specific team.
 
-### 3. App Monthly Usage API
+### 4. App Usage APIs
 
 #### Get App Monthly Usage
 ```
 GET /apps/{app-id}/monthly-usage/{year}/{month}
 ```
-Returns monthly usage for a specific app (used for personal apps), including:
-- Dyno costs by type
-- Add-on costs
-- Actual billed amounts
+Returns monthly usage for a specific app (used for personal apps).
 
-**Response format:** Same structure as above
+#### Get App Daily Usage
+```
+GET /apps/{app-id}/daily-usage?start={YYYY-MM-DD}&end={YYYY-MM-DD}
+```
+Returns day-by-day usage for a specific app.
+
+**Response format (all usage APIs):**
+```json
+{
+  "data": [
+    {
+      "date": "2025-05-10",
+      "app_id": "uuid",
+      "app_name": "string",
+      "addon_id": "uuid",
+      "addon_name": "string",
+      "addon_service_name": "heroku-postgresql",
+      "type": "dyno|addon",
+      "cost": 12.34,
+      "quantity": 24,
+      "dyno_type": "web|worker",
+      "unit": "dyno-hours|addon-hours"
+    }
+  ]
+}
+```
 
 ## Benefits of Enterprise APIs
 
@@ -74,6 +108,7 @@ Returns monthly usage for a specific app (used for personal apps), including:
 - Real billed amounts from Heroku's billing system
 - No estimation or calculation needed
 - Historical data is actual invoice data
+- Day-by-day cost tracking for trends
 
 ### ✅ Better Performance
 - Fewer API calls (3 calls vs 10+ calls per team)
@@ -84,28 +119,47 @@ Returns monthly usage for a specific app (used for personal apps), including:
 - All billable items included
 - Usage metrics (dyno-hours, addon-hours)
 - Quantity information
+- Daily granularity for detailed analysis
 
-### ✅ Native Month Support
+### ✅ Native Time Range Support
 - Built-in monthly aggregation
+- Daily breakdown with start/end dates
 - Easy historical data access
 - Consistent date ranges
+
+### ✅ Cost Trend Analysis
+- Daily cost visualization
+- Identify cost spikes
+- Compare weekday vs weekend usage
+- Track cost changes over time
 
 ## Implementation
 
 ### Enterprise View
-Uses `enterpriseUsageService.js`:
+Uses `enterpriseUsageService.js` and `dailyUsageService.js`:
 1. Calls `/enterprise-accounts` to find enterprise account
-2. Calls `/enterprise-accounts/{id}/monthly-usage/{year}/{month}` for overview
-3. Calls `/teams/{team-id}/monthly-usage/{year}/{month}` for each team
-4. Fetches app details for resource information (dynos, addons)
-5. Categorizes add-ons as data vs other
+2. Calls `/enterprise-accounts/{id}/monthly-usage/{year}/{month}` for monthly overview
+3. Calls `/enterprise-accounts/{id}/daily-usage?start=...&end=...` for daily breakdown
+4. Calls `/teams/{team-id}/monthly-usage/{year}/{month}` for each team
+5. Calls `/teams/{team-id}/daily-usage?start=...&end=...` for team daily trends
+6. Fetches app details for resource information (dynos, addons)
+7. Categorizes add-ons as data vs other
 
 ### Personal View
-Uses `personalUsageService.js`:
+Uses `personalUsageService.js` and `dailyUsageService.js`:
 1. Fetches personal apps (non-team apps)
-2. Calls `/apps/{app-id}/monthly-usage/{year}/{month}` for each app
-3. Fetches app details for resource information
-4. Categorizes and aggregates costs
+2. Calls `/apps/{app-id}/monthly-usage/{year}/{month}` for monthly costs
+3. Calls `/apps/{app-id}/daily-usage?start=...&end=...` for daily breakdown
+4. Fetches app details for resource information
+5. Categorizes and aggregates costs
+
+### Daily Usage Service
+The `dailyUsageService.js` provides:
+- Day-by-day cost tracking across a date range
+- Automatic date range calculation for selected month
+- Aggregated daily costs by type (dyno, data addons, other addons)
+- Summary statistics (total, average, max, min per day)
+- Visual chart component for trend analysis
 
 ## Data Structure
 
