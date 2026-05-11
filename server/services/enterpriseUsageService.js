@@ -225,6 +225,31 @@ async function getTeamApps(client, teamId) {
   }
 }
 
+async function getTeamSpaces(client, teamId) {
+  try {
+    const response = await client.get(`/teams/${teamId}/spaces`);
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error(`Error fetching spaces for team ${teamId}:`, error.message);
+    return [];
+  }
+}
+
+async function getEnterpriseSpacesSummary(client, teams) {
+  const summary = {
+    totalPrivateSpaces: 0,
+    totalShieldSpaces: 0
+  };
+
+  for (const team of teams) {
+    const spaces = await getTeamSpaces(client, team.id);
+    summary.totalPrivateSpaces += spaces.length;
+    summary.totalShieldSpaces += spaces.filter(space => Boolean(space.shield)).length;
+  }
+
+  return summary;
+}
+
 // Get app addons for categorization
 async function getAppAddons(client, appId) {
   try {
@@ -280,6 +305,22 @@ function parseTeamUsage(team) {
   const otherAddonsUsage = Math.max(addonsUsage - dataUsage, partnerUsage, 0);
 
   const teamApps = Array.isArray(team.apps) ? team.apps : [];
+  const appsUsage = teamApps.map(app => {
+    const appDynos = toNumber(app.dynos);
+    const appData = toNumber(app.data);
+    const appPartner = toNumber(app.partner);
+    const appAddons = toNumber(app.addons);
+    const appOtherAddons = Math.max(appAddons - appData, appPartner, 0);
+    const appTotal = appDynos + appAddons;
+
+    return {
+      name: app.app_name || app.name || 'Unknown',
+      dynos: appDynos,
+      dataAddons: appData,
+      generalAddons: appOtherAddons,
+      total: appTotal
+    };
+  }).sort((a, b) => b.total - a.total);
 
   const resources = {
     teamName: team.name,
@@ -304,6 +345,7 @@ function parseTeamUsage(team) {
       addons: [],
       totalCost: otherAddonsUsage
     },
+    appsUsage,
 
     connect: {
       used: connectUsage
@@ -364,6 +406,9 @@ async function getAllEnterpriseAccountsStructure(month) {
         teams: [],
         summary: {
           totalTeams: 0,
+          totalActiveTeams: 0,
+          totalPrivateSpaces: 0,
+          totalShieldSpaces: 0,
           totalApps: 0,
           totalDynos: 0,
           totalConnect: 0,
@@ -440,6 +485,9 @@ async function getAllEnterpriseAccountsStructure(month) {
       }
 
       accountStructure.summary.totalTeams = mergedTeams.length;
+      const spacesSummary = await getEnterpriseSpacesSummary(client, mergedTeams);
+      accountStructure.summary.totalPrivateSpaces = spacesSummary.totalPrivateSpaces;
+      accountStructure.summary.totalShieldSpaces = spacesSummary.totalShieldSpaces;
 
       // Build team resources
       for (const team of mergedTeams) {
@@ -462,6 +510,14 @@ async function getAllEnterpriseAccountsStructure(month) {
           accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
           accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
           accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
+          if (
+            teamResources.dynos.count > 0 ||
+            teamResources.connect.used > 0 ||
+            teamResources.dataAddons.count > 0 ||
+            teamResources.otherAddons.count > 0
+          ) {
+            accountStructure.summary.totalActiveTeams += 1;
+          }
         } catch (error) {
           console.error(`Error processing team ${team.name}:`, error.message);
         }
@@ -478,6 +534,9 @@ async function getAllEnterpriseAccountsStructure(month) {
       accountsWithBillingAccess: allAccountsData.filter(a => a.enterpriseAccount.has_billing_access).length,
       accountsWithoutBillingAccess: allAccountsData.filter(a => !a.enterpriseAccount.has_billing_access).length,
       totalTeams: allAccountsData.reduce((sum, a) => sum + a.summary.totalTeams, 0),
+      totalActiveTeams: allAccountsData.reduce((sum, a) => sum + (a.summary.totalActiveTeams || 0), 0),
+      totalPrivateSpaces: allAccountsData.reduce((sum, a) => sum + (a.summary.totalPrivateSpaces || 0), 0),
+      totalShieldSpaces: allAccountsData.reduce((sum, a) => sum + (a.summary.totalShieldSpaces || 0), 0),
       totalApps: allAccountsData.reduce((sum, a) => sum + a.summary.totalApps, 0),
       totalDynos: allAccountsData.reduce((sum, a) => sum + a.summary.totalDynos, 0),
       totalConnect: allAccountsData.reduce((sum, a) => sum + a.summary.totalConnect, 0),
@@ -536,6 +595,8 @@ module.exports = {
   getTeamMonthlyUsage,
   getTeams,
   getEnterpriseAccountTeams,
+  getTeamSpaces,
+  getEnterpriseSpacesSummary,
   testBillingAccess,
   createHerokuClient
 };

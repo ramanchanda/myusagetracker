@@ -146,6 +146,12 @@
   font-weight: 500;
 }
 
+.summary-subtext {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
 .summary-card.highlight .summary-label {
   color: rgba(255, 255, 255, 0.95);
 }
@@ -160,6 +166,40 @@
   color: #0f172a;
   font-size: 1.4rem;
   letter-spacing: -0.2px;
+}
+
+.teams-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.teams-view-toggle {
+  display: inline-flex;
+  gap: 8px;
+  background: #f8f6ff;
+  border: 1px solid #e9defd;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.teams-filter-btn {
+  border: none;
+  background: transparent;
+  color: #5b6270;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.teams-filter-btn.active {
+  background: #6f42c1;
+  color: #fff;
 }
 
 .no-teams-message {
@@ -233,6 +273,17 @@
   flex: 1;
 }
 
+.team-details-toggle {
+  border: 1px solid #d9c8fb;
+  background: #f6f1ff;
+  color: #5a31a3;
+  font-weight: 600;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
 .team-info h3 {
   margin: 0 0 5px 0;
   color: #0f172a;
@@ -296,6 +347,91 @@
   width: 1rem;
   height: 1rem;
   color: #6f42c1;
+}
+
+.team-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ece4fb;
+}
+
+.team-details h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: #3f3f46;
+}
+
+.team-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.team-detail-item {
+  background: #f8f6ff;
+  border: 1px solid #ece4fb;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 0.74rem;
+  color: #6b7280;
+}
+
+.detail-value {
+  font-size: 0.86rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+.team-apps-breakdown {
+  margin-top: 12px;
+}
+
+.team-apps-breakdown h5 {
+  margin: 0 0 8px 0;
+  font-size: 0.82rem;
+  color: #52525b;
+}
+
+.apps-usage-table {
+  border: 1px solid #ece4fb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.apps-usage-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1ebff;
+  font-size: 0.76rem;
+  align-items: center;
+}
+
+.apps-usage-row:last-child {
+  border-bottom: none;
+}
+
+.app-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+.app-usage {
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.no-app-breakdown {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.8rem;
 }
 
 /* Billing Restrictions Warning */
@@ -431,5 +567,14 @@
 
   .teams-grid {
     grid-template-columns: 1fr;
+  }
+
+  .team-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .apps-usage-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }

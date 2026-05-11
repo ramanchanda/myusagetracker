@@ -18,6 +18,8 @@ function EnterpriseView({ selectedMonth }) {
   const [accounts, setAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
+  const [showAllTeamsInAccount, setShowAllTeamsInAccount] = useState(false);
+  const [expandedTeams, setExpandedTeams] = useState({});
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -75,6 +77,16 @@ function EnterpriseView({ selectedMonth }) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+  const formatCount = (value) => Number(value || 0).toLocaleString();
+  const isTeamActive = (resources) => {
+    if (!resources) return false;
+    return (
+      Number(resources.dynos?.count || 0) > 0 ||
+      Number(resources.connect?.used || 0) > 0 ||
+      Number(resources.dataAddons?.count || 0) > 0 ||
+      Number(resources.otherAddons?.count || 0) > 0
+    );
+  };
 
   if (loading) {
     return (
@@ -134,6 +146,15 @@ function EnterpriseView({ selectedMonth }) {
       billingRestrictions.push(structure.enterpriseAccount);
     }
   }
+
+  const activeTeams = enterpriseTeams.filter(team => isTeamActive(team.resources));
+  const displayedTeams = showAllTeamsInAccount ? enterpriseTeams : activeTeams;
+  const toggleTeamDetails = (teamKey) => {
+    setExpandedTeams(prev => ({
+      ...prev,
+      [teamKey]: !prev[teamKey]
+    }));
+  };
 
   return (
     <div className="enterprise-view">
@@ -204,6 +225,23 @@ function EnterpriseView({ selectedMonth }) {
           <div className="summary-content">
             <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
             <div className="summary-label">Enterprise Teams</div>
+            <div className="summary-subtext">
+              Active: {summaryData.totalActiveTeams ?? activeTeams.length}
+            </div>
+          </div>
+        </div>
+        <div className="summary-card">
+          <EnterpriseIcon className="summary-icon-svg" />
+          <div className="summary-content">
+            <div className="summary-value">{formatCount(summaryData.totalPrivateSpaces)}</div>
+            <div className="summary-label">Private Spaces</div>
+          </div>
+        </div>
+        <div className="summary-card">
+          <EnterpriseIcon className="summary-icon-svg" />
+          <div className="summary-content">
+            <div className="summary-value">{formatCount(summaryData.totalShieldSpaces)}</div>
+            <div className="summary-label">Shield Spaces</div>
           </div>
         </div>
         <div className="summary-card">
@@ -238,8 +276,26 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Teams Grid */}
       <div className="teams-section">
-        <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
-        {enterpriseTeams.length === 0 && (
+        <div className="teams-section-header">
+          <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
+          <div className="teams-view-toggle">
+            <button
+              type="button"
+              className={`teams-filter-btn ${!showAllTeamsInAccount ? 'active' : ''}`}
+              onClick={() => setShowAllTeamsInAccount(false)}
+            >
+              Active Teams ({activeTeams.length})
+            </button>
+            <button
+              type="button"
+              className={`teams-filter-btn ${showAllTeamsInAccount ? 'active' : ''}`}
+              onClick={() => setShowAllTeamsInAccount(true)}
+            >
+              All Teams ({enterpriseTeams.length})
+            </button>
+          </div>
+        </div>
+        {displayedTeams.length === 0 && (
           <div className="no-teams-message">
             <p>No enterprise teams found{billingRestrictions.length > 0 ? ' with billing access' : ''}.</p>
             {billingRestrictions.length > 0 && (
@@ -248,8 +304,10 @@ function EnterpriseView({ selectedMonth }) {
           </div>
         )}
         <div className="teams-grid">
-          {enterpriseTeams.map((team, index) => {
+          {displayedTeams.map((team, index) => {
             const resources = team.resources;
+            const teamKey = `${team.accountName || 'single'}-${team.name}-${index}`;
+            const isExpanded = Boolean(expandedTeams[teamKey]);
             return (
               <div key={index} className="team-card">
                 <div className="team-header">
@@ -261,6 +319,13 @@ function EnterpriseView({ selectedMonth }) {
                     )}
                     <span className="team-type">Enterprise</span>
                   </div>
+                  <button
+                    type="button"
+                    className="team-details-toggle"
+                    onClick={() => toggleTeamDetails(teamKey)}
+                  >
+                    {isExpanded ? 'Hide details' : 'View details'}
+                  </button>
                 </div>
 
                 <div className="team-stats">
@@ -281,6 +346,52 @@ function EnterpriseView({ selectedMonth }) {
                     <span className="stat-value">{formatUsage(resources.otherAddons.count)}</span>
                   </div>
                 </div>
+
+                {isExpanded && (
+                  <div className="team-details">
+                    <h4>Granular Breakdown</h4>
+                    <div className="team-detail-grid">
+                      <div className="team-detail-item">
+                        <span className="detail-label">Total Apps</span>
+                        <span className="detail-value">{resources.totalApps || 0}</span>
+                      </div>
+                      <div className="team-detail-item">
+                        <span className="detail-label">Dyno Units</span>
+                        <span className="detail-value">{formatUsage(resources.dynos.count)}</span>
+                      </div>
+                      <div className="team-detail-item">
+                        <span className="detail-label">Connect Rows</span>
+                        <span className="detail-value">{formatUsage(resources.connect.used)}</span>
+                      </div>
+                      <div className="team-detail-item">
+                        <span className="detail-label">Data Add-ons</span>
+                        <span className="detail-value">{formatUsage(resources.dataAddons.count)}</span>
+                      </div>
+                      <div className="team-detail-item">
+                        <span className="detail-label">General Add-ons Usage</span>
+                        <span className="detail-value">{formatUsage(resources.otherAddons.count)}</span>
+                      </div>
+                    </div>
+
+                    <div className="team-apps-breakdown">
+                      <h5>App-level Usage</h5>
+                      {resources.appsUsage && resources.appsUsage.length > 0 ? (
+                        <div className="apps-usage-table">
+                          {resources.appsUsage.map((app, appIdx) => (
+                            <div key={appIdx} className="apps-usage-row">
+                              <span className="app-name">{app.name}</span>
+                              <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
+                              <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
+                              <span className="app-usage">General: {formatUsage(app.generalAddons)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-app-breakdown">No app-level usage found for this team in selected month.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
