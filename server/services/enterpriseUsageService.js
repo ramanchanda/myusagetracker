@@ -548,6 +548,8 @@ async function getAllEnterpriseAccountsStructure(month) {
             id: team.id,
             name: team.name,
             type: 'enterprise',
+            hasDirectAccess: Boolean(team.hasDirectAccess),
+            hasUsageInSelectedMonth: Boolean(team.dynos || team.addons || team.connect || team.data || team.partner || team.space),
             enterpriseAccountId: enterpriseAccount.id,
             enterpriseAccountName: enterpriseAccount.name,
             resources: teamResources

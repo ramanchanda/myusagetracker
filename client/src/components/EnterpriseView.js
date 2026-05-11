@@ -216,7 +216,7 @@ function EnterpriseView({ selectedMonth }) {
             <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
             <div className="summary-label">Enterprise Teams</div>
             <div className="summary-subtext">
-              Active: {summaryData.totalActiveTeams ?? activeTeams.length}
+              Active: {activeTeams.length}
             </div>
           </div>
         </div>
