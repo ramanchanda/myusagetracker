@@ -135,6 +135,32 @@
   letter-spacing: -0.2px;
 }
 
+.no-teams-message {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.no-teams-message p {
+  margin: 8px 0;
+  font-size: 1.1rem;
+}
+
+.team-account-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e3a8a;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 4px 0;
+  letter-spacing: 0.2px;
+}
+
 .teams-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -230,6 +256,68 @@
 .stat-value.cost {
   color: #16a34a;
   font-size: 1.12rem;
+}
+
+/* Billing Restrictions Warning */
+.billing-restrictions-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+.warning-icon {
+  font-size: 3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-content h3 {
+  margin: 0 0 12px 0;
+  color: #92400e;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.warning-content p {
+  margin: 8px 0;
+  color: #78350f;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.warning-content ul {
+  margin: 12px 0;
+  padding-left: 24px;
+  color: #78350f;
+}
+
+.warning-content li {
+  margin: 6px 0;
+  font-size: 0.9rem;
+}
+
+.warning-content li strong {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.warning-note {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  color: #78350f;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 /* Loading & Error States */

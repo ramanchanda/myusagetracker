@@ -107,13 +107,42 @@ function EnterpriseView({ selectedMonth }) {
 
   if (!structure) return null;
 
-  const enterpriseTeams = structure.teams
-    .filter(team => team.type === 'enterprise')
-    .map(team => ({
-    name: team.name,
-    type: team.type,
-    resources: team.resources
-  }));
+  // Handle multiple accounts structure
+  const isMultiAccount = structure.enterpriseAccounts && Array.isArray(structure.enterpriseAccounts);
+
+  let enterpriseTeams = [];
+  let summaryData = structure.summary || {};
+  let billingRestrictions = [];
+
+  if (isMultiAccount) {
+    // Aggregate teams from all accounts
+    structure.enterpriseAccounts.forEach(account => {
+      if (!account.enterpriseAccount.has_billing_access && account.enterpriseAccount.billing_status === 403) {
+        billingRestrictions.push(account.enterpriseAccount);
+      }
+      if (account.teams) {
+        enterpriseTeams.push(...account.teams.map(team => ({
+          ...team,
+          accountName: account.enterpriseAccount.name,
+          hasBillingAccess: account.enterpriseAccount.has_billing_access
+        })));
+      }
+    });
+  } else {
+    // Single account structure
+    enterpriseTeams = (structure.teams || [])
+      .filter(team => team.type === 'enterprise')
+      .map(team => ({
+        name: team.name,
+        type: team.type,
+        resources: team.resources,
+        accountName: structure.enterpriseAccount?.name
+      }));
+
+    if (structure.enterpriseAccount && !structure.enterpriseAccount.has_billing_access) {
+      billingRestrictions.push(structure.enterpriseAccount);
+    }
+  }
 
   return (
     <div className="enterprise-view">
@@ -134,6 +163,40 @@ function EnterpriseView({ selectedMonth }) {
         </button>
       </div>
 
+      {/* Enterprise Account Selector */}
+      {accounts.length > 0 && (
+        <EnterpriseAccountSelector
+          accounts={accounts}
+          selectedAccountId={selectedAccountId}
+          onAccountChange={setSelectedAccountId}
+          showAllAccounts={showAllAccounts}
+          onShowAllToggle={setShowAllAccounts}
+        />
+      )}
+
+      {/* Billing Restrictions Warning */}
+      {billingRestrictions.length > 0 && (
+        <div className="billing-restrictions-warning">
+          <div className="warning-icon">⚠️</div>
+          <div className="warning-content">
+            <h3>Billing Access Restricted</h3>
+            <p>
+              You don't have billing permissions for {billingRestrictions.length} enterprise account{billingRestrictions.length !== 1 ? 's' : ''}:
+            </p>
+            <ul>
+              {billingRestrictions.map((account, idx) => (
+                <li key={idx}>
+                  <strong>{account.name}</strong> - {account.billing_error}
+                </li>
+              ))}
+            </ul>
+            <p className="warning-note">
+              💡 Contact your enterprise administrator to grant billing access for these accounts.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Daily Usage Chart */}
       {dailyUsage && dailyUsage.dailyUsage && (
         <DailyUsageChart dailyData={dailyUsage.dailyUsage} />
@@ -141,38 +204,47 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Overall Summary */}
       <div className="overall-summary">
+        {isMultiAccount && (
+          <div className="summary-card">
+            <div className="summary-icon">🏢</div>
+            <div className="summary-content">
+              <div className="summary-value">{summaryData.totalEnterpriseAccounts || 0}</div>
+              <div className="summary-label">Enterprise Accounts</div>
+            </div>
+          </div>
+        )}
         <div className="summary-card">
           <div className="summary-icon">👥</div>
           <div className="summary-content">
-            <div className="summary-value">{enterpriseTeams.length}</div>
+            <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
             <div className="summary-label">Enterprise Teams</div>
           </div>
         </div>
         <div className="summary-card">
           <div className="summary-icon">⚡</div>
           <div className="summary-content">
-            <div className="summary-value">{formatUsage(structure.summary.totalDynos)}</div>
+            <div className="summary-value">{formatUsage(summaryData.totalDynos)}</div>
             <div className="summary-label">Dynos Usage</div>
           </div>
         </div>
         <div className="summary-card">
           <div className="summary-icon">💾</div>
           <div className="summary-content">
-            <div className="summary-value">{formatUsage(structure.summary.totalDataAddons)}</div>
+            <div className="summary-value">{formatUsage(summaryData.totalDataAddons)}</div>
             <div className="summary-label">Data Add-ons Usage</div>
           </div>
         </div>
         <div className="summary-card">
           <div className="summary-icon">🔧</div>
           <div className="summary-content">
-            <div className="summary-value">{formatUsage(structure.summary.totalOtherAddons)}</div>
+            <div className="summary-value">{formatUsage(summaryData.totalOtherAddons)}</div>
             <div className="summary-label">Other Add-ons Usage</div>
           </div>
         </div>
         <div className="summary-card highlight">
           <div className="summary-icon">💰</div>
           <div className="summary-content">
-            <div className="summary-value">${formatCurrency(structure.summary.totalMonthlyCost)}</div>
+            <div className="summary-value">${formatCurrency(summaryData.totalMonthlyCost)}</div>
             <div className="summary-label">Monthly Cost</div>
           </div>
         </div>
@@ -180,7 +252,15 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Teams Grid */}
       <div className="teams-section">
-        <h2>{(structure.account.enterpriseAccountName || 'Enterprise Account')} &gt; Enterprise Teams</h2>
+        <h2>📊 Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
+        {enterpriseTeams.length === 0 && (
+          <div className="no-teams-message">
+            <p>No enterprise teams found{billingRestrictions.length > 0 ? ' with billing access' : ''}.</p>
+            {billingRestrictions.length > 0 && (
+              <p>Contact your enterprise administrator to grant billing access.</p>
+            )}
+          </div>
+        )}
         <div className="teams-grid">
           {enterpriseTeams.map((team, index) => {
             const resources = team.resources;
@@ -190,6 +270,9 @@ function EnterpriseView({ selectedMonth }) {
                   <div className="team-icon">🏢</div>
                   <div className="team-info">
                     <h3>{team.name}</h3>
+                    {team.accountName && showAllAccounts && (
+                      <div className="team-account-badge">{team.accountName}</div>
+                    )}
                     <span className="team-type">Enterprise</span>
                   </div>
                 </div>
