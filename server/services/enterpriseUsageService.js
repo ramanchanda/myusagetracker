@@ -331,18 +331,41 @@ async function getAllEnterpriseAccountsStructure(month) {
         console.error(`Error fetching usage for ${enterpriseAccount.name}:`, error.message);
       }
 
-      // Fallback: If no usage data, fetch teams directly
+      // Fallback: If no usage data, fetch teams directly and get individual team usage
       if (enterpriseTeams.length === 0) {
         console.log(`📋 No usage data, fetching teams directly for ${enterpriseAccount.name}`);
         try {
           const allTeams = await getTeams(client);
           // Filter teams belonging to this enterprise account
-          enterpriseTeams = allTeams.filter(team =>
+          const filteredTeams = allTeams.filter(team =>
             team.type === 'enterprise' &&
             team.enterprise_account &&
             team.enterprise_account.id === enterpriseAccount.id
           );
-          console.log(`✅ Found ${enterpriseTeams.length} enterprise teams via direct fetch`);
+          console.log(`✅ Found ${filteredTeams.length} enterprise teams via direct fetch`);
+
+          // Fetch individual team monthly usage for each team
+          for (const team of filteredTeams) {
+            try {
+              const teamUsage = await getTeamMonthlyUsage(client, team.id, targetMonth);
+              if (teamUsage) {
+                // Merge team metadata with usage data
+                enterpriseTeams.push({
+                  ...team,
+                  ...teamUsage
+                });
+                console.log(`  ✅ Got usage data for team: ${team.name}`);
+              } else {
+                // No usage data but include team anyway
+                enterpriseTeams.push(team);
+                console.log(`  ⚠️  No usage data for team: ${team.name}`);
+              }
+            } catch (error) {
+              console.error(`  ❌ Error fetching usage for team ${team.name}:`, error.message);
+              // Include team without usage data
+              enterpriseTeams.push(team);
+            }
+          }
         } catch (error) {
           console.error(`Error fetching teams directly:`, error.message);
         }
