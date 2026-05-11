@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m 'Add enterprise account selector UI to EnterpriseView *)"
+    ]
+  }
+}
