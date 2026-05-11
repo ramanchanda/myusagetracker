@@ -23,6 +23,13 @@
 .account-email {
   color: #666;
   font-size: 1.1rem;
+  margin: 0 0 5px 0;
+}
+
+.selected-month {
+  color: #667eea;
+  font-size: 0.95rem;
+  font-weight: 600;
   margin: 0;
 }
 

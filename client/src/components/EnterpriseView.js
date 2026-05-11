@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './EnterpriseView.css';
 
-function EnterpriseView() {
+function EnterpriseView({ selectedMonth }) {
   const [structure, setStructure] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,13 +10,15 @@ function EnterpriseView() {
 
   useEffect(() => {
     fetchEnterpriseStructure();
-  }, []);
+  }, [selectedMonth]);
 
   const fetchEnterpriseStructure = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('/api/enterprise/structure');
+      const response = await axios.get('/api/enterprise/structure', {
+        params: { month: selectedMonth }
+      });
       setStructure(response.data);
       setLoading(false);
     } catch (err) {
@@ -84,6 +86,9 @@ function EnterpriseView() {
         <div className="account-info">
           <h1>🏢 Enterprise Account</h1>
           <p className="account-email">{structure.account.email}</p>
+          <p className="selected-month">
+            📅 Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </p>
         </div>
         <button onClick={fetchEnterpriseStructure} className="refresh-btn">
           🔄 Refresh

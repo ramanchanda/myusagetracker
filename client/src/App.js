@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import GroupSelector from './components/GroupSelector';
 import MultiGroupDashboard from './components/MultiGroupDashboard';
 import EnterpriseView from './components/EnterpriseView';
+import MonthSelector from './components/MonthSelector';
 import './App.css';
 
 function App() {
@@ -21,6 +22,13 @@ function App() {
 
   // View mode: 'dashboard', 'enterprise'
   const [viewMode, setViewMode] = useState('dashboard');
+
+  // Month selection - default to current month
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
 
   // Fetch available groups
   const fetchGroups = async () => {
@@ -141,8 +149,13 @@ function App() {
         </div>
       )}
 
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+      />
+
       {viewMode === 'enterprise' ? (
-        <EnterpriseView />
+        <EnterpriseView selectedMonth={selectedMonth} />
       ) : (
         <>
           {multiGroupMode && groups.length > 0 && (

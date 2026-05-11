@@ -3,6 +3,12 @@ const { calculateMonthlyCost } = require('./herokuService');
 
 const HEROKU_API_BASE = 'https://api.heroku.com';
 
+// Helper to get current month in YYYY-MM format
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 // Create Heroku client
 function createHerokuClient(apiKey) {
   return axios.create({
@@ -90,7 +96,7 @@ function categorizeAddonType(addonServiceName) {
 }
 
 // Get resource usage for a specific team
-async function getTeamResourceUsage(client, teamName, teamType = 'team') {
+async function getTeamResourceUsage(client, teamName, teamType = 'team', invoiceData = null) {
   try {
     const apps = await getTeamApps(client, teamName);
 
@@ -152,7 +158,32 @@ async function getTeamResourceUsage(client, teamName, teamType = 'team') {
         const appAddons = await client.get(`/apps/${app.id}/addons`);
         appAddons.data.forEach(addon => {
           const addonType = categorizeAddonType(addon.addon_service.name);
-          const cost = calculateMonthlyCost(addon.plan.price);
+
+          // Use invoice data for cost if available, otherwise use API price
+          let cost;
+          if (invoiceData) {
+            // Try to find matching cost in invoice data
+            // Match by addon name, plan name, or service:plan combination
+            const addonName = addon.name;
+            const planName = addon.plan.name;
+            const servicePlan = `${addon.addon_service.name}:${planName.split(':')[1] || planName}`;
+
+            if (invoiceData.addons[addonName]) {
+              cost = invoiceData.addons[addonName].cost;
+            } else if (invoiceData.addons[planName]) {
+              cost = invoiceData.addons[planName].cost;
+            } else if (invoiceData.addons[servicePlan]) {
+              cost = invoiceData.addons[servicePlan].cost;
+            } else {
+              // Check if any invoice addon matches this app
+              const matchingAddon = Object.entries(invoiceData.addons).find(
+                ([key, value]) => value.app === app.name && key.includes(addon.addon_service.name)
+              );
+              cost = matchingAddon ? matchingAddon[1].cost : calculateMonthlyCost(addon.plan.price);
+            }
+          } else {
+            cost = calculateMonthlyCost(addon.plan.price);
+          }
 
           const addonData = {
             name: addon.name,
@@ -192,8 +223,24 @@ async function getTeamResourceUsage(client, teamName, teamType = 'team') {
 }
 
 // Get complete enterprise structure with all teams and resources
-async function getEnterpriseStructure() {
+async function getEnterpriseStructure(month) {
   const client = createHerokuClient();
+
+  // Check if requesting historical data
+  const isHistorical = month && month !== getCurrentMonth();
+  let invoiceData = null;
+
+  if (isHistorical) {
+    const invoiceService = require('./invoiceService');
+    try {
+      const invoice = await invoiceService.getInvoiceForMonth(month);
+      if (invoice) {
+        invoiceData = invoiceService.parseInvoiceCosts(invoice);
+      }
+    } catch (error) {
+      console.error(`Error fetching invoice for ${month}:`, error.message);
+    }
+  }
 
   try {
     const account = await getAccountInfo(client);
@@ -250,7 +297,30 @@ async function getEnterpriseStructure() {
           const appAddons = await client.get(`/apps/${app.id}/addons`);
           appAddons.data.forEach(addon => {
             const addonType = categorizeAddonType(addon.addon_service.name);
-            const cost = calculateMonthlyCost(addon.plan.price);
+
+            // Use invoice data for cost if available, otherwise use API price
+            let cost;
+            if (invoiceData) {
+              // Try to find matching cost in invoice data
+              const addonName = addon.name;
+              const planName = addon.plan.name;
+              const servicePlan = `${addon.addon_service.name}:${planName.split(':')[1] || planName}`;
+
+              if (invoiceData.addons[addonName]) {
+                cost = invoiceData.addons[addonName].cost;
+              } else if (invoiceData.addons[planName]) {
+                cost = invoiceData.addons[planName].cost;
+              } else if (invoiceData.addons[servicePlan]) {
+                cost = invoiceData.addons[servicePlan].cost;
+              } else {
+                const matchingAddon = Object.entries(invoiceData.addons).find(
+                  ([key, value]) => value.app === app.name && key.includes(addon.addon_service.name)
+                );
+                cost = matchingAddon ? matchingAddon[1].cost : calculateMonthlyCost(addon.plan.price);
+              }
+            } else {
+              cost = calculateMonthlyCost(addon.plan.price);
+            }
 
             const addonData = {
               name: addon.name,
@@ -290,7 +360,7 @@ async function getEnterpriseStructure() {
     for (const team of teams) {
       try {
         const teamDetails = await getTeamDetails(client, team.name);
-        const teamResources = await getTeamResourceUsage(client, team.name, team.type);
+        const teamResources = await getTeamResourceUsage(client, team.name, team.type, invoiceData);
 
         structure.teams.push({
           ...teamDetails,

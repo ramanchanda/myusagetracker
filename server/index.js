@@ -11,6 +11,7 @@ const notificationService = require('./services/notificationService');
 const usageMonitor = require('./services/usageMonitor');
 const multiGroupService = require('./services/multiGroupService');
 const enterpriseService = require('./services/enterpriseService');
+const invoiceService = require('./services/invoiceService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -147,7 +148,8 @@ app.get('/api/groups/all/usage', async (req, res) => {
 // Enterprise endpoints
 app.get('/api/enterprise/structure', async (req, res) => {
   try {
-    const structure = await enterpriseService.getEnterpriseStructure();
+    const month = req.query.month;
+    const structure = await enterpriseService.getEnterpriseStructure(month);
     res.json(structure);
   } catch (error) {
     console.error('Error fetching enterprise structure:', error.message);
