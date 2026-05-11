@@ -20,8 +20,10 @@
   margin-bottom: 16px;
 }
 
-.selector-icon {
-  font-size: 1.5rem;
+.selector-heroku-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: #6f42c1;
 }
 
 .selector-header label {
@@ -72,6 +74,9 @@
   color: #475569;
   transition: all 0.3s ease;
   font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .toggle-btn:hover {

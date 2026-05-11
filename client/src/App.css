@@ -1,16 +1,16 @@
 .App {
   min-height: 100vh;
-  background: radial-gradient(circle at top, #f6f9ff 0%, #eef2ff 40%, #ecf4ff 100%);
+  background: radial-gradient(circle at top, #f7f4ff 0%, #f2edff 45%, #efe8ff 100%);
 }
 
 .App-header {
-  background: linear-gradient(135deg, #1d4ed8 0%, #3730a3 100%);
+  background: linear-gradient(135deg, #6f42c1 0%, #512b81 100%);
   padding: 22px 40px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 12px 32px rgba(30, 58, 138, 0.25);
+  box-shadow: 0 12px 32px rgba(81, 43, 129, 0.32);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -47,7 +47,7 @@
 
 .btn-primary {
   background-color: #ffffff;
-  color: #1e3a8a;
+  color: #5a31a3;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
 }
 

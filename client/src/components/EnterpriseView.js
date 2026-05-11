@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import EnterpriseAccountSelector from './EnterpriseAccountSelector';
+import {
+  EnterpriseIcon,
+  TeamsIcon,
+  DynoIcon,
+  PostgresIcon,
+  AddonsIcon,
+  ConnectIcon,
+  CostIcon
+} from './HerokuIcons';
 import './EnterpriseView.css';
 
 function EnterpriseView({ selectedMonth }) {
@@ -139,11 +148,11 @@ function EnterpriseView({ selectedMonth }) {
           </p>
           <p className="account-email">{structure.account.email}</p>
           <p className="selected-month">
-            📅 Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
+            Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
           </p>
         </div>
         <button onClick={fetchEnterpriseStructure} className="refresh-btn">
-          🔄 Refresh
+          Refresh
         </button>
       </div>
 
@@ -185,7 +194,7 @@ function EnterpriseView({ selectedMonth }) {
       <div className="overall-summary">
         {isMultiAccount && (
           <div className="summary-card">
-            <div className="summary-icon">🏢</div>
+            <EnterpriseIcon className="summary-icon-svg" />
             <div className="summary-content">
               <div className="summary-value">{summaryData.totalEnterpriseAccounts || 0}</div>
               <div className="summary-label">Enterprise Accounts</div>
@@ -193,42 +202,42 @@ function EnterpriseView({ selectedMonth }) {
           </div>
         )}
         <div className="summary-card">
-          <div className="summary-icon">👥</div>
+          <TeamsIcon className="summary-icon-svg" />
           <div className="summary-content">
             <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
             <div className="summary-label">Enterprise Teams</div>
           </div>
         </div>
         <div className="summary-card">
-          <div className="summary-icon">⚡</div>
+          <DynoIcon className="summary-icon-svg" />
           <div className="summary-content">
             <div className="summary-value">{formatUsage(summaryData.totalDynos)}</div>
             <div className="summary-label">Dynos Usage</div>
           </div>
         </div>
         <div className="summary-card">
-          <div className="summary-icon">🔌</div>
+          <ConnectIcon className="summary-icon-svg" />
           <div className="summary-content">
             <div className="summary-value">{formatUsage(summaryData.totalConnect)}</div>
             <div className="summary-label">Connect Usage</div>
           </div>
         </div>
         <div className="summary-card">
-          <div className="summary-icon">💾</div>
+          <PostgresIcon className="summary-icon-svg" />
           <div className="summary-content">
             <div className="summary-value">{formatUsage(summaryData.totalDataAddons)}</div>
             <div className="summary-label">Data Add-ons Usage</div>
           </div>
         </div>
         <div className="summary-card">
-          <div className="summary-icon">🔧</div>
+          <AddonsIcon className="summary-icon-svg" />
           <div className="summary-content">
             <div className="summary-value">{formatUsage(summaryData.totalOtherAddons)}</div>
             <div className="summary-label">Other Add-ons Usage</div>
           </div>
         </div>
         <div className="summary-card highlight">
-          <div className="summary-icon">💰</div>
+          <CostIcon className="summary-icon-svg" />
           <div className="summary-content">
             <div className="summary-value">${formatCurrency(summaryData.totalMonthlyCost)}</div>
             <div className="summary-label">Monthly Cost</div>
@@ -238,7 +247,7 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Teams Grid */}
       <div className="teams-section">
-        <h2>📊 Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
+        <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
         {enterpriseTeams.length === 0 && (
           <div className="no-teams-message">
             <p>No enterprise teams found{billingRestrictions.length > 0 ? ' with billing access' : ''}.</p>
@@ -253,7 +262,7 @@ function EnterpriseView({ selectedMonth }) {
             return (
               <div key={index} className="team-card">
                 <div className="team-header">
-                  <div className="team-icon">🏢</div>
+                  <EnterpriseIcon className="team-icon-svg" />
                   <div className="team-info">
                     <h3>{team.name}</h3>
                     {team.accountName && showAllAccounts && (
@@ -265,23 +274,23 @@ function EnterpriseView({ selectedMonth }) {
 
                 <div className="team-stats">
                   <div className="stat-row">
-                    <span className="stat-label">⚡ Dynos Usage</span>
+                    <span className="stat-label"><DynoIcon className="inline-stat-icon" /> Dynos Usage</span>
                     <span className="stat-value">{formatUsage(resources.dynos.count)}</span>
                   </div>
                   <div className="stat-row">
-                    <span className="stat-label">🔌 Connect Usage</span>
+                    <span className="stat-label"><ConnectIcon className="inline-stat-icon" /> Connect Usage</span>
                     <span className="stat-value">{formatUsage(resources.connect.used)}</span>
                   </div>
                   <div className="stat-row">
-                    <span className="stat-label">💾 Data Add-ons Usage</span>
+                    <span className="stat-label"><PostgresIcon className="inline-stat-icon" /> Postgres/Data Usage</span>
                     <span className="stat-value">{formatUsage(resources.dataAddons.count)}</span>
                   </div>
                   <div className="stat-row">
-                    <span className="stat-label">🔧 Other Add-ons Usage</span>
+                    <span className="stat-label"><AddonsIcon className="inline-stat-icon" /> Add-ons Usage</span>
                     <span className="stat-value">{formatUsage(resources.otherAddons.count)}</span>
                   </div>
                   <div className="stat-row total">
-                    <span className="stat-label">💰 Monthly Cost</span>
+                    <span className="stat-label"><CostIcon className="inline-stat-icon" /> Monthly Cost</span>
                     <span className="stat-value cost">${formatCurrency(resources.totalMonthlyCost)}</span>
                   </div>
                 </div>

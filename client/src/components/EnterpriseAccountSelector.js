@@ -1,4 +1,5 @@
 import React from 'react';
+import { EnterpriseIcon, TeamsIcon } from './HerokuIcons';
 import './EnterpriseAccountSelector.css';
 
 function EnterpriseAccountSelector({ accounts, selectedAccountId, onAccountChange, showAllAccounts, onShowAllToggle }) {
@@ -11,7 +12,7 @@ function EnterpriseAccountSelector({ accounts, selectedAccountId, onAccountChang
     return (
       <div className="enterprise-account-selector single">
         <div className="account-badge">
-          <span className="account-icon">🏢</span>
+          <EnterpriseIcon className="selector-heroku-icon" />
           <span className="account-name">{accounts[0].name}</span>
         </div>
       </div>
@@ -21,7 +22,7 @@ function EnterpriseAccountSelector({ accounts, selectedAccountId, onAccountChang
   return (
     <div className="enterprise-account-selector">
       <div className="selector-header">
-        <span className="selector-icon">🏢</span>
+        <EnterpriseIcon className="selector-heroku-icon" />
         <label>Enterprise Account:</label>
       </div>
 
@@ -44,7 +45,8 @@ function EnterpriseAccountSelector({ accounts, selectedAccountId, onAccountChang
           className={`toggle-btn ${showAllAccounts ? 'active' : ''}`}
           onClick={() => onShowAllToggle(!showAllAccounts)}
         >
-          {showAllAccounts ? '📋 Viewing All Accounts' : '📊 View All Accounts'}
+          <TeamsIcon className="selector-heroku-icon" />
+          {showAllAccounts ? 'Viewing All Accounts' : 'View All Accounts'}
         </button>
 
         {!showAllAccounts && (
