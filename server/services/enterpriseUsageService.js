@@ -63,8 +63,9 @@ async function getEnterpriseAccount(client, accountId) {
 // Test billing access for an enterprise account
 async function testBillingAccess(client, accountId, month) {
   try {
-    const [year, monthNum] = month.split('-');
-    await client.get(`/enterprise-accounts/${accountId}/monthly-usage/${year}/${monthNum}`);
+    await client.get(`/enterprise-accounts/${accountId}/usage/monthly`, {
+      params: { start: month, end: month }
+    });
     return { hasAccess: true, error: null };
   } catch (error) {
     if (error.response?.status === 403) {
@@ -96,19 +97,23 @@ function toNumber(value) {
 // Get enterprise account monthly usage
 async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
   try {
-    const [year, monthNum] = month.split('-');
-
-    console.log(`Fetching monthly usage: /enterprise-accounts/${enterpriseAccountId}/monthly-usage/${year}/${monthNum}`);
+    console.log(`Fetching monthly usage: /enterprise-accounts/${enterpriseAccountId}/usage/monthly?start=${month}&end=${month}`);
 
     const response = await client.get(
-      `/enterprise-accounts/${enterpriseAccountId}/monthly-usage/${year}/${monthNum}`
+      `/enterprise-accounts/${enterpriseAccountId}/usage/monthly`,
+      {
+        params: {
+          start: month,
+          end: month
+        }
+      }
     );
 
     return response.data;
   } catch (error) {
     console.error(`Error fetching enterprise monthly usage for ${month}:`, error.message);
     console.error(`Enterprise Account ID: ${enterpriseAccountId}`);
-    console.error(`Full URL attempted: /enterprise-accounts/${enterpriseAccountId}/monthly-usage/${month.split('-')[0]}/${month.split('-')[1]}`);
+    console.error(`Full URL attempted: /enterprise-accounts/${enterpriseAccountId}/usage/monthly?start=${month}&end=${month}`);
 
     if (error.response?.status === 404) {
       console.error('404 Error: Either the enterprise account does not exist, or there is no usage data for this month.');
@@ -122,16 +127,21 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
 // Get team monthly usage
 async function getTeamMonthlyUsage(client, teamId, month) {
   try {
-    const year = month.split('-')[0];
-    const monthNum = month.split('-')[1];
+    console.log(`  Fetching team usage: /teams/${teamId}/usage/monthly?start=${month}&end=${month}`);
 
     const response = await client.get(
-      `/teams/${teamId}/monthly-usage/${year}/${monthNum}`
+      `/teams/${teamId}/usage/monthly`,
+      {
+        params: {
+          start: month,
+          end: month
+        }
+      }
     );
 
     return response.data;
   } catch (error) {
-    console.error(`Error fetching team monthly usage for ${month}:`, error.message);
+    console.error(`  Error fetching team monthly usage for ${month}:`, error.message);
     return null;
   }
 }
@@ -323,7 +333,16 @@ async function getAllEnterpriseAccountsStructure(month) {
           targetMonth
         );
 
-        if (enterpriseUsage && Array.isArray(enterpriseUsage.teams)) {
+        // The /usage/monthly endpoint returns an array of month data
+        if (enterpriseUsage && Array.isArray(enterpriseUsage)) {
+          // Get the first (and should be only) month's data
+          const monthData = enterpriseUsage[0];
+          if (monthData && Array.isArray(monthData.teams)) {
+            enterpriseTeams = monthData.teams;
+            console.log(`✅ Found ${enterpriseTeams.length} teams with usage data`);
+          }
+        } else if (enterpriseUsage && Array.isArray(enterpriseUsage.teams)) {
+          // Fallback for different response structure
           enterpriseTeams = enterpriseUsage.teams;
           console.log(`✅ Found ${enterpriseTeams.length} teams with usage data`);
         }
@@ -347,14 +366,21 @@ async function getAllEnterpriseAccountsStructure(month) {
           // Fetch individual team monthly usage for each team
           for (const team of filteredTeams) {
             try {
-              const teamUsage = await getTeamMonthlyUsage(client, team.id, targetMonth);
-              if (teamUsage) {
-                // Merge team metadata with usage data
-                enterpriseTeams.push({
-                  ...team,
-                  ...teamUsage
-                });
-                console.log(`  ✅ Got usage data for team: ${team.name}`);
+              const teamUsageResponse = await getTeamMonthlyUsage(client, team.id, targetMonth);
+              if (teamUsageResponse && Array.isArray(teamUsageResponse)) {
+                // /usage/monthly returns array of months
+                const monthData = teamUsageResponse[0];
+                if (monthData) {
+                  // Merge team metadata with usage data
+                  enterpriseTeams.push({
+                    ...team,
+                    ...monthData
+                  });
+                  console.log(`  ✅ Got usage data for team: ${team.name}`);
+                } else {
+                  enterpriseTeams.push(team);
+                  console.log(`  ⚠️  No usage data for team: ${team.name}`);
+                }
               } else {
                 // No usage data but include team anyway
                 enterpriseTeams.push(team);
