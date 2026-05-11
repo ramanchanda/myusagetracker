@@ -252,7 +252,6 @@ async function getEnterpriseStructure(month) {
         name: account.name,
         id: account.id
       },
-      personalApps: null,
       teams: [],
       summary: {
         totalTeams: teams.length,
@@ -264,99 +263,7 @@ async function getEnterpriseStructure(month) {
       }
     };
 
-    // Get personal apps (non-team)
-    const personalApps = await getPersonalApps(client);
-    if (personalApps.length > 0) {
-      // Create a "personal" pseudo-team for personal apps
-      const personalResources = {
-        teamName: 'Personal Apps',
-        teamType: 'personal',
-        totalApps: personalApps.length,
-        dynos: { count: 0, totalQuantity: 0, formations: [] },
-        connect: { used: 0, limit: 0, percentage: 0 },
-        dataAddons: { count: 0, addons: [], totalCost: '0.00' },
-        otherAddons: { count: 0, addons: [], totalCost: '0.00' },
-        totalMonthlyCost: '0.00'
-      };
-
-      // Fetch resources for personal apps
-      for (const app of personalApps) {
-        try {
-          const formations = await client.get(`/apps/${app.id}/formation`);
-          formations.data.forEach(formation => {
-            personalResources.dynos.formations.push({
-              appName: app.name,
-              type: formation.type,
-              quantity: formation.quantity,
-              size: formation.size
-            });
-            personalResources.dynos.count++;
-            personalResources.dynos.totalQuantity += formation.quantity;
-          });
-
-          const appAddons = await client.get(`/apps/${app.id}/addons`);
-          appAddons.data.forEach(addon => {
-            const addonType = categorizeAddonType(addon.addon_service.name);
-
-            // Use invoice data for cost if available, otherwise use API price
-            let cost;
-            if (invoiceData) {
-              // Try to find matching cost in invoice data
-              const addonName = addon.name;
-              const planName = addon.plan.name;
-              const servicePlan = `${addon.addon_service.name}:${planName.split(':')[1] || planName}`;
-
-              if (invoiceData.addons[addonName]) {
-                cost = invoiceData.addons[addonName].cost;
-              } else if (invoiceData.addons[planName]) {
-                cost = invoiceData.addons[planName].cost;
-              } else if (invoiceData.addons[servicePlan]) {
-                cost = invoiceData.addons[servicePlan].cost;
-              } else {
-                const matchingAddon = Object.entries(invoiceData.addons).find(
-                  ([key, value]) => value.app === app.name && key.includes(addon.addon_service.name)
-                );
-                cost = matchingAddon ? matchingAddon[1].cost : calculateMonthlyCost(addon.plan.price);
-              }
-            } else {
-              cost = calculateMonthlyCost(addon.plan.price);
-            }
-
-            const addonData = {
-              name: addon.name,
-              service: addon.addon_service.name,
-              plan: addon.plan.name,
-              cost: cost,
-              appName: app.name,
-              state: addon.state
-            };
-
-            if (addonType.isData) {
-              personalResources.dataAddons.addons.push(addonData);
-              personalResources.dataAddons.count++;
-              personalResources.dataAddons.totalCost = (parseFloat(personalResources.dataAddons.totalCost) + cost).toFixed(2);
-            } else {
-              personalResources.otherAddons.addons.push(addonData);
-              personalResources.otherAddons.count++;
-              personalResources.otherAddons.totalCost = (parseFloat(personalResources.otherAddons.totalCost) + cost).toFixed(2);
-            }
-
-            personalResources.totalMonthlyCost = (parseFloat(personalResources.totalMonthlyCost) + cost).toFixed(2);
-          });
-        } catch (error) {
-          console.error(`Error fetching resources for personal app ${app.name}:`, error.message);
-        }
-      }
-
-      structure.personalApps = personalResources;
-      structure.summary.totalApps += personalApps.length;
-      structure.summary.totalDynos += personalResources.dynos.count;
-      structure.summary.totalDataAddons += personalResources.dataAddons.count;
-      structure.summary.totalOtherAddons += personalResources.otherAddons.count;
-      structure.summary.totalMonthlyCost += parseFloat(personalResources.totalMonthlyCost);
-    }
-
-    // Get resources for each team
+    // Get resources for each team (enterprise teams only)
     for (const team of teams) {
       try {
         const teamDetails = await getTeamDetails(client, team.name);

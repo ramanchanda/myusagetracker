@@ -3,6 +3,7 @@ import axios from 'axios';
 import Dashboard from './components/Dashboard';
 import GroupSelector from './components/GroupSelector';
 import MultiGroupDashboard from './components/MultiGroupDashboard';
+import PersonalView from './components/PersonalView';
 import EnterpriseView from './components/EnterpriseView';
 import MonthSelector from './components/MonthSelector';
 import './App.css';
@@ -20,7 +21,7 @@ function App() {
   const [allGroupsData, setAllGroupsData] = useState([]);
   const [multiGroupMode, setMultiGroupMode] = useState(false);
 
-  // View mode: 'dashboard', 'enterprise'
+  // View mode: 'dashboard', 'personal', 'enterprise'
   const [viewMode, setViewMode] = useState('dashboard');
 
   // Month selection - default to current month
@@ -117,6 +118,12 @@ function App() {
               📊 Dashboard
             </button>
             <button
+              className={`view-btn ${viewMode === 'personal' ? 'active' : ''}`}
+              onClick={() => setViewMode('personal')}
+            >
+              👤 Personal
+            </button>
+            <button
               className={`view-btn ${viewMode === 'enterprise' ? 'active' : ''}`}
               onClick={() => setViewMode('enterprise')}
             >
@@ -154,7 +161,9 @@ function App() {
         onMonthChange={setSelectedMonth}
       />
 
-      {viewMode === 'enterprise' ? (
+      {viewMode === 'personal' ? (
+        <PersonalView selectedMonth={selectedMonth} />
+      ) : viewMode === 'enterprise' ? (
         <EnterpriseView selectedMonth={selectedMonth} />
       ) : (
         <>

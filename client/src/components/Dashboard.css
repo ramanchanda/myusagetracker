@@ -2,44 +2,68 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 30px 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
 }
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
 }
 
 .card {
   background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+}
+
+.addons-summary-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .addons-summary-card .card-header {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: transparent;
   color: white;
-  padding: 20px;
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.addons-summary-card .card-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .addons-summary-card .card-body {
-  padding: 25px;
+  padding: 28px 24px;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.stat-row:hover {
+  padding-left: 8px;
+}
+
+.addons-summary-card .stat-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-row:last-child {
@@ -47,59 +71,84 @@
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 0.95rem;
   color: #666;
   font-weight: 500;
 }
 
+.addons-summary-card .stat-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .stat-value {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #333;
+}
+
+.addons-summary-card .stat-value {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .stat-value.cost {
   color: #28a745;
 }
 
+.addons-summary-card .stat-value.cost {
+  color: #ffd700;
+}
+
 .charts-section {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .addons-section {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 .addons-view-toggle {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 15px;
+  margin-bottom: 30px;
   justify-content: center;
+  background: white;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .addons-view-toggle button {
-  padding: 12px 24px;
-  border: 2px solid #e0e0e0;
-  background: white;
-  border-radius: 8px;
+  padding: 14px 32px;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   color: #666;
+  position: relative;
 }
 
 .addons-view-toggle button:hover {
-  border-color: #667eea;
   color: #667eea;
   transform: translateY(-2px);
+  background: rgba(102, 126, 234, 0.1);
 }
 
 .addons-view-toggle button.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
   color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 768px) {

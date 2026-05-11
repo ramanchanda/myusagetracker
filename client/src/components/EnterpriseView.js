@@ -63,19 +63,11 @@ function EnterpriseView({ selectedMonth }) {
 
   if (!structure) return null;
 
-  const allTeams = [];
-  if (structure.personalApps) {
-    allTeams.push({
-      name: 'Personal Apps',
-      type: 'personal',
-      resources: structure.personalApps
-    });
-  }
-  allTeams.push(...structure.teams.map(team => ({
+  const allTeams = structure.teams.map(team => ({
     name: team.name,
     type: team.type,
     resources: team.resources
-  })));
+  }));
 
   const displayTeam = selectedTeam !== null ? allTeams[selectedTeam] : null;
 
@@ -143,7 +135,7 @@ function EnterpriseView({ selectedMonth }) {
 
       {/* Teams Grid */}
       <div className="teams-section">
-        <h2>📊 Teams & Resources</h2>
+        <h2>📊 Enterprise Teams</h2>
         <div className="teams-grid">
           {allTeams.map((team, index) => {
             const resources = team.resources;

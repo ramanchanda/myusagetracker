@@ -11,6 +11,7 @@ const notificationService = require('./services/notificationService');
 const usageMonitor = require('./services/usageMonitor');
 const multiGroupService = require('./services/multiGroupService');
 const enterpriseService = require('./services/enterpriseService');
+const personalService = require('./services/personalService');
 const invoiceService = require('./services/invoiceService');
 
 const app = express();
@@ -141,6 +142,18 @@ app.get('/api/groups/all/usage', async (req, res) => {
     res.json(allUsage);
   } catch (error) {
     console.error('Error fetching all groups usage:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Personal apps endpoints
+app.get('/api/personal/structure', async (req, res) => {
+  try {
+    const month = req.query.month;
+    const structure = await personalService.getPersonalAppsStructure(month);
+    res.json(structure);
+  } catch (error) {
+    console.error('Error fetching personal apps structure:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
