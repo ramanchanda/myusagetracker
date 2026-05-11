@@ -307,15 +307,17 @@ function parseTeamUsage(team) {
   const teamApps = Array.isArray(team.apps) ? team.apps : [];
   const appsUsage = teamApps.map(app => {
     const appDynos = toNumber(app.dynos);
+    const appConnect = toNumber(app.connect);
     const appData = toNumber(app.data);
     const appPartner = toNumber(app.partner);
     const appAddons = toNumber(app.addons);
     const appOtherAddons = Math.max(appAddons - appData, appPartner, 0);
-    const appTotal = appDynos + appAddons;
+    const appTotal = appDynos + appAddons + appConnect;
 
     return {
       name: app.app_name || app.name || 'Unknown',
       dynos: appDynos,
+      connect: appConnect,
       dataAddons: appData,
       generalAddons: appOtherAddons,
       total: appTotal
@@ -468,15 +470,29 @@ async function getAllEnterpriseAccountsStructure(month) {
           .map(team => [team.id, team])
       );
 
-      const mergedTeams =
-        canonicalTeams.length > 0
-          ? canonicalTeams.map(team => ({
-              id: team.id,
-              name: team.name,
-              type: team.type || 'enterprise',
-              ...(usageByTeamId.get(team.id) || {})
-            }))
-          : enterpriseTeams;
+      // Build a union of canonical teams + usage teams.
+      // Canonical /teams can be permission-scoped (member-only), while usage teams can include more.
+      const canonicalById = new Map(
+        canonicalTeams
+          .filter(team => team && team.id)
+          .map(team => [team.id, team])
+      );
+      const allTeamIds = new Set([
+        ...Array.from(canonicalById.keys()),
+        ...Array.from(usageByTeamId.keys())
+      ]);
+
+      const mergedTeams = Array.from(allTeamIds).map(teamId => {
+        const canonicalTeam = canonicalById.get(teamId) || {};
+        const usageTeam = usageByTeamId.get(teamId) || {};
+
+        return {
+          id: teamId,
+          name: usageTeam.name || canonicalTeam.name || 'Unknown Team',
+          type: canonicalTeam.type || usageTeam.type || 'enterprise',
+          ...usageTeam
+        };
+      });
 
       if (mergedTeams.length === 0) {
         console.log(`No teams found for ${enterpriseAccount.name}`);

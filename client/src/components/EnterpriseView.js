@@ -381,6 +381,7 @@ function EnterpriseView({ selectedMonth }) {
                             <div key={appIdx} className="apps-usage-row">
                               <span className="app-name">{app.name}</span>
                               <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
+                              <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
                               <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
                               <span className="app-usage">General: {formatUsage(app.generalAddons)}</span>
                             </div>
