@@ -314,6 +314,8 @@ async function getAllEnterpriseAccountsStructure(month) {
       }
 
       // Get enterprise-level monthly usage
+      let enterpriseTeams = [];
+
       try {
         const enterpriseUsage = await getEnterpriseMonthlyUsage(
           client,
@@ -321,52 +323,66 @@ async function getAllEnterpriseAccountsStructure(month) {
           targetMonth
         );
 
-        if (!enterpriseUsage) {
-          console.log(`No usage data found for ${enterpriseAccount.name} in ${targetMonth}`);
-          allAccountsData.push(accountStructure);
-          continue;
+        if (enterpriseUsage && Array.isArray(enterpriseUsage.teams)) {
+          enterpriseTeams = enterpriseUsage.teams;
+          console.log(`✅ Found ${enterpriseTeams.length} teams with usage data`);
         }
-
-        if (!Array.isArray(enterpriseUsage.teams)) {
-          console.log(`No teams data for ${enterpriseAccount.name}`);
-          allAccountsData.push(accountStructure);
-          continue;
-        }
-
-        const enterpriseTeams = enterpriseUsage.teams;
-        accountStructure.summary.totalTeams = enterpriseTeams.length;
-
-        // Build team resources from enterprise monthly usage payload
-        for (const team of enterpriseTeams) {
-          try {
-            const teamResources = parseTeamUsage(team);
-
-            accountStructure.teams.push({
-              id: team.id,
-              name: team.name,
-              type: 'enterprise',
-              enterpriseAccountId: enterpriseAccount.id,
-              enterpriseAccountName: enterpriseAccount.name,
-              resources: teamResources
-            });
-
-            // Update summary
-            accountStructure.summary.totalApps += teamResources.totalApps;
-            accountStructure.summary.totalDynos += teamResources.dynos.count;
-            accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
-            accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
-            accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
-          } catch (error) {
-            console.error(`Error processing team ${team.name}:`, error.message);
-          }
-        }
-
-        accountStructure.summary.totalMonthlyCost = accountStructure.summary.totalMonthlyCost.toFixed(2);
-
       } catch (error) {
         console.error(`Error fetching usage for ${enterpriseAccount.name}:`, error.message);
-        accountStructure.summary.error = error.message;
       }
+
+      // Fallback: If no usage data, fetch teams directly
+      if (enterpriseTeams.length === 0) {
+        console.log(`📋 No usage data, fetching teams directly for ${enterpriseAccount.name}`);
+        try {
+          const allTeams = await getTeams(client);
+          // Filter teams belonging to this enterprise account
+          enterpriseTeams = allTeams.filter(team =>
+            team.type === 'enterprise' &&
+            team.enterprise_account &&
+            team.enterprise_account.id === enterpriseAccount.id
+          );
+          console.log(`✅ Found ${enterpriseTeams.length} enterprise teams via direct fetch`);
+        } catch (error) {
+          console.error(`Error fetching teams directly:`, error.message);
+        }
+      }
+
+      // Process teams
+      if (enterpriseTeams.length === 0) {
+        console.log(`No teams found for ${enterpriseAccount.name}`);
+        allAccountsData.push(accountStructure);
+        continue;
+      }
+
+      accountStructure.summary.totalTeams = enterpriseTeams.length;
+
+      // Build team resources
+      for (const team of enterpriseTeams) {
+        try {
+          const teamResources = parseTeamUsage(team);
+
+          accountStructure.teams.push({
+            id: team.id,
+            name: team.name,
+            type: 'enterprise',
+            enterpriseAccountId: enterpriseAccount.id,
+            enterpriseAccountName: enterpriseAccount.name,
+            resources: teamResources
+          });
+
+          // Update summary
+          accountStructure.summary.totalApps += teamResources.totalApps;
+          accountStructure.summary.totalDynos += teamResources.dynos.count;
+          accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
+          accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
+          accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
+        } catch (error) {
+          console.error(`Error processing team ${team.name}:`, error.message);
+        }
+      }
+
+      accountStructure.summary.totalMonthlyCost = accountStructure.summary.totalMonthlyCost.toFixed(2);
 
       allAccountsData.push(accountStructure);
     }
