@@ -62,18 +62,13 @@ function toNumber(value) {
 // Get enterprise account monthly usage
 async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
   try {
+    const [year, monthNum] = month.split('-');
+
     const response = await client.get(
-      `/enterprise-accounts/${enterpriseAccountId}/usage/monthly`,
-      {
-        params: {
-          start: month,
-          end: month
-        }
-      }
+      `/enterprise-accounts/${enterpriseAccountId}/monthly-usage/${year}/${monthNum}`
     );
 
-    const usageRows = Array.isArray(response.data) ? response.data : [];
-    return usageRows.find(row => row.month === month) || usageRows[0] || null;
+    return response.data;
   } catch (error) {
     console.error(`Error fetching enterprise monthly usage for ${month}:`, error.message);
     throw error;
