@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { calculateMonthlyCost } = require('./herokuService');
 
 const HEROKU_API_BASE = 'https://api.heroku.com';
 
@@ -151,24 +152,7 @@ async function getTeamResourceUsage(client, teamName, teamType = 'team') {
         const appAddons = await client.get(`/apps/${app.id}/addons`);
         appAddons.data.forEach(addon => {
           const addonType = categorizeAddonType(addon.addon_service.name);
-
-          // Handle different price formats from Heroku API
-          let cost = 0;
-          if (addon.plan && addon.plan.price) {
-            if (typeof addon.plan.price === 'number') {
-              cost = addon.plan.price;
-            } else if (addon.plan.price.cents !== undefined) {
-              cost = addon.plan.price.cents / 100;
-            } else if (addon.plan.price.unit !== undefined) {
-              // Some plans have unit pricing
-              cost = parseFloat(addon.plan.price.unit) || 0;
-            }
-          }
-
-          // Log for debugging
-          if (cost === 0 && addon.plan) {
-            console.log(`Zero cost for addon: ${addon.name}, plan: ${addon.plan.name}, price structure:`, JSON.stringify(addon.plan.price));
-          }
+          const cost = calculateMonthlyCost(addon.plan.price);
 
           const addonData = {
             name: addon.name,
@@ -176,8 +160,7 @@ async function getTeamResourceUsage(client, teamName, teamType = 'team') {
             plan: addon.plan.name,
             cost: cost,
             appName: app.name,
-            state: addon.state,
-            priceInfo: addon.plan.price // Include for debugging
+            state: addon.state
           };
 
           if (addonType.isData) {
@@ -267,18 +250,7 @@ async function getEnterpriseStructure() {
           const appAddons = await client.get(`/apps/${app.id}/addons`);
           appAddons.data.forEach(addon => {
             const addonType = categorizeAddonType(addon.addon_service.name);
-
-            // Handle different price formats
-            let cost = 0;
-            if (addon.plan && addon.plan.price) {
-              if (typeof addon.plan.price === 'number') {
-                cost = addon.plan.price;
-              } else if (addon.plan.price.cents !== undefined) {
-                cost = addon.plan.price.cents / 100;
-              } else if (addon.plan.price.unit !== undefined) {
-                cost = parseFloat(addon.plan.price.unit) || 0;
-              }
-            }
+            const cost = calculateMonthlyCost(addon.plan.price);
 
             const addonData = {
               name: addon.name,

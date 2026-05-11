@@ -157,6 +157,36 @@ function categorizeAddon(addonServiceName) {
   return { category: 'other', type: 'Other Service', icon: '🔧' };
 }
 
+// Helper to calculate monthly cost from Heroku pricing
+function calculateMonthlyCost(priceData) {
+  if (!priceData) return 0;
+
+  // Handle different price formats
+  if (typeof priceData === 'number') {
+    return priceData;
+  }
+
+  // If price has cents field (monthly)
+  if (priceData.cents !== undefined) {
+    return priceData.cents / 100;
+  }
+
+  // If price has unit field (could be hourly or monthly)
+  if (priceData.unit !== undefined) {
+    const unit = parseFloat(priceData.unit) || 0;
+
+    // Check if it's an hourly rate (very small numbers like 0.069)
+    // Convert hourly to monthly (730 hours/month average)
+    if (unit > 0 && unit < 1) {
+      return unit * 730; // 730 hours in a month on average
+    }
+
+    return unit;
+  }
+
+  return 0;
+}
+
 async function getAddonUsage() {
   try {
     const apps = await getApps();
@@ -167,12 +197,15 @@ async function getAddonUsage() {
         const appAddons = await herokuClient.get(`/apps/${app.id}/addons`);
         for (const addon of appAddons.data) {
           const categorization = categorizeAddon(addon.addon_service.name);
+          const monthlyCost = calculateMonthlyCost(addon.plan.price);
+
           addons.push({
             appName: app.name,
             name: addon.name,
             addonService: addon.addon_service.name,
             plan: addon.plan.name,
             price: addon.plan.price,
+            monthlyCost: monthlyCost, // Add calculated monthly cost
             state: addon.state,
             createdAt: addon.created_at,
             category: categorization.category,
@@ -186,17 +219,7 @@ async function getAddonUsage() {
     }
 
     const totalMonthlyCost = addons.reduce((sum, addon) => {
-      let cost = 0;
-      if (addon.price) {
-        if (typeof addon.price === 'number') {
-          cost = addon.price;
-        } else if (addon.price.cents !== undefined) {
-          cost = addon.price.cents / 100;
-        } else if (addon.price.unit !== undefined) {
-          cost = parseFloat(addon.price.unit) || 0;
-        }
-      }
-      return sum + cost;
+      return sum + (addon.monthlyCost || 0);
     }, 0);
 
     // Group addons by category
@@ -284,5 +307,6 @@ module.exports = {
   getAddonUsage,
   getConnectUsage,
   getQuotaInfo,
-  categorizeAddon
+  categorizeAddon,
+  calculateMonthlyCost
 };

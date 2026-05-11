@@ -114,8 +114,8 @@ async function getGroupUsage(group) {
     dynoData.usagePercentage = ((dynoData.used / dynoData.limit) * 100).toFixed(2);
     dynoData.remaining = dynoData.limit - dynoData.used;
 
-    // Import categorization function
-    const { categorizeAddon } = require('./herokuService');
+    // Import categorization and pricing functions
+    const { categorizeAddon, calculateMonthlyCost } = require('./herokuService');
 
     // Addon usage
     const addons = [];
@@ -124,12 +124,14 @@ async function getGroupUsage(group) {
         const appAddons = await client.get(`/apps/${app.id}/addons`);
         for (const addon of appAddons.data) {
           const categorization = categorizeAddon(addon.addon_service.name);
+          const monthlyCost = calculateMonthlyCost(addon.plan.price);
           addons.push({
             appName: app.name,
             name: addon.name,
             addonService: addon.addon_service.name,
             plan: addon.plan.name,
             price: addon.plan.price,
+            monthlyCost: monthlyCost,
             state: addon.state,
             createdAt: addon.created_at,
             category: categorization.category,
@@ -143,8 +145,7 @@ async function getGroupUsage(group) {
     }
 
     const totalMonthlyCost = addons.reduce((sum, addon) => {
-      const price = addon.price?.cents || 0;
-      return sum + (price / 100);
+      return sum + (addon.monthlyCost || 0);
     }, 0);
 
     // Group addons by category
@@ -160,7 +161,7 @@ async function getGroupUsage(group) {
       }
       acc[cat].count++;
       acc[cat].addons.push(addon);
-      acc[cat].totalCost += (addon.price?.cents || 0) / 100;
+      acc[cat].totalCost += (addon.monthlyCost || 0);
       return acc;
     }, {});
 
