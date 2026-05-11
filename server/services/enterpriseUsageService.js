@@ -2,10 +2,36 @@ const axios = require('axios');
 
 const HEROKU_API_BASE = 'https://api.heroku.com';
 
+// Simple in-memory cache
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(endpoint, params) {
+  return `${endpoint}-${JSON.stringify(params)}`;
+}
+
+function getFromCache(key) {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key, data) {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
 // Helper to get current month in YYYY-MM format
 function getCurrentMonth() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Add delay between API calls to avoid rate limiting
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Create Heroku client
@@ -96,8 +122,17 @@ function toNumber(value) {
 
 // Get enterprise account monthly usage
 async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
+  const cacheKey = getCacheKey(`enterprise-${enterpriseAccountId}`, { month });
+  const cached = getFromCache(cacheKey);
+  if (cached) {
+    console.log(`✅ Using cached enterprise usage for ${enterpriseAccountId}`);
+    return cached;
+  }
+
   try {
     console.log(`Fetching monthly usage: /enterprise-accounts/${enterpriseAccountId}/usage/monthly?start=${month}&end=${month}`);
+
+    await delay(100); // Small delay to avoid rate limiting
 
     const response = await client.get(
       `/enterprise-accounts/${enterpriseAccountId}/usage/monthly`,
@@ -109,6 +144,7 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
       }
     );
 
+    setCache(cacheKey, response.data);
     return response.data;
   } catch (error) {
     console.error(`Error fetching enterprise monthly usage for ${month}:`, error.message);
@@ -118,6 +154,11 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
     if (error.response?.status === 404) {
       console.error('404 Error: Either the enterprise account does not exist, or there is no usage data for this month.');
       return null; // Return null instead of throwing
+    }
+
+    if (error.response?.status === 429) {
+      console.error('⚠️ Rate limit hit! Too many API calls.');
+      throw new Error('Rate limit exceeded. Please wait a moment and try again.');
     }
 
     throw error;
@@ -350,51 +391,10 @@ async function getAllEnterpriseAccountsStructure(month) {
         console.error(`Error fetching usage for ${enterpriseAccount.name}:`, error.message);
       }
 
-      // Fallback: If no usage data, fetch teams directly and get individual team usage
+      // Fallback: If no usage data, fetch teams directly (but don't fetch individual team usage to avoid rate limits)
       if (enterpriseTeams.length === 0) {
-        console.log(`📋 No usage data, fetching teams directly for ${enterpriseAccount.name}`);
-        try {
-          const allTeams = await getTeams(client);
-          // Filter teams belonging to this enterprise account
-          const filteredTeams = allTeams.filter(team =>
-            team.type === 'enterprise' &&
-            team.enterprise_account &&
-            team.enterprise_account.id === enterpriseAccount.id
-          );
-          console.log(`✅ Found ${filteredTeams.length} enterprise teams via direct fetch`);
-
-          // Fetch individual team monthly usage for each team
-          for (const team of filteredTeams) {
-            try {
-              const teamUsageResponse = await getTeamMonthlyUsage(client, team.id, targetMonth);
-              if (teamUsageResponse && Array.isArray(teamUsageResponse)) {
-                // /usage/monthly returns array of months
-                const monthData = teamUsageResponse[0];
-                if (monthData) {
-                  // Merge team metadata with usage data
-                  enterpriseTeams.push({
-                    ...team,
-                    ...monthData
-                  });
-                  console.log(`  ✅ Got usage data for team: ${team.name}`);
-                } else {
-                  enterpriseTeams.push(team);
-                  console.log(`  ⚠️  No usage data for team: ${team.name}`);
-                }
-              } else {
-                // No usage data but include team anyway
-                enterpriseTeams.push(team);
-                console.log(`  ⚠️  No usage data for team: ${team.name}`);
-              }
-            } catch (error) {
-              console.error(`  ❌ Error fetching usage for team ${team.name}:`, error.message);
-              // Include team without usage data
-              enterpriseTeams.push(team);
-            }
-          }
-        } catch (error) {
-          console.error(`Error fetching teams directly:`, error.message);
-        }
+        console.log(`📋 No usage data found for ${enterpriseAccount.name} - skipping team-level calls to avoid rate limits`);
+        console.log(`⚠️  To see data, ensure usage exists for ${targetMonth} or try a different month`);
       }
 
       // Process teams

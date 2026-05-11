@@ -12,6 +12,7 @@ function EnterpriseView({ selectedMonth }) {
   const [accounts, setAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
+  const [showDailyUsage, setShowDailyUsage] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -228,6 +229,13 @@ function EnterpriseView({ selectedMonth }) {
           </div>
         </div>
         <div className="summary-card">
+          <div className="summary-icon">🔌</div>
+          <div className="summary-content">
+            <div className="summary-value">{formatUsage(summaryData.totalConnect)}</div>
+            <div className="summary-label">Connect Usage</div>
+          </div>
+        </div>
+        <div className="summary-card">
           <div className="summary-icon">💾</div>
           <div className="summary-content">
             <div className="summary-value">{formatUsage(summaryData.totalDataAddons)}</div>
@@ -281,6 +289,10 @@ function EnterpriseView({ selectedMonth }) {
                   <div className="stat-row">
                     <span className="stat-label">⚡ Dynos Usage</span>
                     <span className="stat-value">{formatUsage(resources.dynos.count)}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">🔌 Connect Usage</span>
+                    <span className="stat-value">{formatUsage(resources.connect.used)}</span>
                   </div>
                   <div className="stat-row">
                     <span className="stat-label">💾 Data Add-ons Usage</span>
