@@ -10,6 +10,7 @@ const herokuService = require('./services/herokuService');
 const notificationService = require('./services/notificationService');
 const usageMonitor = require('./services/usageMonitor');
 const multiGroupService = require('./services/multiGroupService');
+const enterpriseService = require('./services/enterpriseService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -139,6 +140,27 @@ app.get('/api/groups/all/usage', async (req, res) => {
     res.json(allUsage);
   } catch (error) {
     console.error('Error fetching all groups usage:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Enterprise endpoints
+app.get('/api/enterprise/structure', async (req, res) => {
+  try {
+    const structure = await enterpriseService.getEnterpriseStructure();
+    res.json(structure);
+  } catch (error) {
+    console.error('Error fetching enterprise structure:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/enterprise/teams', async (req, res) => {
+  try {
+    const teams = await enterpriseService.getTeams();
+    res.json(teams);
+  } catch (error) {
+    console.error('Error fetching teams:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

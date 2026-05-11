@@ -3,6 +3,7 @@ import axios from 'axios';
 import Dashboard from './components/Dashboard';
 import GroupSelector from './components/GroupSelector';
 import MultiGroupDashboard from './components/MultiGroupDashboard';
+import EnterpriseView from './components/EnterpriseView';
 import './App.css';
 
 function App() {
@@ -17,6 +18,9 @@ function App() {
   const [showAllGroups, setShowAllGroups] = useState(false);
   const [allGroupsData, setAllGroupsData] = useState([]);
   const [multiGroupMode, setMultiGroupMode] = useState(false);
+
+  // View mode: 'dashboard', 'enterprise'
+  const [viewMode, setViewMode] = useState('dashboard');
 
   // Fetch available groups
   const fetchGroups = async () => {
@@ -97,12 +101,30 @@ function App() {
       <header className="App-header">
         <h1>🚀 Heroku Usage Tracker</h1>
         <div className="header-actions">
-          <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
-            {loading ? '⏳ Loading...' : '🔄 Refresh'}
-          </button>
-          <button onClick={handleTestNotification} className="btn btn-secondary">
-            📧 Test Notification
-          </button>
+          <div className="view-mode-toggle">
+            <button
+              className={`view-btn ${viewMode === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setViewMode('dashboard')}
+            >
+              📊 Dashboard
+            </button>
+            <button
+              className={`view-btn ${viewMode === 'enterprise' ? 'active' : ''}`}
+              onClick={() => setViewMode('enterprise')}
+            >
+              🏢 Enterprise
+            </button>
+          </div>
+          {viewMode === 'dashboard' && (
+            <>
+              <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
+                {loading ? '⏳ Loading...' : '🔄 Refresh'}
+              </button>
+              <button onClick={handleTestNotification} className="btn btn-secondary">
+                📧 Test Notification
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -119,26 +141,32 @@ function App() {
         </div>
       )}
 
-      {multiGroupMode && groups.length > 0 && (
-        <GroupSelector
-          groups={groups}
-          selectedGroup={selectedGroup}
-          onGroupChange={setSelectedGroup}
-          showAllGroups={showAllGroups}
-          onShowAllToggle={setShowAllGroups}
-        />
-      )}
+      {viewMode === 'enterprise' ? (
+        <EnterpriseView />
+      ) : (
+        <>
+          {multiGroupMode && groups.length > 0 && (
+            <GroupSelector
+              groups={groups}
+              selectedGroup={selectedGroup}
+              onGroupChange={setSelectedGroup}
+              showAllGroups={showAllGroups}
+              onShowAllToggle={setShowAllGroups}
+            />
+          )}
 
-      {loading && !usageData && !allGroupsData.length ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading usage data...</p>
-        </div>
-      ) : showAllGroups && allGroupsData.length > 0 ? (
-        <MultiGroupDashboard groupsData={allGroupsData} />
-      ) : usageData ? (
-        <Dashboard data={usageData} />
-      ) : null}
+          {loading && !usageData && !allGroupsData.length ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Loading usage data...</p>
+            </div>
+          ) : showAllGroups && allGroupsData.length > 0 ? (
+            <MultiGroupDashboard groupsData={allGroupsData} />
+          ) : usageData ? (
+            <Dashboard data={usageData} />
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
