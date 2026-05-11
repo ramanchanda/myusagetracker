@@ -64,6 +64,8 @@ async function getEnterpriseAccount(client) {
 // Get enterprise account daily usage
 async function getEnterpriseDailyUsage(client, enterpriseAccountId, startDate, endDate) {
   try {
+    console.log(`Fetching daily usage: /enterprise-accounts/${enterpriseAccountId}/daily-usage?start=${startDate}&end=${endDate}`);
+
     const response = await client.get(
       `/enterprise-accounts/${enterpriseAccountId}/daily-usage`,
       {
@@ -77,6 +79,13 @@ async function getEnterpriseDailyUsage(client, enterpriseAccountId, startDate, e
     return response.data;
   } catch (error) {
     console.error(`Error fetching enterprise daily usage:`, error.message);
+    console.error(`Date range: ${startDate} to ${endDate}`);
+
+    if (error.response?.status === 404) {
+      console.error('404 Error: No daily usage data found for this date range.');
+      return []; // Return empty array instead of throwing
+    }
+
     throw error;
   }
 }

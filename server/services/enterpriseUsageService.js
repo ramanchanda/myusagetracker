@@ -36,20 +36,29 @@ async function getEnterpriseAccount(client) {
   try {
     const configuredEnterpriseId = process.env.ENTERPRISE_ACCOUNT_ID_OR_NAME;
     if (configuredEnterpriseId) {
+      console.log(`Using configured enterprise account: ${configuredEnterpriseId}`);
       const configuredResponse = await client.get(`/enterprise-accounts/${configuredEnterpriseId}`);
       return configuredResponse.data;
     }
 
     // Otherwise, resolve from the list of enterprise accounts
+    console.log('Fetching enterprise accounts list...');
     const response = await client.get('/enterprise-accounts');
 
+    console.log(`Found ${response.data?.length || 0} enterprise account(s)`);
+
     if (response.data && response.data.length > 0) {
-      return response.data[0]; // Return first enterprise account
+      const account = response.data[0];
+      console.log(`Using enterprise account: ${account.name} (${account.id})`);
+      return account;
     }
 
+    console.error('No enterprise accounts found. This account may not have enterprise access.');
     return null;
   } catch (error) {
     console.error('Error fetching enterprise account:', error.message);
+    console.error('Status:', error.response?.status);
+    console.error('This may indicate no enterprise subscription or insufficient permissions.');
     return null;
   }
 }
@@ -64,6 +73,8 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
   try {
     const [year, monthNum] = month.split('-');
 
+    console.log(`Fetching monthly usage: /enterprise-accounts/${enterpriseAccountId}/monthly-usage/${year}/${monthNum}`);
+
     const response = await client.get(
       `/enterprise-accounts/${enterpriseAccountId}/monthly-usage/${year}/${monthNum}`
     );
@@ -71,6 +82,14 @@ async function getEnterpriseMonthlyUsage(client, enterpriseAccountId, month) {
     return response.data;
   } catch (error) {
     console.error(`Error fetching enterprise monthly usage for ${month}:`, error.message);
+    console.error(`Enterprise Account ID: ${enterpriseAccountId}`);
+    console.error(`Full URL attempted: /enterprise-accounts/${enterpriseAccountId}/monthly-usage/${month.split('-')[0]}/${month.split('-')[1]}`);
+
+    if (error.response?.status === 404) {
+      console.error('404 Error: Either the enterprise account does not exist, or there is no usage data for this month.');
+      return null; // Return null instead of throwing
+    }
+
     throw error;
   }
 }
@@ -252,13 +271,20 @@ async function getEnterpriseStructure(month) {
     };
 
     // Get enterprise-level monthly usage
+    console.log(`Fetching enterprise usage for month: ${targetMonth}`);
     const enterpriseUsage = await getEnterpriseMonthlyUsage(
       client,
       enterpriseAccount.id,
       targetMonth
     );
 
-    if (!enterpriseUsage || !Array.isArray(enterpriseUsage.teams)) {
+    if (!enterpriseUsage) {
+      console.log(`No usage data found for ${targetMonth}. Returning empty structure.`);
+      return structure;
+    }
+
+    if (!Array.isArray(enterpriseUsage.teams)) {
+      console.log('No teams data in enterprise usage response');
       return structure;
     }
 
