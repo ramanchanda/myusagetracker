@@ -400,6 +400,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <th>Dyno Units</th>
                       <th>Data Add-ons</th>
                       <th>General Add-ons</th>
+                      <th>Private Spaces</th>
+                      <th>Shield Spaces</th>
                       <th>Total</th>
                     </tr>
                   </thead>
@@ -410,6 +412,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(day.dynoCost)}</td>
                         <td>{formatUsage(day.dataCost)}</td>
                         <td>{formatUsage(day.otherCost)}</td>
+                        <td>{formatCount(dailyReport.spaceSummary?.privateSpaces)}</td>
+                        <td>{formatCount(dailyReport.spaceSummary?.shieldSpaces)}</td>
                         <td>{formatUsage(day.totalCost)}</td>
                       </tr>
                     ))}
@@ -428,8 +432,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <th>Connect Rows</th>
                       <th>Data Add-ons</th>
                       <th>General Add-ons</th>
-                      <th>Private Spaces</th>
-                      <th>Shield Spaces</th>
+                      <th>App in Private Spaces</th>
+                      <th>App in Shield Spaces</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -442,8 +446,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(row.connectRows)}</td>
                         <td>{formatUsage(row.dataAddons)}</td>
                         <td>{formatUsage(row.generalAddons)}</td>
-                        <td>{formatCount(row.privateSpaces)}</td>
-                        <td>{formatCount(row.shieldSpaces)}</td>
+                        <td>{Number(row.privateSpaces) > 0 ? 'Yes' : 'No'}</td>
+                        <td>{Number(row.shieldSpaces) > 0 ? 'Yes' : 'No'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -613,6 +617,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <span className="stat-label"><PostgresIcon className="inline-stat-icon" /> Data Add-ons</span>
                         <span className="stat-value">{formatUsage(resources.dataAddons.count)}</span>
                       </div>
+                    <div className="stat-row">
+                      <span className="stat-label"><EnterpriseIcon className="inline-stat-icon" /> Private Spaces</span>
+                      <span className="stat-value">{formatCount(resources.privateSpaces)}</span>
+                    </div>
+                    <div className="stat-row">
+                      <span className="stat-label"><EnterpriseIcon className="inline-stat-icon" /> Shield Spaces</span>
+                      <span className="stat-value">{formatCount(resources.shieldSpaces)}</span>
+                    </div>
                       <div className="stat-row last">
                         <span className="stat-label"><AddonsIcon className="inline-stat-icon" /> General Add-ons Usage</span>
                         <span className="stat-value">{formatUsage(resources.otherAddons.count)}</span>
@@ -642,6 +654,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                           <div className="team-detail-item">
                             <span className="detail-label">General Add-ons Usage</span>
                             <span className="detail-value">{formatUsage(resources.otherAddons.count)}</span>
+                          </div>
+                          <div className="team-detail-item">
+                            <span className="detail-label">Private Spaces</span>
+                            <span className="detail-value">{formatCount(resources.privateSpaces)}</span>
+                          </div>
+                          <div className="team-detail-item">
+                            <span className="detail-label">Shield Spaces</span>
+                            <span className="detail-value">{formatCount(resources.shieldSpaces)}</span>
                           </div>
                         </div>
 

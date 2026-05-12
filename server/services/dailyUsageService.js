@@ -269,6 +269,10 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
       dateRange: dateRange,
       dailyUsage: null,
       teams: [],
+      spaceSummary: {
+        privateSpaces: 0,
+        shieldSpaces: 0
+      },
       dailyBreakdown: []
     };
 
@@ -297,6 +301,11 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
         shieldSpaces: spaces.filter(space => Boolean(space.shield)).length
       });
     }
+
+    structure.spaceSummary = Array.from(teamSpaceMap.values()).reduce((acc, item) => ({
+      privateSpaces: acc.privateSpaces + item.privateSpaces,
+      shieldSpaces: acc.shieldSpaces + item.shieldSpaces
+    }), { privateSpaces: 0, shieldSpaces: 0 });
 
     // Build team daily usage from enterprise payload directly
     const teamMap = new Map();

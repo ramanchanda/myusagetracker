@@ -551,6 +551,9 @@ async function getAllEnterpriseAccountsStructure(month) {
       for (const team of mergedTeams) {
         try {
           const teamResources = parseTeamUsage(team);
+          const teamSpaces = await getTeamSpaces(client, team.id);
+          teamResources.privateSpaces = teamSpaces.length;
+          teamResources.shieldSpaces = teamSpaces.filter(space => Boolean(space.shield)).length;
 
           accountStructure.teams.push({
             id: team.id,
