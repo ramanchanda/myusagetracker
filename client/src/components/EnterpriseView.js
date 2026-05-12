@@ -362,22 +362,85 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
               </div>
 
               <h3 className="summary12-subtitle">12-Month Resource Breakdown</h3>
-              <div className="trend-chart-wrap summary12-chart">
-                <ResponsiveContainer width="100%" height={340}>
-                  <BarChart data={trendSummary.monthly}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="dynoUnits" fill="#6f42c1" name="Dyno Units" />
-                    <Bar dataKey="connectRows" fill="#0ea5e9" name="Connect Rows" />
-                    <Bar dataKey="dataAddons" fill="#22c55e" name="Data Add-ons" />
-                    <Bar dataKey="generalAddons" fill="#f97316" name="General Add-ons" />
-                    <Bar dataKey="privateSpaces" fill="#3b82f6" name="Private Spaces" />
-                    <Bar dataKey="shieldSpaces" fill="#f59e0b" name="Shield Spaces" />
-                  </BarChart>
-                </ResponsiveContainer>
+
+              <div className="resource-charts-grid">
+                <div className="resource-chart-item">
+                  <h4>Dyno Units</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={trendSummary.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="dynoUnits" fill="#6f42c1" name="Dyno Units" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="resource-chart-item">
+                  <h4>Connect Rows</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={trendSummary.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="connectRows" fill="#0ea5e9" name="Connect Rows" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="resource-chart-item">
+                  <h4>Data Add-ons</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={trendSummary.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="dataAddons" fill="#22c55e" name="Data Add-ons" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="resource-chart-item">
+                  <h4>General Add-ons</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={trendSummary.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="generalAddons" fill="#f97316" name="General Add-ons" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="resource-chart-item">
+                  <h4>Private Spaces</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={trendSummary.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="privateSpaces" fill="#3b82f6" name="Private Spaces" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="resource-chart-item">
+                  <h4>Shield Spaces</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={trendSummary.monthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="shieldSpaces" fill="#f59e0b" name="Shield Spaces" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </>
           ) : (
