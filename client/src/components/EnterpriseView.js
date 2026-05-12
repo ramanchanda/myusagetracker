@@ -222,7 +222,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       accountName: structure.enterpriseAccount?.name
     }));
 
-    if (structure.enterpriseAccount && !structure.enterpriseAccount.has_billing_access) {
+    if (structure.enterpriseAccount && !structure.enterpriseAccount.has_billing_access && structure.enterpriseAccount.billing_status === 403) {
       billingRestrictions.push(structure.enterpriseAccount);
     }
   }
