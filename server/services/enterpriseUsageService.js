@@ -445,9 +445,8 @@ async function getAllEnterpriseAccountsStructure(month) {
         continue;
       }
 
-      // Get enterprise-level monthly usage for selected month and historical range
+      // Get enterprise-level monthly usage for selected month ONLY
       let selectedMonthTeams = [];
-      let historicalTeams = [];
 
       try {
         const enterpriseUsage = await getEnterpriseMonthlyUsage(
@@ -461,158 +460,58 @@ async function getAllEnterpriseAccountsStructure(month) {
           : (enterpriseUsage ? [enterpriseUsage] : []);
         const selectedMonthData = usageRows.find(row => row.month === targetMonth) || usageRows[0];
         selectedMonthTeams = Array.isArray(selectedMonthData?.teams) ? selectedMonthData.teams : [];
-        console.log(`✅ Found ${selectedMonthTeams.length} teams with selected-month usage data`);
-
-        // Use a wider month range to surface inactive teams (zero usage for selected month).
-        const historicalStartMonth = shiftMonth(targetMonth, -11);
-        const historicalUsage = await getEnterpriseMonthlyUsage(
-          client,
-          enterpriseAccount.id,
-          historicalStartMonth,
-          targetMonth
-        );
-        const historicalRows = Array.isArray(historicalUsage)
-          ? historicalUsage
-          : (historicalUsage ? [historicalUsage] : []);
-
-        const historicalById = new Map();
-        historicalRows.forEach(row => {
-          (row.teams || []).forEach(team => {
-            if (team?.id && !historicalById.has(team.id)) {
-              historicalById.set(team.id, team);
-            }
-          });
-        });
-        historicalTeams = Array.from(historicalById.values());
-        console.log(`✅ Found ${historicalTeams.length} unique teams in last 12 months`);
+        console.log(`✅ Found ${selectedMonthTeams.length} teams with usage in ${targetMonth}`);
       } catch (error) {
         console.error(`Error fetching usage for ${enterpriseAccount.name}:`, error.message);
       }
 
-      // Fallback notice: usage can still be empty for a new or restricted account.
-      if (selectedMonthTeams.length === 0 && historicalTeams.length === 0) {
-        console.log(`📋 No usage data found for ${enterpriseAccount.name} in selected/historical range`);
-        console.log(`⚠️  To see data, ensure usage exists for ${targetMonth} or try a different month`);
-      }
-
-      // Get canonical team list for this account and merge usage teams onto it.
-      // This ensures team counts are accurate even when usage payload omits zero-usage teams.
-      const canonicalTeams = await getEnterpriseAccountTeams(client, enterpriseAccount.id);
-      const usageByTeamId = new Map(
-        selectedMonthTeams
-          .filter(team => team && team.id)
-          .map(team => [team.id, team])
-      );
-      const historicalByTeamId = new Map(
-        historicalTeams
-          .filter(team => team && team.id)
-          .map(team => [team.id, team])
-      );
-
-      // Build a union of canonical teams + usage teams.
-      // Canonical /teams can be permission-scoped (member-only), while usage teams can include more.
-      const canonicalById = new Map(
-        canonicalTeams
-          .filter(team => team && team.id)
-          .map(team => [team.id, team])
-      );
-      const allTeamIds = new Set([
-        ...Array.from(canonicalById.keys()),
-        ...Array.from(historicalByTeamId.keys()),
-        ...Array.from(usageByTeamId.keys())
-      ]);
-
-      const mergedTeams = Array.from(allTeamIds).map(teamId => {
-        const canonicalTeam = canonicalById.get(teamId) || {};
-        const historicalTeam = historicalByTeamId.get(teamId) || {};
-        const usageTeam = usageByTeamId.get(teamId) || {};
-        const hasDirectAccess = canonicalById.has(teamId);
-
-        return {
-          id: teamId,
-          name: usageTeam.name || historicalTeam.name || canonicalTeam.name || 'Unknown Team',
-          type: canonicalTeam.type || usageTeam.type || historicalTeam.type || 'enterprise',
-          hasDirectAccess,
-          ...usageTeam
-        };
-      });
-
-      if (mergedTeams.length === 0) {
-        console.log(`No teams found for ${enterpriseAccount.name}`);
+      if (selectedMonthTeams.length === 0) {
+        console.log(`📋 No usage data found for ${enterpriseAccount.name} in ${targetMonth}`);
         allAccountsData.push(accountStructure);
         continue;
       }
 
-      accountStructure.summary.totalTeams = mergedTeams.length;
-      accountStructure.summary.totalActiveTeams = canonicalTeams.length;
-      const spacesSummary = await getEnterpriseSpacesSummary(client, mergedTeams);
-      accountStructure.summary.totalPrivateSpaces = spacesSummary.totalPrivateSpaces;
-      accountStructure.summary.totalShieldSpaces = spacesSummary.totalShieldSpaces;
+      // Use only teams from monthly usage API (teams with actual usage)
+      const teamsWithUsage = selectedMonthTeams
+        .filter(team => team && team.id)
+        .map(team => ({
+          id: team.id,
+          name: team.name || 'Unknown Team',
+          type: team.type || 'enterprise',
+          ...team
+        }));
 
-      // Build team resources
-      for (const team of mergedTeams) {
+      accountStructure.summary.totalTeams = teamsWithUsage.length;
+      accountStructure.summary.totalActiveTeams = teamsWithUsage.length;
+
+      // Build team resources from usage data only
+      for (const team of teamsWithUsage) {
         try {
           const teamResources = parseTeamUsage(team);
-          const teamSpaces = await getTeamSpaces(client, team.id);
-          const shieldSpaces = teamSpaces.filter(space => Boolean(space.shield));
-          const privateSpaces = teamSpaces.filter(space => !Boolean(space.shield));
-          teamResources.privateSpaces = privateSpaces.length;
-          teamResources.shieldSpaces = shieldSpaces.length;
 
-          // Fetch actual team apps to determine space assignments
-          const teamApps = await getTeamApps(client, team.id);
-          // Monthly usage payload may omit zero-usage apps; use canonical team app list for count.
-          teamResources.totalApps = Math.max(teamResources.totalApps || 0, teamApps.length);
+          // Apps come directly from usage API (only apps with usage)
+          const appsFromUsage = (team.apps || []).map(app => ({
+            name: app.app_name || app.name || 'Unknown App',
+            dynos: toNumber(app.dynos),
+            connect: toNumber(app.connect),
+            dataAddons: toNumber(app.data),
+            generalAddons: Math.max(toNumber(app.addons) - toNumber(app.data), toNumber(app.partner), 0),
+            total: toNumber(app.dynos) + toNumber(app.addons) + toNumber(app.connect)
+          })).sort((a, b) => b.total - a.total);
+
+          teamResources.appsUsage = appsFromUsage;
+          teamResources.totalApps = appsFromUsage.length;
+
+          // Space info from usage data (aggregated, not per-team)
+          teamResources.privateSpaces = 0;
+          teamResources.shieldSpaces = 0;
           teamResources.appsInPrivateSpaces = 0;
           teamResources.appsInShieldSpaces = 0;
-
-          // Create a map of existing apps from usage data
-          const appsUsageMap = new Map();
-          (teamResources.appsUsage || []).forEach(app => {
-            appsUsageMap.set(app.name, app);
-          });
-
-          // Merge all team apps with their usage data (if any)
-          const allAppsWithUsage = teamApps.map(app => {
-            const existingUsage = appsUsageMap.get(app.name);
-
-            // Check space assignment
-            let isInPrivateSpace = false;
-            let isInShieldSpace = false;
-            if (app.space) {
-              const appSpace = teamSpaces.find(space => space.name === app.space.name || space.id === app.space.id);
-              if (appSpace) {
-                if (appSpace.shield) {
-                  isInShieldSpace = true;
-                  teamResources.appsInShieldSpaces++;
-                } else {
-                  isInPrivateSpace = true;
-                  teamResources.appsInPrivateSpaces++;
-                }
-              }
-            }
-
-            return {
-              name: app.name,
-              dynos: existingUsage?.dynos || 0,
-              connect: existingUsage?.connect || 0,
-              dataAddons: existingUsage?.dataAddons || 0,
-              generalAddons: existingUsage?.generalAddons || 0,
-              total: existingUsage?.total || 0,
-              isInPrivateSpace,
-              isInShieldSpace
-            };
-          }).sort((a, b) => b.total - a.total);
-
-          // Replace appsUsage with complete list
-          teamResources.appsUsage = allAppsWithUsage;
 
           accountStructure.teams.push({
             id: team.id,
             name: team.name,
             type: 'enterprise',
-            hasDirectAccess: Boolean(team.hasDirectAccess),
-            hasUsageInSelectedMonth: Boolean(team.dynos || team.addons || team.connect || team.data || team.partner || team.space),
             enterpriseAccountId: enterpriseAccount.id,
             enterpriseAccountName: enterpriseAccount.name,
             resources: teamResources
@@ -629,6 +528,10 @@ async function getAllEnterpriseAccountsStructure(month) {
           console.error(`Error processing team ${team.name}:`, error.message);
         }
       }
+
+      // Get space summary for the entire account (not per-team)
+      accountStructure.summary.totalPrivateSpaces = 0;
+      accountStructure.summary.totalShieldSpaces = 0;
 
       accountStructure.summary.totalMonthlyCost = accountStructure.summary.totalMonthlyCost.toFixed(2);
 
