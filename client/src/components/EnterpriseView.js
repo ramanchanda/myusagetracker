@@ -107,19 +107,18 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   }, [accounts, reportView, fetchTrendSummary]);
 
   const fetchDailyReport = useCallback(async () => {
+    if (!dailyStartDate || !dailyEndDate) {
+      setDailyReport(null);
+      return;
+    }
+
     try {
       setDailyLoading(true);
       const params = {
-        accountId: selectedAccountId
+        accountId: selectedAccountId,
+        start: dailyStartDate,
+        end: dailyEndDate
       };
-
-      // Use custom date range if provided, otherwise use selected month
-      if (dailyStartDate && dailyEndDate) {
-        params.start = dailyStartDate;
-        params.end = dailyEndDate;
-      } else {
-        params.month = selectedMonth;
-      }
 
       const response = await axios.get('/api/enterprise/daily-usage', { params });
       setDailyReport(response.data);
@@ -129,13 +128,15 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     } finally {
       setDailyLoading(false);
     }
-  }, [selectedMonth, selectedAccountId, dailyStartDate, dailyEndDate]);
+  }, [selectedAccountId, dailyStartDate, dailyEndDate]);
 
   useEffect(() => {
-    if (accounts.length > 0 && reportView === 'daily') {
-      fetchDailyReport();
+    if (reportView === 'daily') {
+      setDailyReport(null);
+      setDailyStartDate('');
+      setDailyEndDate('');
     }
-  }, [accounts, reportView, fetchDailyReport]);
+  }, [reportView]);
 
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -451,12 +452,18 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   </thead>
                   <tbody>
                     {groupedDailyBreakdown.map((row, idx) => (
-                      <tr key={`${row.date}-${row.teamName}-${row.appName}-${idx}`}>
+                      <tr
+                        key={`${row.date}-${row.teamName}-${row.appName}-${idx}`}
+                        className={[
+                          row.showDate ? 'date-group-start' : '',
+                          row.showTeam ? 'team-group-start' : ''
+                        ].filter(Boolean).join(' ')}
+                      >
                         <td className={row.showDate ? 'group-value' : 'group-continued'}>
-                          {row.showDate ? row.date : ''}
+                          {row.showDate ? <span className="group-pill date">{row.date}</span> : ''}
                         </td>
                         <td className={row.showTeam ? 'group-value' : 'group-continued'}>
-                          {row.showTeam ? row.teamName : ''}
+                          {row.showTeam ? <span className="group-pill team">{row.teamName}</span> : ''}
                         </td>
                         <td>{row.appName}</td>
                         <td>{formatUsage(row.dynoUnits)}</td>
@@ -472,7 +479,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
               </div>
             </>
           ) : (
-            <p className="trend-loading">No daily datewise data available for selected month.</p>
+            <p className="trend-loading">
+              {dailyStartDate && dailyEndDate
+                ? 'No daily datewise data available for the selected range.'
+                : 'Select From and To dates, then click Fetch Data.'}
+            </p>
           )}
         </div>
       )}

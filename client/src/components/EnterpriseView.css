@@ -159,6 +159,36 @@
   user-select: none;
 }
 
+.daily-table tbody tr.date-group-start td {
+  border-top: 2px solid #d8c7fb;
+  background: linear-gradient(180deg, #fcfaff 0%, #ffffff 100%);
+}
+
+.daily-table tbody tr.team-group-start:not(.date-group-start) td {
+  border-top: 1px dashed #e4d8fb;
+  background: #fdfcff;
+}
+
+.group-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.group-pill.date {
+  background: #ece3ff;
+  color: #4c1d95;
+}
+
+.group-pill.team {
+  background: #e0ecff;
+  color: #1d4ed8;
+}
+
 .daily-table th {
   background: #f8f5ff;
   color: #4b5563;

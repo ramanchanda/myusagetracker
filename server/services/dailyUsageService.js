@@ -126,6 +126,16 @@ async function getTeamSpaces(client, teamId) {
   }
 }
 
+async function getTeamApps(client, teamId) {
+  try {
+    const response = await client.get(`/teams/${teamId}/apps`);
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error(`Error fetching apps for team ${teamId}:`, error.message);
+    return [];
+  }
+}
+
 // Get app daily usage
 async function getAppDailyUsage(client, appId, startDate, endDate) {
   try {
@@ -294,12 +304,25 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
     });
 
     const teamSpaceMap = new Map();
+    const teamAppSpaceMap = new Map();
     for (const teamId of uniqueTeamIds) {
       const spaces = await getTeamSpaces(client, teamId);
       teamSpaceMap.set(teamId, {
         privateSpaces: spaces.length,
         shieldSpaces: spaces.filter(space => Boolean(space.shield)).length
       });
+
+      const appSpaceByName = new Map();
+      const apps = await getTeamApps(client, teamId);
+      apps.forEach(app => {
+        const appName = app.name;
+        const appSpace = app.space || null;
+        appSpaceByName.set(appName, {
+          inPrivateSpace: Boolean(appSpace),
+          inShieldSpace: Boolean(appSpace?.shield)
+        });
+      });
+      teamAppSpaceMap.set(teamId, appSpaceByName);
     }
 
     structure.spaceSummary = Array.from(teamSpaceMap.values()).reduce((acc, item) => ({
@@ -355,16 +378,22 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
         }
 
         apps.forEach(app => {
+          const appName = app.app_name || app.name || '-';
+          const appSpaceFlags = (teamAppSpaceMap.get(team.id) || new Map()).get(appName) || {
+            inPrivateSpace: false,
+            inShieldSpace: false
+          };
+
           structure.dailyBreakdown.push({
             date: day.date,
             teamName: team.name || '-',
-            appName: app.app_name || app.name || '-',
+            appName,
             dynoUnits: Number(app.dynos || 0),
             connectRows: Number(app.connect || 0),
             dataAddons: Number(app.data || 0),
             generalAddons: Math.max(Number(app.addons || 0) - Number(app.data || 0), Number(app.partner || 0), 0),
-            privateSpaces: spaceInfo.privateSpaces,
-            shieldSpaces: spaceInfo.shieldSpaces
+            privateSpaces: appSpaceFlags.inPrivateSpace ? 1 : 0,
+            shieldSpaces: appSpaceFlags.inShieldSpace ? 1 : 0
           });
         });
       });
