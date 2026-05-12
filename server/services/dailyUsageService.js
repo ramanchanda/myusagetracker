@@ -48,8 +48,13 @@ async function getAccountInfo(client) {
 }
 
 // Get enterprise account
-async function getEnterpriseAccount(client) {
+async function getEnterpriseAccount(client, enterpriseAccountId) {
   try {
+    if (enterpriseAccountId) {
+      const singleResponse = await client.get(`/enterprise-accounts/${enterpriseAccountId}`);
+      return singleResponse.data;
+    }
+
     const response = await client.get('/enterprise-accounts');
     if (response.data && response.data.length > 0) {
       return response.data[0];
@@ -223,12 +228,12 @@ function parseDailyUsage(dailyUsageData) {
 }
 
 // Get enterprise daily usage structure
-async function getEnterpriseDailyUsageStructure(month) {
+async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId) {
   const client = createHerokuClient();
 
   try {
     const account = await getAccountInfo(client);
-    const enterpriseAccount = await getEnterpriseAccount(client);
+    const enterpriseAccount = await getEnterpriseAccount(client, enterpriseAccountId);
 
     if (!enterpriseAccount) {
       throw new Error('No enterprise account found');

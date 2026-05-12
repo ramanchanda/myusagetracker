@@ -120,6 +120,37 @@
   color: #6b7280;
 }
 
+.daily-table-wrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid #ece4fb;
+  border-radius: 10px;
+}
+
+.daily-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+  font-size: 0.82rem;
+}
+
+.daily-table th,
+.daily-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f1ebff;
+  text-align: left;
+}
+
+.daily-table th {
+  background: #f8f5ff;
+  color: #4b5563;
+  font-weight: 700;
+}
+
+.daily-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 /* Overall Summary */
 .overall-summary {
   display: grid;

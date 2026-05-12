@@ -241,7 +241,8 @@ app.get('/api/enterprise/account', async (req, res) => {
 app.get('/api/enterprise/daily-usage', async (req, res) => {
   try {
     const month = req.query.month;
-    const structure = await dailyUsageService.getEnterpriseDailyUsageStructure(month);
+    const enterpriseAccountId = req.query.accountId;
+    const structure = await dailyUsageService.getEnterpriseDailyUsageStructure(month, enterpriseAccountId);
     res.json(structure);
   } catch (error) {
     console.error('Error fetching enterprise daily usage:', error.message);

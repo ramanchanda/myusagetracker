@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import EnterpriseAccountSelector from './EnterpriseAccountSelector';
 import {
   EnterpriseIcon,
@@ -12,7 +12,7 @@ import {
 } from './HerokuIcons';
 import './EnterpriseView.css';
 
-function EnterpriseView({ selectedMonth }) {
+function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
   const [structure, setStructure] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,9 +21,10 @@ function EnterpriseView({ selectedMonth }) {
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [showAllTeamsInAccount, setShowAllTeamsInAccount] = useState(false);
   const [expandedTeams, setExpandedTeams] = useState({});
-  const [reportView, setReportView] = useState('summary12');
   const [trendSummary, setTrendSummary] = useState(null);
   const [trendLoading, setTrendLoading] = useState(false);
+  const [dailyReport, setDailyReport] = useState(null);
+  const [dailyLoading, setDailyLoading] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -100,6 +101,30 @@ function EnterpriseView({ selectedMonth }) {
       fetchTrendSummary();
     }
   }, [accounts, reportView, fetchTrendSummary]);
+
+  const fetchDailyReport = useCallback(async () => {
+    try {
+      setDailyLoading(true);
+      const response = await axios.get('/api/enterprise/daily-usage', {
+        params: {
+          month: selectedMonth,
+          accountId: selectedAccountId
+        }
+      });
+      setDailyReport(response.data);
+    } catch (err) {
+      console.error('Error fetching daily report:', err);
+      setDailyReport(null);
+    } finally {
+      setDailyLoading(false);
+    }
+  }, [selectedMonth, selectedAccountId]);
+
+  useEffect(() => {
+    if (accounts.length > 0 && reportView === 'daily') {
+      fetchDailyReport();
+    }
+  }, [accounts, reportView, fetchDailyReport]);
 
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -194,31 +219,33 @@ function EnterpriseView({ selectedMonth }) {
         />
       )}
 
-      <div className="report-options">
-        <button
-          type="button"
-          className={`report-option-btn ${reportView === 'summary12' ? 'active' : ''}`}
-          onClick={() => setReportView('summary12')}
-        >
-          Summary of past 12 months - trend, analysis
-        </button>
-        <button
-          type="button"
-          className={`report-option-btn ${reportView === 'monthly' ? 'active' : ''}`}
-          onClick={() => setReportView('monthly')}
-        >
-          Monthly Report
-        </button>
-        <button
-          type="button"
-          className={`report-option-btn ${reportView === 'daily' ? 'active' : ''}`}
-          onClick={() => setReportView('daily')}
-        >
-          Daily - Datewise Report
-        </button>
-      </div>
+      {billingRestrictions.length === 0 && (
+        <div className="report-options">
+          <button
+            type="button"
+            className={`report-option-btn ${reportView === 'summary12' ? 'active' : ''}`}
+            onClick={() => onReportViewChange('summary12')}
+          >
+            Summary of past 12 months - trend, analysis
+          </button>
+          <button
+            type="button"
+            className={`report-option-btn ${reportView === 'monthly' ? 'active' : ''}`}
+            onClick={() => onReportViewChange('monthly')}
+          >
+            Monthly Report
+          </button>
+          <button
+            type="button"
+            className={`report-option-btn ${reportView === 'daily' ? 'active' : ''}`}
+            onClick={() => onReportViewChange('daily')}
+          >
+            Daily - Datewise Report
+          </button>
+        </div>
+      )}
 
-      {reportView === 'summary12' && (
+      {billingRestrictions.length === 0 && reportView === 'summary12' && (
         <div className="trend-summary-panel">
           <h3>Summary of past 12 months - trend, analysis</h3>
           {trendLoading ? (
@@ -264,12 +291,80 @@ function EnterpriseView({ selectedMonth }) {
         </div>
       )}
 
-      {reportView === 'monthly' && (
+      {billingRestrictions.length === 0 && reportView === 'monthly' && (
         <div className="report-placeholder">Monthly Report view coming next.</div>
       )}
 
-      {reportView === 'daily' && (
-        <div className="report-placeholder">Daily - Datewise Report view coming next.</div>
+      {billingRestrictions.length === 0 && reportView === 'daily' && (
+        <div className="trend-summary-panel">
+          <h3>Daily - Datewise Report</h3>
+          {dailyLoading ? (
+            <p className="trend-loading">Loading daily report...</p>
+          ) : dailyReport?.dailyUsage?.days?.length ? (
+            <>
+              <div className="trend-analysis-grid">
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Total Days</span>
+                  <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.totalDays)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Avg Daily Usage</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.avgDailyCost)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Max Daily Usage</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.maxDailyCost)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Min Daily Usage</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.minDailyCost)}</span>
+                </div>
+              </div>
+
+              <div className="trend-chart-wrap">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={dailyReport.dailyUsage.days}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickFormatter={(v) => v.slice(8)} />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="dynoCost" fill="#6f42c1" name="Dyno Units" />
+                    <Bar dataKey="dataCost" fill="#22c55e" name="Data Add-ons" />
+                    <Bar dataKey="otherCost" fill="#f97316" name="General Add-ons" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="daily-table-wrap">
+                <table className="daily-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Dyno Units</th>
+                      <th>Data Add-ons</th>
+                      <th>General Add-ons</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyReport.dailyUsage.days.map((day) => (
+                      <tr key={day.date}>
+                        <td>{day.date}</td>
+                        <td>{formatUsage(day.dynoCost)}</td>
+                        <td>{formatUsage(day.dataCost)}</td>
+                        <td>{formatUsage(day.otherCost)}</td>
+                        <td>{formatUsage(day.totalCost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="trend-loading">No daily datewise data available for selected month.</p>
+          )}
+        </div>
       )}
 
       {/* Billing Restrictions Warning */}

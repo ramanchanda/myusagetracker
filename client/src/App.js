@@ -15,6 +15,7 @@ function App() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   };
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [reportView, setReportView] = useState('summary12');
 
   const fetchEnterpriseHealth = useCallback(async () => {
     try {
@@ -65,11 +66,17 @@ function App() {
         </div>
       )}
 
-      <MonthSelector
+      {reportView === 'monthly' && (
+        <MonthSelector
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+        />
+      )}
+      <EnterpriseView
         selectedMonth={selectedMonth}
-        onMonthChange={setSelectedMonth}
+        reportView={reportView}
+        onReportViewChange={setReportView}
       />
-      <EnterpriseView selectedMonth={selectedMonth} />
     </div>
   );
 }
