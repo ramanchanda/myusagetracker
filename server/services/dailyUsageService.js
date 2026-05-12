@@ -328,36 +328,49 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
 
     structure.dailyUsage = parseDailyUsage(enterpriseUsage);
 
+    // Build team space map from daily usage API response (no separate API calls needed)
+    // The daily usage API already provides private_space and shield_space counts per team
+    const teamSpaceMap = new Map();
+    const teamAppSpaceMap = new Map();
     const uniqueTeamIds = new Set();
+
     (enterpriseUsage || []).forEach(day => {
       (day.teams || []).forEach(team => {
-        if (team?.id) uniqueTeamIds.add(team.id);
+        if (team?.id) {
+          uniqueTeamIds.add(team.id);
+
+          // Use space data from API response instead of fetching separately
+          if (!teamSpaceMap.has(team.id)) {
+            teamSpaceMap.set(team.id, {
+              privateSpaces: Number(team.private_space || 0),
+              shieldSpaces: Number(team.shield_space || 0)
+            });
+          }
+        }
       });
     });
 
-    const teamSpaceMap = new Map();
-    const teamAppSpaceMap = new Map();
+    // Fetch app space associations (still needed for per-app space badges)
     for (const teamId of uniqueTeamIds) {
-      const spaces = await getTeamSpaces(client, teamId);
-      const shieldSpaces = spaces.filter(space => Boolean(space.shield));
-      const privateSpaces = spaces.filter(space => !Boolean(space.shield));
-      teamSpaceMap.set(teamId, {
-        privateSpaces: privateSpaces.length,
-        shieldSpaces: shieldSpaces.length
-      });
-
       const appSpaceByName = new Map();
-      const apps = await getTeamApps(client, teamId);
-      apps.forEach(app => {
-        const appName = app.name;
-        const appSpace = app.space || null;
-        const isInShieldSpace = Boolean(appSpace?.shield);
-        const isInPrivateSpace = Boolean(appSpace) && !isInShieldSpace;
-        appSpaceByName.set(appName, {
-          inPrivateSpace: isInPrivateSpace,
-          inShieldSpace: isInShieldSpace
+      try {
+        const apps = await getTeamApps(client, teamId);
+        apps.forEach(app => {
+          const appName = app.name;
+          const appSpace = app.space || null;
+          const isInShieldSpace = Boolean(appSpace?.shield);
+          const isInPrivateSpace = Boolean(appSpace) && !isInShieldSpace;
+          appSpaceByName.set(appName, {
+            inPrivateSpace: isInPrivateSpace,
+            inShieldSpace: isInShieldSpace
+          });
         });
-      });
+      } catch (error) {
+        const status = error.response?.status;
+        console.warn(`⚠️  Warning: Cannot fetch apps for team ${teamId}`);
+        console.warn(`   Status: ${status} ${error.response?.statusText || ''}`);
+        console.warn(`   Impact: App space badges will not be available for this team`);
+      }
       teamAppSpaceMap.set(teamId, appSpaceByName);
     }
 
