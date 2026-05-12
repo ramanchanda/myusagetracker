@@ -666,9 +666,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
               <div className="summary-content">
                 <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
                 <div className="summary-label">Enterprise Teams</div>
-                <div className="summary-subtext">
-                  Active: {activeTeams.length}
-                </div>
               </div>
             </div>
             <div className="summary-card">
