@@ -632,7 +632,11 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       dataAddons: 0,
       generalAddons: 0,
       privateSpaces: 0,
-      shieldSpaces: 0
+      shieldSpaces: 0,
+      dataAddonsCredits: 0,
+      generalAddonsCredits: 0,
+      privateSpaceCredits: 0,
+      shieldSpaceCredits: 0
     });
   });
 
@@ -669,6 +673,12 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
         const shieldSpaceCount = toNumber(monthData.shield_space);
         row.privateSpaces += privateSpaceCount;
         row.shieldSpaces += shieldSpaceCount;
+
+        // Add credit fields for bar chart
+        row.dataAddonsCredits += toNumber(monthData.data);
+        row.generalAddonsCredits += Math.max(accountAddons - accountData, accountPartner, 0);
+        row.privateSpaceCredits += toNumber(monthData.private_space_credits);
+        row.shieldSpaceCredits += toNumber(monthData.shield_space_credits);
       });
     } catch (error) {
       console.error(`Trend summary fetch failed for ${account.id}:`, error.message);
@@ -676,7 +686,13 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
   }
 
   // Convert map to array in correct order
-  const monthly = months.map(m => monthlyMap.get(m));
+  const monthly = months.map(m => {
+    const monthData = monthlyMap.get(m);
+    return {
+      ...monthData,
+      connectRowsMillions: monthData.connectRows / 1000000
+    };
+  });
 
   const total = monthly.reduce((acc, item) => ({
     teams: acc.teams + item.teams,
@@ -685,8 +701,12 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     dataAddons: acc.dataAddons + item.dataAddons,
     generalAddons: acc.generalAddons + item.generalAddons,
     privateSpaces: acc.privateSpaces + item.privateSpaces,
-    shieldSpaces: acc.shieldSpaces + item.shieldSpaces
-  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0, privateSpaces: 0, shieldSpaces: 0 });
+    shieldSpaces: acc.shieldSpaces + item.shieldSpaces,
+    dataAddonsCredits: acc.dataAddonsCredits + item.dataAddonsCredits,
+    generalAddonsCredits: acc.generalAddonsCredits + item.generalAddonsCredits,
+    privateSpaceCredits: acc.privateSpaceCredits + item.privateSpaceCredits,
+    shieldSpaceCredits: acc.shieldSpaceCredits + item.shieldSpaceCredits
+  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0, privateSpaces: 0, shieldSpaces: 0, dataAddonsCredits: 0, generalAddonsCredits: 0, privateSpaceCredits: 0, shieldSpaceCredits: 0 });
 
   const first = monthly[0] || { dynoUnits: 0, connectRows: 0, privateSpaces: 0, shieldSpaces: 0 };
   const last = monthly[monthly.length - 1] || { dynoUnits: 0, connectRows: 0, privateSpaces: 0, shieldSpaces: 0 };

@@ -144,7 +144,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
 
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 3
   });
   const formatCount = (value) => Number(value || 0).toLocaleString();
   const isTeamActive = (team) => Boolean(team?.hasDirectAccess);
@@ -265,7 +265,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
             className={`report-option-btn ${reportView === 'summary12' ? 'active' : ''}`}
             onClick={() => onReportViewChange('summary12')}
           >
-            Summary of past 12 months - trend, analysis
+            Summary of past 12 months
           </button>
           <button
             type="button"
@@ -348,12 +348,31 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <Tooltip />
                     <Legend />
                     <Line type="monotone" dataKey="dynoUnits" stroke="#6f42c1" strokeWidth={2} name="Dyno Units" />
-                    <Line type="monotone" dataKey="connectRows" stroke="#0ea5e9" strokeWidth={2} name="Connect Rows" />
+                    <Line type="monotone" dataKey="connectRowsMillions" stroke="#0ea5e9" strokeWidth={2} name="Connect Rows (M)" />
                     <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2} name="Data Add-ons" />
                     <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2} name="General Add-ons" />
                     <Line type="monotone" dataKey="privateSpaces" stroke="#3b82f6" strokeWidth={2} name="Private Spaces" />
                     <Line type="monotone" dataKey="shieldSpaces" stroke="#f59e0b" strokeWidth={2} name="Shield Spaces" />
                   </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <h3 style={{ marginTop: '24px', marginBottom: '12px' }}>12-Month Usage & Credits Breakdown</h3>
+              <div className="trend-chart-wrap summary12-chart">
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={trendSummary.monthly}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="dynoUnits" fill="#6f42c1" name="Dyno Units" />
+                    <Bar dataKey="connectRows" fill="#0ea5e9" name="Connect Rows" />
+                    <Bar dataKey="dataAddonsCredits" fill="#22c55e" name="Data Add-ons Credits" />
+                    <Bar dataKey="generalAddonsCredits" fill="#f97316" name="General Add-ons Credits" />
+                    <Bar dataKey="privateSpaceCredits" fill="#3b82f6" name="Private Space Credits" />
+                    <Bar dataKey="shieldSpaceCredits" fill="#f59e0b" name="Shield Space Credits" />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </>
