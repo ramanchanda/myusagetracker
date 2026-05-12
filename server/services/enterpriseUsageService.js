@@ -566,19 +566,46 @@ async function getAllEnterpriseAccountsStructure(month) {
           teamResources.appsInPrivateSpaces = 0;
           teamResources.appsInShieldSpaces = 0;
 
-          for (const app of teamApps) {
+          // Create a map of existing apps from usage data
+          const appsUsageMap = new Map();
+          (teamResources.appsUsage || []).forEach(app => {
+            appsUsageMap.set(app.name, app);
+          });
+
+          // Merge all team apps with their usage data (if any)
+          const allAppsWithUsage = teamApps.map(app => {
+            const existingUsage = appsUsageMap.get(app.name);
+
+            // Check space assignment
+            let isInPrivateSpace = false;
+            let isInShieldSpace = false;
             if (app.space) {
-              // Find the space this app belongs to
               const appSpace = teamSpaces.find(space => space.name === app.space.name || space.id === app.space.id);
               if (appSpace) {
                 if (appSpace.shield) {
+                  isInShieldSpace = true;
                   teamResources.appsInShieldSpaces++;
                 } else {
+                  isInPrivateSpace = true;
                   teamResources.appsInPrivateSpaces++;
                 }
               }
             }
-          }
+
+            return {
+              name: app.name,
+              dynos: existingUsage?.dynos || 0,
+              connect: existingUsage?.connect || 0,
+              dataAddons: existingUsage?.dataAddons || 0,
+              generalAddons: existingUsage?.generalAddons || 0,
+              total: existingUsage?.total || 0,
+              isInPrivateSpace,
+              isInShieldSpace
+            };
+          }).sort((a, b) => b.total - a.total);
+
+          // Replace appsUsage with complete list
+          teamResources.appsUsage = allAppsWithUsage;
 
           accountStructure.teams.push({
             id: team.id,

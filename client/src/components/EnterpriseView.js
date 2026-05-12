@@ -177,7 +177,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       <div className="enterprise-view">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>Loading enterprise usage/utilization Data...</p>
+          <p>Loading enterprise usage/utilization report...</p>
         </div>
       </div>
     );
@@ -734,7 +734,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                             <div className="apps-usage-table">
                               {resources.appsUsage.map((app, appIdx) => (
                                 <div key={appIdx} className="apps-usage-row">
-                                  <span className="app-name">{app.name}</span>
+                                  <span className="app-name">
+                                    {app.name}
+                                    {app.isInPrivateSpace && <span className="space-badge private">Private Space</span>}
+                                    {app.isInShieldSpace && <span className="space-badge shield">Shield Space</span>}
+                                  </span>
                                   <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
                                   <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
                                   <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
@@ -743,7 +747,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                               ))}
                             </div>
                           ) : (
-                            <p className="no-app-breakdown">No app-level usage found for this team in selected month.</p>
+                            <p className="no-app-breakdown">No apps found for this team.</p>
                           )}
                         </div>
                       </div>
