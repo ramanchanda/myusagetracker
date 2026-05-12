@@ -32,6 +32,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [dailyStartDate, setDailyStartDate] = useState('');
   const [dailyEndDate, setDailyEndDate] = useState('');
   const [dailyFetchAttempted, setDailyFetchAttempted] = useState(false);
+  const [dailyDateError, setDailyDateError] = useState('');
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -111,8 +112,27 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
 
   const fetchDailyReport = useCallback(async () => {
     setDailyFetchAttempted(true);
+    setDailyDateError('');
 
     if (!dailyStartDate || !dailyEndDate) {
+      setDailyReport(null);
+      return;
+    }
+
+    // Validate date range (max 31 days)
+    const start = new Date(dailyStartDate);
+    const end = new Date(dailyEndDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 31) {
+      setDailyDateError('Start and end date invalid. Cannot request more than 31 days of usage');
+      setDailyReport(null);
+      return;
+    }
+
+    if (start > end) {
+      setDailyDateError('Start date must be before end date');
       setDailyReport(null);
       return;
     }
@@ -141,6 +161,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       setDailyStartDate('');
       setDailyEndDate('');
       setDailyFetchAttempted(false);
+      setDailyDateError('');
     }
   }, [reportView]);
 
@@ -511,8 +532,12 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 <input
                   type="date"
                   value={dailyStartDate}
-                  onChange={(e) => setDailyStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setDailyStartDate(e.target.value);
+                    setDailyDateError('');
+                  }}
                   className="date-input"
+                  max={dailyEndDate || undefined}
                 />
               </label>
               <label>
@@ -520,8 +545,12 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 <input
                   type="date"
                   value={dailyEndDate}
-                  onChange={(e) => setDailyEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setDailyEndDate(e.target.value);
+                    setDailyDateError('');
+                  }}
                   className="date-input"
+                  min={dailyStartDate || undefined}
                 />
               </label>
               <button
@@ -538,6 +567,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     setDailyEndDate('');
                     setDailyReport(null);
                     setDailyFetchAttempted(false);
+                    setDailyDateError('');
                   }}
                   className="clear-dates-btn"
                 >
@@ -545,6 +575,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </button>
               )}
             </div>
+            <p className="usage-note" style={{ fontSize: '0.85rem', marginTop: '8px' }}>
+              <strong>Note:</strong> Cannot request more than 31 days of usage
+            </p>
+            {dailyDateError && (
+              <div className="error-banner" style={{ marginTop: '12px' }}>
+                <span>{dailyDateError}</span>
+              </div>
+            )}
           </div>
           {dailyFetchAttempted && dailyLoading ? (
             <p className="trend-loading">Loading daily report...</p>
@@ -587,6 +625,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </ResponsiveContainer>
               </div>
 
+              <h4 className="chart-section-title" style={{ marginTop: '32px' }}>Daily Usage Summary</h4>
               <div className="daily-table-wrap">
                 <table className="daily-table">
                   <thead>
@@ -618,6 +657,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </table>
               </div>
 
+              <h4 className="chart-section-title" style={{ marginTop: '40px' }}>Detailed Team & App Breakdown</h4>
               <div className="daily-table-wrap breakdown-table-wrap">
                 <table className="daily-table breakdown-table">
                   <thead>
