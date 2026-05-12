@@ -228,7 +228,7 @@ function parseDailyUsage(dailyUsageData) {
 }
 
 // Get enterprise daily usage structure
-async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId) {
+async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, customStart, customEnd) {
   const client = createHerokuClient();
 
   try {
@@ -239,8 +239,13 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId) {
       throw new Error('No enterprise account found');
     }
 
-    // Get date range
-    const dateRange = month ? getMonthRange(month) : getCurrentMonthRange();
+    // Get date range - use custom dates if provided, otherwise use month
+    let dateRange;
+    if (customStart && customEnd) {
+      dateRange = { start: customStart, end: customEnd };
+    } else {
+      dateRange = month ? getMonthRange(month) : getCurrentMonthRange();
+    }
 
     const structure = {
       account: {

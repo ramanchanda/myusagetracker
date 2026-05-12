@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import EnterpriseView from './components/EnterpriseView';
-import MonthSelector from './components/MonthSelector';
 import './App.css';
 
 function App() {
@@ -66,14 +65,9 @@ function App() {
         </div>
       )}
 
-      {reportView === 'monthly' && (
-        <MonthSelector
-          selectedMonth={selectedMonth}
-          onMonthChange={setSelectedMonth}
-        />
-      )}
       <EnterpriseView
         selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
         reportView={reportView}
         onReportViewChange={setReportView}
       />

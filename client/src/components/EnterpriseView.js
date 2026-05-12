@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import EnterpriseAccountSelector from './EnterpriseAccountSelector';
+import MonthSelector from './MonthSelector';
 import {
   EnterpriseIcon,
   TeamsIcon,
@@ -11,8 +12,9 @@ import {
   ConnectIcon
 } from './HerokuIcons';
 import './EnterpriseView.css';
+import './DailyReportStyles.css';
 
-function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
+function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportViewChange }) {
   const [structure, setStructure] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,6 +27,8 @@ function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
   const [trendLoading, setTrendLoading] = useState(false);
   const [dailyReport, setDailyReport] = useState(null);
   const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyStartDate, setDailyStartDate] = useState('');
+  const [dailyEndDate, setDailyEndDate] = useState('');
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -105,12 +109,19 @@ function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
   const fetchDailyReport = useCallback(async () => {
     try {
       setDailyLoading(true);
-      const response = await axios.get('/api/enterprise/daily-usage', {
-        params: {
-          month: selectedMonth,
-          accountId: selectedAccountId
-        }
-      });
+      const params = {
+        accountId: selectedAccountId
+      };
+
+      // Use custom date range if provided, otherwise use selected month
+      if (dailyStartDate && dailyEndDate) {
+        params.start = dailyStartDate;
+        params.end = dailyEndDate;
+      } else {
+        params.month = selectedMonth;
+      }
+
+      const response = await axios.get('/api/enterprise/daily-usage', { params });
       setDailyReport(response.data);
     } catch (err) {
       console.error('Error fetching daily report:', err);
@@ -118,7 +129,7 @@ function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
     } finally {
       setDailyLoading(false);
     }
-  }, [selectedMonth, selectedAccountId]);
+  }, [selectedMonth, selectedAccountId, dailyStartDate, dailyEndDate]);
 
   useEffect(() => {
     if (accounts.length > 0 && reportView === 'daily') {
@@ -245,6 +256,13 @@ function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
         </div>
       )}
 
+      {billingRestrictions.length === 0 && reportView === 'monthly' && (
+        <MonthSelector
+          selectedMonth={selectedMonth}
+          onMonthChange={onMonthChange}
+        />
+      )}
+
       {billingRestrictions.length === 0 && reportView === 'summary12' && (
         <div className="trend-summary-panel">
           <h3>Summary of past 12 months - trend, analysis</h3>
@@ -297,7 +315,47 @@ function EnterpriseView({ selectedMonth, reportView, onReportViewChange }) {
 
       {billingRestrictions.length === 0 && reportView === 'daily' && (
         <div className="trend-summary-panel">
-          <h3>Daily - Datewise Report</h3>
+          <div className="daily-header">
+            <h3>Daily - Datewise Report</h3>
+            <div className="date-range-selector">
+              <label>
+                From:
+                <input
+                  type="date"
+                  value={dailyStartDate}
+                  onChange={(e) => setDailyStartDate(e.target.value)}
+                  className="date-input"
+                />
+              </label>
+              <label>
+                To:
+                <input
+                  type="date"
+                  value={dailyEndDate}
+                  onChange={(e) => setDailyEndDate(e.target.value)}
+                  className="date-input"
+                />
+              </label>
+              <button
+                onClick={fetchDailyReport}
+                className="fetch-daily-btn"
+                disabled={!dailyStartDate || !dailyEndDate || dailyLoading}
+              >
+                {dailyLoading ? 'Loading...' : 'Fetch Data'}
+              </button>
+              {(dailyStartDate || dailyEndDate) && (
+                <button
+                  onClick={() => {
+                    setDailyStartDate('');
+                    setDailyEndDate('');
+                  }}
+                  className="clear-dates-btn"
+                >
+                  Clear Dates
+                </button>
+              )}
+            </div>
+          </div>
           {dailyLoading ? (
             <p className="trend-loading">Loading daily report...</p>
           ) : dailyReport?.dailyUsage?.days?.length ? (

@@ -1,0 +1,120 @@
+/* Daily Report Date Range Selector */
+.daily-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.daily-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.4rem;
+}
+
+.date-range-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.date-range-selector label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0f172a;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-input:hover {
+  border-color: #2563eb;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.fetch-daily-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.fetch-daily-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+}
+
+.fetch-daily-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clear-dates-btn {
+  padding: 8px 16px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.clear-dates-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .daily-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-range-selector {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-range-selector label {
+    width: 100%;
+  }
+
+  .date-input {
+    width: 100%;
+  }
+
+  .fetch-daily-btn,
+  .clear-dates-btn {
+    width: 100%;
+  }
+}
