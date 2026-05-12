@@ -597,27 +597,9 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     if (all[0]) accounts = [all[0]];
   }
 
-  // Build a map of team ID to space types for cost categorization
-  const teamSpaceTypeMap = new Map();
-  for (const account of accounts) {
-    try {
-      const allTeams = await getEnterpriseAccountTeams(client, account.id);
-      for (const team of allTeams) {
-        try {
-          const teamSpaces = await getTeamSpaces(client, team.id);
-          const hasShield = teamSpaces.some(space => Boolean(space.shield));
-          const hasPrivate = teamSpaces.some(space => !Boolean(space.shield));
-          teamSpaceTypeMap.set(team.id, { hasShield, hasPrivate });
-        } catch (error) {
-          // Ignore space fetch errors for individual teams
-        }
-      }
-    } catch (error) {
-      console.error(`Error fetching teams for space types:`, error.message);
-    }
-  }
-
   // Fetch usage data for all 12 months in a single API call
+  // Note: API now provides private_space_credits and shield_space_credits directly,
+  // so we no longer need to fetch team spaces individually
   const startMonth = months[0];
   const endMonth = months[months.length - 1];
 

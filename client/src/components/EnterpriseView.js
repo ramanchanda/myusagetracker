@@ -331,7 +331,12 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       )}
 
       {billingRestrictions.length === 0 && reportView === 'monthly' && (
-        <h3 className="monthly-summary-title">Enterprise Account Usage Summary</h3>
+        <>
+          <h3 className="monthly-summary-title">Enterprise Account Usage Summary</h3>
+          <p className="usage-note">
+            <strong>Note:</strong> Enterprise Team count includes only teams with active resource utilization. Teams with no applications or 0 resource usage are not listed.
+          </p>
+        </>
       )}
 
       {billingRestrictions.length === 0 && reportView === 'summary12' && (
@@ -766,6 +771,9 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </select>
               </div>
             </div>
+            <p className="usage-note">
+              <strong>Note:</strong> Only applications with resource usage/utilization are listed. Applications with no or 0 resource usage/utilization are excluded.
+            </p>
             {displayedTeams.length === 0 && (
               <div className="no-teams-message">
                 <p>No enterprise teams found{billingRestrictions.length > 0 ? ' with billing access' : ''}.</p>
