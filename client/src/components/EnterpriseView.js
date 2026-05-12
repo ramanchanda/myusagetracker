@@ -23,6 +23,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState('all');
   const [expandedTeams, setExpandedTeams] = useState({});
+  const [teamAppsCache, setTeamAppsCache] = useState({});
+  const [loadingTeamApps, setLoadingTeamApps] = useState({});
   const [trendSummary, setTrendSummary] = useState(null);
   const [trendLoading, setTrendLoading] = useState(false);
   const [dailyReport, setDailyReport] = useState(null);
@@ -234,11 +236,43 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     ? enterpriseTeams
     : enterpriseTeams.filter(team => team.id === selectedTeamFilter);
 
-  const toggleTeamDetails = (teamKey) => {
+  const fetchTeamApps = async (teamId) => {
+    if (teamAppsCache[teamId]) {
+      return; // Already cached
+    }
+
+    setLoadingTeamApps(prev => ({ ...prev, [teamId]: true }));
+
+    try {
+      const response = await axios.get(`/api/enterprise/team/${teamId}/apps`);
+      const appsSpaceMap = {};
+      response.data.forEach(app => {
+        appsSpaceMap[app.name] = {
+          isInPrivateSpace: app.isInPrivateSpace,
+          isInShieldSpace: app.isInShieldSpace
+        };
+      });
+      setTeamAppsCache(prev => ({ ...prev, [teamId]: appsSpaceMap }));
+    } catch (err) {
+      console.error(`Error fetching apps for team ${teamId}:`, err);
+      setTeamAppsCache(prev => ({ ...prev, [teamId]: {} }));
+    } finally {
+      setLoadingTeamApps(prev => ({ ...prev, [teamId]: false }));
+    }
+  };
+
+  const toggleTeamDetails = async (teamKey, teamId) => {
+    const isExpanding = !expandedTeams[teamKey];
+
     setExpandedTeams(prev => ({
       ...prev,
-      [teamKey]: !prev[teamKey]
+      [teamKey]: isExpanding
     }));
+
+    // Fetch team apps when expanding
+    if (isExpanding && teamId) {
+      await fetchTeamApps(teamId);
+    }
   };
 
   return (
@@ -759,7 +793,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <button
                         type="button"
                         className="team-details-toggle"
-                        onClick={() => toggleTeamDetails(teamKey)}
+                        onClick={() => toggleTeamDetails(teamKey, team.id)}
                       >
                         {isExpanded ? 'Hide details' : 'View details'}
                       </button>
@@ -828,25 +862,31 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
 
                         <div className="team-apps-breakdown">
                           <h5>App-level Usage</h5>
-                          {resources.appsUsage && resources.appsUsage.length > 0 ? (
-                            <div className="apps-usage-table">
-                              {resources.appsUsage.map((app, appIdx) => (
-                                <div key={appIdx} className="apps-usage-row">
-                                  <span className="app-name">
-                                    {app.name}
-                                    {app.isInPrivateSpace && <span className="space-badge private">Private Space</span>}
-                                    {app.isInShieldSpace && <span className="space-badge shield">Shield Space</span>}
-                                  </span>
-                                  <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
-                                  <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
-                                  <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
-                                  <span className="app-usage">General: {formatUsage(app.generalAddons)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="no-app-breakdown">No apps found for this team.</p>
+                          {loadingTeamApps[team.id] && (
+                            <p className="no-app-breakdown">Loading space information...</p>
                           )}
+                          {!loadingTeamApps[team.id] && resources.appsUsage && resources.appsUsage.length > 0 ? (
+                            <div className="apps-usage-table">
+                              {resources.appsUsage.map((app, appIdx) => {
+                                const spaceInfo = teamAppsCache[team.id]?.[app.name] || {};
+                                return (
+                                  <div key={appIdx} className="apps-usage-row">
+                                    <span className="app-name">
+                                      {app.name}
+                                      {spaceInfo.isInPrivateSpace && <span className="space-badge private">Private Space</span>}
+                                      {spaceInfo.isInShieldSpace && <span className="space-badge shield">Shield Space</span>}
+                                    </span>
+                                    <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
+                                    <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
+                                    <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
+                                    <span className="app-usage">General: {formatUsage(app.generalAddons)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : !loadingTeamApps[team.id] ? (
+                            <p className="no-app-breakdown">No apps found for this team.</p>
+                          ) : null}
                         </div>
                       </div>
                     )}

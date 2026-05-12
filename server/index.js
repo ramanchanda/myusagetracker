@@ -225,6 +225,18 @@ app.get('/api/enterprise/teams', async (req, res) => {
   }
 });
 
+// Get team apps with space information (lazy loading for Monthly Report)
+app.get('/api/enterprise/team/:teamId/apps', async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const appsWithSpaceInfo = await enterpriseUsageService.getTeamAppsWithSpaceInfo(teamId);
+    res.json(appsWithSpaceInfo);
+  } catch (error) {
+    console.error(`Error fetching team apps for ${req.params.teamId}:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Enterprise account info
 app.get('/api/enterprise/account', async (req, res) => {
   try {

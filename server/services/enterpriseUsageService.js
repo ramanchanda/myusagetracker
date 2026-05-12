@@ -494,49 +494,23 @@ async function getAllEnterpriseAccountsStructure(month) {
         try {
           const teamResources = parseTeamUsage(team);
 
-          // Fetch team apps to get space information
-          let teamApps = [];
-          try {
-            const appsResponse = await client.get(`/teams/${team.id}/apps`);
-            teamApps = Array.isArray(appsResponse.data) ? appsResponse.data : [];
-          } catch (error) {
-            console.warn(`⚠️  Warning: Cannot fetch apps for team ${team.id} (${team.name})`);
-            console.warn(`   Status: ${error.response?.status} ${error.response?.statusText || ''}`);
-            console.warn(`   Impact: Space information will not be available for apps in this team`);
-          }
-
-          // Build app space map
-          const appSpaceMap = new Map();
-          teamApps.forEach(app => {
-            const appSpace = app.space || null;
-            appSpaceMap.set(app.name, {
-              isInPrivateSpace: Boolean(appSpace) && !Boolean(appSpace.shield),
-              isInShieldSpace: Boolean(appSpace?.shield)
-            });
-          });
-
           // Apps come directly from usage API (only apps with usage)
-          const appsFromUsage = (team.apps || []).map(app => {
-            const appName = app.app_name || app.name || 'Unknown App';
-            const spaceInfo = appSpaceMap.get(appName) || { isInPrivateSpace: false, isInShieldSpace: false };
-            return {
-              name: appName,
-              dynos: toNumber(app.dynos),
-              connect: toNumber(app.connect),
-              dataAddons: toNumber(app.data),
-              generalAddons: Math.max(toNumber(app.addons) - toNumber(app.data), toNumber(app.partner), 0),
-              total: toNumber(app.dynos) + toNumber(app.addons) + toNumber(app.connect),
-              isInPrivateSpace: spaceInfo.isInPrivateSpace,
-              isInShieldSpace: spaceInfo.isInShieldSpace
-            };
-          }).sort((a, b) => b.total - a.total);
+          // Space info will be fetched lazily when user clicks "View details"
+          const appsFromUsage = (team.apps || []).map(app => ({
+            name: app.app_name || app.name || 'Unknown App',
+            dynos: toNumber(app.dynos),
+            connect: toNumber(app.connect),
+            dataAddons: toNumber(app.data),
+            generalAddons: Math.max(toNumber(app.addons) - toNumber(app.data), toNumber(app.partner), 0),
+            total: toNumber(app.dynos) + toNumber(app.addons) + toNumber(app.connect)
+          })).sort((a, b) => b.total - a.total);
 
           teamResources.appsUsage = appsFromUsage;
           teamResources.totalApps = appsFromUsage.length;
 
-          // Count apps in spaces
-          teamResources.appsInPrivateSpaces = appsFromUsage.filter(app => app.isInPrivateSpace).length;
-          teamResources.appsInShieldSpaces = appsFromUsage.filter(app => app.isInShieldSpace).length;
+          // Space info is already in teamResources from parseTeamUsage
+          teamResources.appsInPrivateSpaces = 0;
+          teamResources.appsInShieldSpaces = 0;
 
           accountStructure.teams.push({
             id: team.id,
@@ -781,6 +755,39 @@ async function getEnterpriseStructure(month, enterpriseAccountId) {
   return allData;
 }
 
+// Get team apps with space information (for lazy loading)
+async function getTeamAppsWithSpaceInfo(teamId) {
+  const client = createHerokuClient();
+
+  try {
+    const appsResponse = await client.get(`/teams/${teamId}/apps`);
+    const teamApps = Array.isArray(appsResponse.data) ? appsResponse.data : [];
+
+    // Map apps to include space information
+    const appsWithSpaceInfo = teamApps.map(app => {
+      const appSpace = app.space || null;
+      return {
+        name: app.name,
+        id: app.id,
+        isInPrivateSpace: Boolean(appSpace) && !Boolean(appSpace.shield),
+        isInShieldSpace: Boolean(appSpace?.shield)
+      };
+    });
+
+    return appsWithSpaceInfo;
+  } catch (error) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    console.warn(`⚠️  Warning: Cannot fetch apps for team ${teamId}`);
+    console.warn(`   Status: ${status} ${statusText || ''}`);
+    console.warn(`   Message: ${error.message}`);
+    if (status === 404) {
+      console.warn(`   Reason: Team may be deleted, renamed, or API key lacks access`);
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   getEnterpriseStructure,
   getAllEnterpriseAccountsStructure,
@@ -793,6 +800,7 @@ module.exports = {
   getTeamSpaces,
   getEnterpriseSpacesSummary,
   getEnterpriseTrendSummary,
+  getTeamAppsWithSpaceInfo,
   testBillingAccess,
   createHerokuClient
 };
