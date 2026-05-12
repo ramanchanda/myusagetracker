@@ -494,23 +494,49 @@ async function getAllEnterpriseAccountsStructure(month) {
         try {
           const teamResources = parseTeamUsage(team);
 
+          // Fetch team apps to get space information
+          let teamApps = [];
+          try {
+            const appsResponse = await client.get(`/teams/${team.id}/apps`);
+            teamApps = Array.isArray(appsResponse.data) ? appsResponse.data : [];
+          } catch (error) {
+            console.warn(`⚠️  Warning: Cannot fetch apps for team ${team.id} (${team.name})`);
+            console.warn(`   Status: ${error.response?.status} ${error.response?.statusText || ''}`);
+            console.warn(`   Impact: Space information will not be available for apps in this team`);
+          }
+
+          // Build app space map
+          const appSpaceMap = new Map();
+          teamApps.forEach(app => {
+            const appSpace = app.space || null;
+            appSpaceMap.set(app.name, {
+              isInPrivateSpace: Boolean(appSpace) && !Boolean(appSpace.shield),
+              isInShieldSpace: Boolean(appSpace?.shield)
+            });
+          });
+
           // Apps come directly from usage API (only apps with usage)
-          const appsFromUsage = (team.apps || []).map(app => ({
-            name: app.app_name || app.name || 'Unknown App',
-            dynos: toNumber(app.dynos),
-            connect: toNumber(app.connect),
-            dataAddons: toNumber(app.data),
-            generalAddons: Math.max(toNumber(app.addons) - toNumber(app.data), toNumber(app.partner), 0),
-            total: toNumber(app.dynos) + toNumber(app.addons) + toNumber(app.connect)
-          })).sort((a, b) => b.total - a.total);
+          const appsFromUsage = (team.apps || []).map(app => {
+            const appName = app.app_name || app.name || 'Unknown App';
+            const spaceInfo = appSpaceMap.get(appName) || { isInPrivateSpace: false, isInShieldSpace: false };
+            return {
+              name: appName,
+              dynos: toNumber(app.dynos),
+              connect: toNumber(app.connect),
+              dataAddons: toNumber(app.data),
+              generalAddons: Math.max(toNumber(app.addons) - toNumber(app.data), toNumber(app.partner), 0),
+              total: toNumber(app.dynos) + toNumber(app.addons) + toNumber(app.connect),
+              isInPrivateSpace: spaceInfo.isInPrivateSpace,
+              isInShieldSpace: spaceInfo.isInShieldSpace
+            };
+          }).sort((a, b) => b.total - a.total);
 
           teamResources.appsUsage = appsFromUsage;
           teamResources.totalApps = appsFromUsage.length;
 
-          // Space info is already in teamResources from parseTeamUsage
-          // Set apps in spaces to 0 since we don't have that detail without fetching /teams/{id}/apps
-          teamResources.appsInPrivateSpaces = 0;
-          teamResources.appsInShieldSpaces = 0;
+          // Count apps in spaces
+          teamResources.appsInPrivateSpaces = appsFromUsage.filter(app => app.isInPrivateSpace).length;
+          teamResources.appsInShieldSpaces = appsFromUsage.filter(app => app.isInShieldSpace).length;
 
           accountStructure.teams.push({
             id: team.id,
