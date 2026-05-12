@@ -147,7 +147,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     maximumFractionDigits: 3
   });
   const formatCount = (value) => Number(value || 0).toLocaleString();
-  const isTeamActive = (team) => Boolean(team?.hasDirectAccess);
   const groupedDailyBreakdown = (dailyReport?.dailyBreakdown || [])
     .slice()
     .sort((a, b) => {
