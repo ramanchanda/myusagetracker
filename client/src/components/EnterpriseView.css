@@ -54,9 +54,9 @@
   background: #f8f3ff;
   color: #59369b;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   border-radius: 9px;
-  padding: 8px 12px;
+  padding: 10px 16px;
   cursor: pointer;
 }
 
@@ -341,7 +341,7 @@
 
 .monthly-summary-title {
   margin: 8px 0 14px;
-  font-size: 1.05rem;
+  font-size: 1.6rem;
   color: #4c1d95;
   font-weight: 700;
 }

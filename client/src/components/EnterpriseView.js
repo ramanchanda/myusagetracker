@@ -714,7 +714,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
           {/* Teams Grid */}
           <div className="teams-section">
             <div className="teams-section-header">
-              <h2>Enterprise Account Usage Summary {showAllAccounts ? '(All Accounts)' : ''}</h2>
+              <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
               <div className="team-filter-dropdown">
                 <label htmlFor="teamFilter">Filter Team: </label>
                 <select

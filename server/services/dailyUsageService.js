@@ -121,7 +121,15 @@ async function getTeamSpaces(client, teamId) {
     const response = await client.get(`/teams/${teamId}/spaces`);
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    console.error(`Error fetching spaces for team ${teamId}:`, error.message);
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    console.warn(`⚠️  Warning: Cannot fetch spaces for team ${teamId}`);
+    console.warn(`   Status: ${status} ${statusText || ''}`);
+    console.warn(`   Message: ${error.message}`);
+    if (status === 404) {
+      console.warn(`   Reason: Team may be deleted, renamed, or API key lacks access`);
+    }
+    console.warn(`   Impact: Space information will not be available for this team`);
     return [];
   }
 }
@@ -131,7 +139,15 @@ async function getTeamApps(client, teamId) {
     const response = await client.get(`/teams/${teamId}/apps`);
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    console.error(`Error fetching apps for team ${teamId}:`, error.message);
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    console.warn(`⚠️  Warning: Cannot fetch apps for team ${teamId}`);
+    console.warn(`   Status: ${status} ${statusText || ''}`);
+    console.warn(`   Message: ${error.message}`);
+    if (status === 404) {
+      console.warn(`   Reason: Team may be deleted, renamed, or API key lacks access`);
+    }
+    console.warn(`   Impact: App information will not be available for this team`);
     return [];
   }
 }
