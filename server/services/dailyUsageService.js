@@ -116,6 +116,16 @@ async function getTeamDailyUsage(client, teamId, startDate, endDate) {
   }
 }
 
+async function getTeamSpaces(client, teamId) {
+  try {
+    const response = await client.get(`/teams/${teamId}/spaces`);
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    console.error(`Error fetching spaces for team ${teamId}:`, error.message);
+    return [];
+  }
+}
+
 // Get app daily usage
 async function getAppDailyUsage(client, appId, startDate, endDate) {
   try {
@@ -258,7 +268,8 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
       },
       dateRange: dateRange,
       dailyUsage: null,
-      teams: []
+      teams: [],
+      dailyBreakdown: []
     };
 
     // Get enterprise-level daily usage
@@ -270,6 +281,22 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
     );
 
     structure.dailyUsage = parseDailyUsage(enterpriseUsage);
+
+    const uniqueTeamIds = new Set();
+    (enterpriseUsage || []).forEach(day => {
+      (day.teams || []).forEach(team => {
+        if (team?.id) uniqueTeamIds.add(team.id);
+      });
+    });
+
+    const teamSpaceMap = new Map();
+    for (const teamId of uniqueTeamIds) {
+      const spaces = await getTeamSpaces(client, teamId);
+      teamSpaceMap.set(teamId, {
+        privateSpaces: spaces.length,
+        shieldSpaces: spaces.filter(space => Boolean(space.shield)).length
+      });
+    }
 
     // Build team daily usage from enterprise payload directly
     const teamMap = new Map();
@@ -296,6 +323,43 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
       type: 'enterprise',
       dailyUsage: parseDailyUsage(team.days)
     }));
+
+    // Datewise rows with Team Name, App Name, Private/Shield space context
+    (enterpriseUsage || []).forEach(day => {
+      (day.teams || []).forEach(team => {
+        const apps = Array.isArray(team.apps) ? team.apps : [];
+        const spaceInfo = teamSpaceMap.get(team.id) || { privateSpaces: 0, shieldSpaces: 0 };
+
+        if (apps.length === 0) {
+          structure.dailyBreakdown.push({
+            date: day.date,
+            teamName: team.name || '-',
+            appName: '-',
+            dynoUnits: Number(team.dynos || 0),
+            connectRows: Number(team.connect || 0),
+            dataAddons: Number(team.data || 0),
+            generalAddons: Math.max(Number(team.addons || 0) - Number(team.data || 0), Number(team.partner || 0), 0),
+            privateSpaces: spaceInfo.privateSpaces,
+            shieldSpaces: spaceInfo.shieldSpaces
+          });
+          return;
+        }
+
+        apps.forEach(app => {
+          structure.dailyBreakdown.push({
+            date: day.date,
+            teamName: team.name || '-',
+            appName: app.app_name || app.name || '-',
+            dynoUnits: Number(app.dynos || 0),
+            connectRows: Number(app.connect || 0),
+            dataAddons: Number(app.data || 0),
+            generalAddons: Math.max(Number(app.addons || 0) - Number(app.data || 0), Number(app.partner || 0), 0),
+            privateSpaces: spaceInfo.privateSpaces,
+            shieldSpaces: spaceInfo.shieldSpaces
+          });
+        });
+      });
+    });
 
     return structure;
   } catch (error) {
@@ -380,6 +444,7 @@ module.exports = {
   getPersonalDailyUsageStructure,
   getEnterpriseDailyUsage,
   getTeamDailyUsage,
+  getTeamSpaces,
   getAppDailyUsage,
   parseDailyUsage
 };

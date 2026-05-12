@@ -214,9 +214,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     <div className="enterprise-view">
       <div className="account-meta-strip">
         <p className="account-email">{structure.account.email}</p>
-        <p className="selected-month">
-          Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
-        </p>
+        {reportView === 'monthly' && selectedMonth && (
+          <p className="selected-month">
+            Viewing: {new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </p>
+        )}
       </div>
 
       {/* Enterprise Account Selector */}
@@ -409,6 +411,39 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(day.dataCost)}</td>
                         <td>{formatUsage(day.otherCost)}</td>
                         <td>{formatUsage(day.totalCost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="daily-table-wrap breakdown-table-wrap">
+                <table className="daily-table breakdown-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Team Name</th>
+                      <th>App Name</th>
+                      <th>Dyno Units</th>
+                      <th>Connect Rows</th>
+                      <th>Data Add-ons</th>
+                      <th>General Add-ons</th>
+                      <th>Private Spaces</th>
+                      <th>Shield Spaces</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(dailyReport.dailyBreakdown || []).map((row, idx) => (
+                      <tr key={`${row.date}-${row.teamName}-${row.appName}-${idx}`}>
+                        <td>{row.date}</td>
+                        <td>{row.teamName}</td>
+                        <td>{row.appName}</td>
+                        <td>{formatUsage(row.dynoUnits)}</td>
+                        <td>{formatUsage(row.connectRows)}</td>
+                        <td>{formatUsage(row.dataAddons)}</td>
+                        <td>{formatUsage(row.generalAddons)}</td>
+                        <td>{formatCount(row.privateSpaces)}</td>
+                        <td>{formatCount(row.shieldSpaces)}</td>
                       </tr>
                     ))}
                   </tbody>
