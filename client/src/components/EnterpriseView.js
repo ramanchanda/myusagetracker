@@ -309,10 +309,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
         </div>
       )}
 
-      {billingRestrictions.length === 0 && reportView === 'monthly' && (
-        <div className="report-placeholder">Monthly Report view coming next.</div>
-      )}
-
       {billingRestrictions.length === 0 && reportView === 'daily' && (
         <div className="trend-summary-panel">
           <div className="daily-header">
@@ -448,195 +444,199 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
         </div>
       )}
 
-      {/* Overall Summary */}
-      <div className="overall-summary">
-        {isMultiAccount && (
-          <div className="summary-card">
-            <EnterpriseIcon className="summary-icon-svg" />
-            <div className="summary-content">
-              <div className="summary-value">{summaryData.totalEnterpriseAccounts || 0}</div>
-              <div className="summary-label">Enterprise Accounts</div>
-            </div>
-          </div>
-        )}
-        <div className="summary-card">
-          <TeamsIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
-            <div className="summary-label">Enterprise Teams</div>
-            <div className="summary-subtext">
-              Active: {activeTeams.length}
-            </div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <EnterpriseIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{formatCount(summaryData.totalPrivateSpaces)}</div>
-            <div className="summary-label">Private Spaces</div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <EnterpriseIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{formatCount(summaryData.totalShieldSpaces)}</div>
-            <div className="summary-label">Shield Spaces</div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <DynoIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{formatUsage(summaryData.totalDynos)}</div>
-            <div className="summary-label">Dyno Units</div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <ConnectIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{formatUsage(summaryData.totalConnect)}</div>
-            <div className="summary-label">Connect Rows</div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <PostgresIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{formatUsage(summaryData.totalDataAddons)}</div>
-            <div className="summary-label">Data Add-ons</div>
-          </div>
-        </div>
-        <div className="summary-card">
-          <AddonsIcon className="summary-icon-svg" />
-          <div className="summary-content">
-            <div className="summary-value">{formatUsage(summaryData.totalOtherAddons)}</div>
-            <div className="summary-label">General Add-ons Usage</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Teams Grid */}
-      <div className="teams-section">
-        <div className="teams-section-header">
-          <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
-          <div className="teams-view-toggle">
-            <button
-              type="button"
-              className={`teams-filter-btn ${!showAllTeamsInAccount ? 'active' : ''}`}
-              onClick={() => setShowAllTeamsInAccount(false)}
-            >
-              Active Teams ({activeTeams.length})
-            </button>
-            <button
-              type="button"
-              className={`teams-filter-btn ${showAllTeamsInAccount ? 'active' : ''}`}
-              onClick={() => setShowAllTeamsInAccount(true)}
-            >
-              All Teams ({enterpriseTeams.length})
-            </button>
-          </div>
-        </div>
-        {displayedTeams.length === 0 && (
-          <div className="no-teams-message">
-            <p>No enterprise teams found{billingRestrictions.length > 0 ? ' with billing access' : ''}.</p>
-            {billingRestrictions.length > 0 && (
-              <p>Contact your enterprise administrator to grant billing access.</p>
+      {billingRestrictions.length === 0 && reportView === 'monthly' && (
+        <>
+          {/* Overall Summary */}
+          <div className="overall-summary">
+            {isMultiAccount && (
+              <div className="summary-card">
+                <EnterpriseIcon className="summary-icon-svg" />
+                <div className="summary-content">
+                  <div className="summary-value">{summaryData.totalEnterpriseAccounts || 0}</div>
+                  <div className="summary-label">Enterprise Accounts</div>
+                </div>
+              </div>
             )}
+            <div className="summary-card">
+              <TeamsIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{summaryData.totalTeams || enterpriseTeams.length}</div>
+                <div className="summary-label">Enterprise Teams</div>
+                <div className="summary-subtext">
+                  Active: {activeTeams.length}
+                </div>
+              </div>
+            </div>
+            <div className="summary-card">
+              <EnterpriseIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{formatCount(summaryData.totalPrivateSpaces)}</div>
+                <div className="summary-label">Private Spaces</div>
+              </div>
+            </div>
+            <div className="summary-card">
+              <EnterpriseIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{formatCount(summaryData.totalShieldSpaces)}</div>
+                <div className="summary-label">Shield Spaces</div>
+              </div>
+            </div>
+            <div className="summary-card">
+              <DynoIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{formatUsage(summaryData.totalDynos)}</div>
+                <div className="summary-label">Dyno Units</div>
+              </div>
+            </div>
+            <div className="summary-card">
+              <ConnectIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{formatUsage(summaryData.totalConnect)}</div>
+                <div className="summary-label">Connect Rows</div>
+              </div>
+            </div>
+            <div className="summary-card">
+              <PostgresIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{formatUsage(summaryData.totalDataAddons)}</div>
+                <div className="summary-label">Data Add-ons</div>
+              </div>
+            </div>
+            <div className="summary-card">
+              <AddonsIcon className="summary-icon-svg" />
+              <div className="summary-content">
+                <div className="summary-value">{formatUsage(summaryData.totalOtherAddons)}</div>
+                <div className="summary-label">General Add-ons Usage</div>
+              </div>
+            </div>
           </div>
-        )}
-        <div className="teams-grid">
-          {displayedTeams.map((team, index) => {
-            const resources = team.resources;
-            const teamKey = `${team.accountName || 'single'}-${team.name}-${index}`;
-            const isExpanded = Boolean(expandedTeams[teamKey]);
-            return (
-              <div key={index} className="team-card">
-                <div className="team-header">
-                  <EnterpriseIcon className="team-icon-svg" />
-                  <div className="team-info">
-                    <h3>{team.name}</h3>
-                    {team.accountName && showAllAccounts && (
-                      <div className="team-account-badge">{team.accountName}</div>
-                    )}
-                    <span className="team-type">Enterprise</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="team-details-toggle"
-                    onClick={() => toggleTeamDetails(teamKey)}
-                  >
-                    {isExpanded ? 'Hide details' : 'View details'}
-                  </button>
-                </div>
 
-                <div className="team-stats">
-                  <div className="stat-row">
-                    <span className="stat-label"><DynoIcon className="inline-stat-icon" /> Dyno Units</span>
-                    <span className="stat-value">{formatUsage(resources.dynos.count)}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label"><ConnectIcon className="inline-stat-icon" /> Connect Rows</span>
-                    <span className="stat-value">{formatUsage(resources.connect.used)}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label"><PostgresIcon className="inline-stat-icon" /> Data Add-ons</span>
-                    <span className="stat-value">{formatUsage(resources.dataAddons.count)}</span>
-                  </div>
-                  <div className="stat-row last">
-                    <span className="stat-label"><AddonsIcon className="inline-stat-icon" /> General Add-ons Usage</span>
-                    <span className="stat-value">{formatUsage(resources.otherAddons.count)}</span>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="team-details">
-                    <h4>Granular Breakdown</h4>
-                    <div className="team-detail-grid">
-                      <div className="team-detail-item">
-                        <span className="detail-label">Total Apps</span>
-                        <span className="detail-value">{resources.totalApps || 0}</span>
-                      </div>
-                      <div className="team-detail-item">
-                        <span className="detail-label">Dyno Units</span>
-                        <span className="detail-value">{formatUsage(resources.dynos.count)}</span>
-                      </div>
-                      <div className="team-detail-item">
-                        <span className="detail-label">Connect Rows</span>
-                        <span className="detail-value">{formatUsage(resources.connect.used)}</span>
-                      </div>
-                      <div className="team-detail-item">
-                        <span className="detail-label">Data Add-ons</span>
-                        <span className="detail-value">{formatUsage(resources.dataAddons.count)}</span>
-                      </div>
-                      <div className="team-detail-item">
-                        <span className="detail-label">General Add-ons Usage</span>
-                        <span className="detail-value">{formatUsage(resources.otherAddons.count)}</span>
-                      </div>
-                    </div>
-
-                    <div className="team-apps-breakdown">
-                      <h5>App-level Usage</h5>
-                      {resources.appsUsage && resources.appsUsage.length > 0 ? (
-                        <div className="apps-usage-table">
-                          {resources.appsUsage.map((app, appIdx) => (
-                            <div key={appIdx} className="apps-usage-row">
-                              <span className="app-name">{app.name}</span>
-                              <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
-                              <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
-                              <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
-                              <span className="app-usage">General: {formatUsage(app.generalAddons)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="no-app-breakdown">No app-level usage found for this team in selected month.</p>
-                      )}
-                    </div>
-                  </div>
+          {/* Teams Grid */}
+          <div className="teams-section">
+            <div className="teams-section-header">
+              <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
+              <div className="teams-view-toggle">
+                <button
+                  type="button"
+                  className={`teams-filter-btn ${!showAllTeamsInAccount ? 'active' : ''}`}
+                  onClick={() => setShowAllTeamsInAccount(false)}
+                >
+                  Active Teams ({activeTeams.length})
+                </button>
+                <button
+                  type="button"
+                  className={`teams-filter-btn ${showAllTeamsInAccount ? 'active' : ''}`}
+                  onClick={() => setShowAllTeamsInAccount(true)}
+                >
+                  All Teams ({enterpriseTeams.length})
+                </button>
+              </div>
+            </div>
+            {displayedTeams.length === 0 && (
+              <div className="no-teams-message">
+                <p>No enterprise teams found{billingRestrictions.length > 0 ? ' with billing access' : ''}.</p>
+                {billingRestrictions.length > 0 && (
+                  <p>Contact your enterprise administrator to grant billing access.</p>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </div>
+            )}
+            <div className="teams-grid">
+              {displayedTeams.map((team, index) => {
+                const resources = team.resources;
+                const teamKey = `${team.accountName || 'single'}-${team.name}-${index}`;
+                const isExpanded = Boolean(expandedTeams[teamKey]);
+                return (
+                  <div key={index} className="team-card">
+                    <div className="team-header">
+                      <EnterpriseIcon className="team-icon-svg" />
+                      <div className="team-info">
+                        <h3>{team.name}</h3>
+                        {team.accountName && showAllAccounts && (
+                          <div className="team-account-badge">{team.accountName}</div>
+                        )}
+                        <span className="team-type">Enterprise</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="team-details-toggle"
+                        onClick={() => toggleTeamDetails(teamKey)}
+                      >
+                        {isExpanded ? 'Hide details' : 'View details'}
+                      </button>
+                    </div>
+
+                    <div className="team-stats">
+                      <div className="stat-row">
+                        <span className="stat-label"><DynoIcon className="inline-stat-icon" /> Dyno Units</span>
+                        <span className="stat-value">{formatUsage(resources.dynos.count)}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span className="stat-label"><ConnectIcon className="inline-stat-icon" /> Connect Rows</span>
+                        <span className="stat-value">{formatUsage(resources.connect.used)}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span className="stat-label"><PostgresIcon className="inline-stat-icon" /> Data Add-ons</span>
+                        <span className="stat-value">{formatUsage(resources.dataAddons.count)}</span>
+                      </div>
+                      <div className="stat-row last">
+                        <span className="stat-label"><AddonsIcon className="inline-stat-icon" /> General Add-ons Usage</span>
+                        <span className="stat-value">{formatUsage(resources.otherAddons.count)}</span>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="team-details">
+                        <h4>Granular Breakdown</h4>
+                        <div className="team-detail-grid">
+                          <div className="team-detail-item">
+                            <span className="detail-label">Total Apps</span>
+                            <span className="detail-value">{resources.totalApps || 0}</span>
+                          </div>
+                          <div className="team-detail-item">
+                            <span className="detail-label">Dyno Units</span>
+                            <span className="detail-value">{formatUsage(resources.dynos.count)}</span>
+                          </div>
+                          <div className="team-detail-item">
+                            <span className="detail-label">Connect Rows</span>
+                            <span className="detail-value">{formatUsage(resources.connect.used)}</span>
+                          </div>
+                          <div className="team-detail-item">
+                            <span className="detail-label">Data Add-ons</span>
+                            <span className="detail-value">{formatUsage(resources.dataAddons.count)}</span>
+                          </div>
+                          <div className="team-detail-item">
+                            <span className="detail-label">General Add-ons Usage</span>
+                            <span className="detail-value">{formatUsage(resources.otherAddons.count)}</span>
+                          </div>
+                        </div>
+
+                        <div className="team-apps-breakdown">
+                          <h5>App-level Usage</h5>
+                          {resources.appsUsage && resources.appsUsage.length > 0 ? (
+                            <div className="apps-usage-table">
+                              {resources.appsUsage.map((app, appIdx) => (
+                                <div key={appIdx} className="apps-usage-row">
+                                  <span className="app-name">{app.name}</span>
+                                  <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
+                                  <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
+                                  <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
+                                  <span className="app-usage">General: {formatUsage(app.generalAddons)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="no-app-breakdown">No app-level usage found for this team in selected month.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

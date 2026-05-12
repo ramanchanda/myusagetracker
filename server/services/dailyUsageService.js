@@ -69,10 +69,10 @@ async function getEnterpriseAccount(client, enterpriseAccountId) {
 // Get enterprise account daily usage
 async function getEnterpriseDailyUsage(client, enterpriseAccountId, startDate, endDate) {
   try {
-    console.log(`Fetching daily usage: /enterprise-accounts/${enterpriseAccountId}/daily-usage?start=${startDate}&end=${endDate}`);
+    console.log(`Fetching daily usage: /enterprise-accounts/${enterpriseAccountId}/usage/daily?start=${startDate}&end=${endDate}`);
 
     const response = await client.get(
-      `/enterprise-accounts/${enterpriseAccountId}/daily-usage`,
+      `/enterprise-accounts/${enterpriseAccountId}/usage/daily`,
       {
         params: {
           start: startDate,
@@ -85,6 +85,7 @@ async function getEnterpriseDailyUsage(client, enterpriseAccountId, startDate, e
   } catch (error) {
     console.error(`Error fetching enterprise daily usage:`, error.message);
     console.error(`Date range: ${startDate} to ${endDate}`);
+    console.error(`Status: ${error.response?.status}`);
 
     if (error.response?.status === 404) {
       console.error('404 Error: No daily usage data found for this date range.');
@@ -99,7 +100,7 @@ async function getEnterpriseDailyUsage(client, enterpriseAccountId, startDate, e
 async function getTeamDailyUsage(client, teamId, startDate, endDate) {
   try {
     const response = await client.get(
-      `/teams/${teamId}/daily-usage`,
+      `/teams/${teamId}/usage/daily`,
       {
         params: {
           start: startDate,
@@ -119,7 +120,7 @@ async function getTeamDailyUsage(client, teamId, startDate, endDate) {
 async function getAppDailyUsage(client, appId, startDate, endDate) {
   try {
     const response = await client.get(
-      `/apps/${appId}/daily-usage`,
+      `/apps/${appId}/usage/daily`,
       {
         params: {
           start: startDate,
