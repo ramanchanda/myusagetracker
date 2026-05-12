@@ -712,9 +712,14 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     }
   }
 
-  const monthly = [];
-  for (const m of months) {
-    const row = {
+  // Fetch usage data for all 12 months in a single API call
+  const startMonth = months[0];
+  const endMonth = months[months.length - 1];
+
+  // Build monthly data structure with all months initialized
+  const monthlyMap = new Map();
+  months.forEach(m => {
+    monthlyMap.set(m, {
       month: m,
       teams: 0,
       dynoUnits: 0,
@@ -723,12 +728,24 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       generalAddons: 0,
       privateSpaceCost: 0,
       shieldSpaceCost: 0
-    };
+    });
+  });
 
-    for (const account of accounts) {
-      try {
-        const usage = await getEnterpriseMonthlyUsage(client, account.id, m);
-        const usageTeams = extractUsageTeamsFromMonthlyResponse(usage, m);
+  // Fetch usage for all accounts
+  for (const account of accounts) {
+    try {
+      // Single API call to get all 12 months of data
+      const usageData = await getEnterpriseMonthlyUsage(client, account.id, startMonth, endMonth);
+
+      // usageData is an array of monthly usage objects
+      const usageArray = Array.isArray(usageData) ? usageData : [usageData];
+
+      usageArray.forEach(monthData => {
+        const m = monthData.month;
+        if (!monthlyMap.has(m)) return; // Skip months outside our range
+
+        const row = monthlyMap.get(m);
+        const usageTeams = monthData.teams || [];
         row.teams += usageTeams.length;
 
         usageTeams.forEach(team => {
@@ -761,13 +778,14 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
             }
           }
         });
-      } catch (error) {
-        console.error(`Trend summary fetch failed for ${account.id} ${m}:`, error.message);
-      }
+      });
+    } catch (error) {
+      console.error(`Trend summary fetch failed for ${account.id}:`, error.message);
     }
-
-    monthly.push(row);
   }
+
+  // Convert map to array in correct order
+  const monthly = months.map(m => monthlyMap.get(m));
 
   const total = monthly.reduce((acc, item) => ({
     teams: acc.teams + item.teams,
