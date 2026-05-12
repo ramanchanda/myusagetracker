@@ -319,6 +319,8 @@ function parseTeamUsage(team) {
   const addonsUsage = toNumber(team.addons);
   const connectUsage = toNumber(team.connect);
   const spaceUsage = toNumber(team.space);
+  const privateSpaceCount = toNumber(team.private_space);
+  const shieldSpaceCount = toNumber(team.shield_space);
   const otherAddonsUsage = Math.max(addonsUsage - dataUsage, partnerUsage, 0);
 
   const teamApps = Array.isArray(team.apps) ? team.apps : [];
@@ -373,6 +375,9 @@ function parseTeamUsage(team) {
     space: {
       used: spaceUsage
     },
+
+    privateSpaces: privateSpaceCount,
+    shieldSpaces: shieldSpaceCount,
 
     totalMonthlyCost: dynosUsage + addonsUsage + connectUsage + spaceUsage
   };
@@ -502,9 +507,8 @@ async function getAllEnterpriseAccountsStructure(month) {
           teamResources.appsUsage = appsFromUsage;
           teamResources.totalApps = appsFromUsage.length;
 
-          // Space info from usage data (aggregated, not per-team)
-          teamResources.privateSpaces = 0;
-          teamResources.shieldSpaces = 0;
+          // Space info is already in teamResources from parseTeamUsage
+          // Set apps in spaces to 0 since we don't have that detail without fetching /teams/{id}/apps
           teamResources.appsInPrivateSpaces = 0;
           teamResources.appsInShieldSpaces = 0;
 
@@ -517,21 +521,19 @@ async function getAllEnterpriseAccountsStructure(month) {
             resources: teamResources
           });
 
-          // Update summary
+          // Update summary - aggregate space counts across all teams
           accountStructure.summary.totalApps += teamResources.totalApps;
           accountStructure.summary.totalDynos += teamResources.dynos.count;
           accountStructure.summary.totalConnect += teamResources.connect.used;
           accountStructure.summary.totalDataAddons += teamResources.dataAddons.count;
           accountStructure.summary.totalOtherAddons += teamResources.otherAddons.count;
           accountStructure.summary.totalMonthlyCost += parseFloat(teamResources.totalMonthlyCost);
+          accountStructure.summary.totalPrivateSpaces += teamResources.privateSpaces;
+          accountStructure.summary.totalShieldSpaces += teamResources.shieldSpaces;
         } catch (error) {
           console.error(`Error processing team ${team.name}:`, error.message);
         }
       }
-
-      // Get space summary for the entire account (not per-team)
-      accountStructure.summary.totalPrivateSpaces = 0;
-      accountStructure.summary.totalShieldSpaces = 0;
 
       accountStructure.summary.totalMonthlyCost = accountStructure.summary.totalMonthlyCost.toFixed(2);
 
