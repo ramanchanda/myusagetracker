@@ -258,8 +258,10 @@ async function getEnterpriseSpacesSummary(client, teams) {
 
   for (const team of teams) {
     const spaces = await getTeamSpaces(client, team.id);
-    summary.totalPrivateSpaces += spaces.length;
-    summary.totalShieldSpaces += spaces.filter(space => Boolean(space.shield)).length;
+    const shieldSpaces = spaces.filter(space => Boolean(space.shield));
+    const privateSpaces = spaces.filter(space => !Boolean(space.shield));
+    summary.totalPrivateSpaces += privateSpaces.length;
+    summary.totalShieldSpaces += shieldSpaces.length;
   }
 
   return summary;
@@ -552,8 +554,29 @@ async function getAllEnterpriseAccountsStructure(month) {
         try {
           const teamResources = parseTeamUsage(team);
           const teamSpaces = await getTeamSpaces(client, team.id);
-          teamResources.privateSpaces = teamSpaces.length;
-          teamResources.shieldSpaces = teamSpaces.filter(space => Boolean(space.shield)).length;
+          const shieldSpaces = teamSpaces.filter(space => Boolean(space.shield));
+          const privateSpaces = teamSpaces.filter(space => !Boolean(space.shield));
+          teamResources.privateSpaces = privateSpaces.length;
+          teamResources.shieldSpaces = shieldSpaces.length;
+
+          // Fetch actual team apps to determine space assignments
+          const teamApps = await getTeamApps(client, team.id);
+          teamResources.appsInPrivateSpaces = 0;
+          teamResources.appsInShieldSpaces = 0;
+
+          for (const app of teamApps) {
+            if (app.space) {
+              // Find the space this app belongs to
+              const appSpace = teamSpaces.find(space => space.name === app.space.name || space.id === app.space.id);
+              if (appSpace) {
+                if (appSpace.shield) {
+                  teamResources.appsInShieldSpaces++;
+                } else {
+                  teamResources.appsInPrivateSpaces++;
+                }
+              }
+            }
+          }
 
           accountStructure.teams.push({
             id: team.id,
