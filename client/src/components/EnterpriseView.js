@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, AreaChart, Area } from 'recharts';
 import EnterpriseAccountSelector from './EnterpriseAccountSelector';
 import MonthSelector from './MonthSelector';
 import {
@@ -357,21 +357,33 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </ResponsiveContainer>
               </div>
 
-              <h3 style={{ marginTop: '24px', marginBottom: '12px' }}>12-Month Usage & Credits Breakdown</h3>
+              <h3 className="summary12-subtitle">Space Footprint Trend</h3>
               <div className="trend-chart-wrap summary12-chart">
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={230}>
+                  <AreaChart data={trendSummary.monthly}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="privateSpaces" stroke="#3b82f6" fill="#bfdbfe" name="Private Spaces" />
+                    <Area type="monotone" dataKey="shieldSpaces" stroke="#f59e0b" fill="#fde68a" name="Shield Spaces" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <h3 className="summary12-subtitle">12-Month Usage & Credits Breakdown</h3>
+              <div className="trend-chart-wrap summary12-chart">
+                <ResponsiveContainer width="100%" height={340}>
                   <BarChart data={trendSummary.monthly}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="dynoUnits" fill="#6f42c1" name="Dyno Units" />
                     <Bar dataKey="connectRows" fill="#0ea5e9" name="Connect Rows" />
                     <Bar dataKey="dataAddonsCredits" fill="#22c55e" name="Data Add-ons Credits" />
                     <Bar dataKey="generalAddonsCredits" fill="#f97316" name="General Add-ons Credits" />
-                    <Bar dataKey="privateSpaceCredits" fill="#3b82f6" name="Private Space Credits" />
-                    <Bar dataKey="shieldSpaceCredits" fill="#f59e0b" name="Shield Space Credits" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
