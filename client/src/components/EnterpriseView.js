@@ -143,6 +143,19 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   });
   const formatCount = (value) => Number(value || 0).toLocaleString();
   const isTeamActive = (team) => Boolean(team?.hasDirectAccess);
+  const groupedDailyBreakdown = (dailyReport?.dailyBreakdown || [])
+    .slice()
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      if (a.teamName !== b.teamName) return a.teamName.localeCompare(b.teamName);
+      return a.appName.localeCompare(b.appName);
+    })
+    .map((row, idx, arr) => {
+      const prev = idx > 0 ? arr[idx - 1] : null;
+      const showDate = !prev || prev.date !== row.date;
+      const showTeam = !prev || prev.date !== row.date || prev.teamName !== row.teamName;
+      return { ...row, showDate, showTeam };
+    });
 
   if (loading) {
     return (
@@ -437,10 +450,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     </tr>
                   </thead>
                   <tbody>
-                    {(dailyReport.dailyBreakdown || []).map((row, idx) => (
+                    {groupedDailyBreakdown.map((row, idx) => (
                       <tr key={`${row.date}-${row.teamName}-${row.appName}-${idx}`}>
-                        <td>{row.date}</td>
-                        <td>{row.teamName}</td>
+                        <td className={row.showDate ? 'group-value' : 'group-continued'}>
+                          {row.showDate ? row.date : ''}
+                        </td>
+                        <td className={row.showTeam ? 'group-value' : 'group-continued'}>
+                          {row.showTeam ? row.teamName : ''}
+                        </td>
                         <td>{row.appName}</td>
                         <td>{formatUsage(row.dynoUnits)}</td>
                         <td>{formatUsage(row.connectRows)}</td>
