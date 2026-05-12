@@ -342,8 +342,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       {billingRestrictions.length === 0 && reportView === 'summary12' && (
         <div className="trend-summary-panel summary12-panel">
           <div className="summary12-header">
-            <h3>Summary of past 12 months - trend, analysis</h3>
-            <p>Enterprise utilization trend, capacity pattern, and platform usage signals.</p>
+            <h2 className="summary12-title">12-Month Trend Analysis</h2>
+            <p className="summary12-description">Enterprise utilization trends, capacity patterns, and platform usage insights</p>
           </div>
           {trendLoading ? (
             <p className="trend-loading">Loading trend summary...</p>
@@ -383,35 +383,47 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-value">{formatUsage(trendSummary.analysis.shieldSpacesTrendPct)}%</span>
                 </div>
               </div>
-              <div className="trend-chart-wrap summary12-chart">
-                <ResponsiveContainer width="100%" height={260}>
+              <div className="main-trend-chart">
+                <h3 className="chart-section-title">Overall Trend (12 Months)</h3>
+                <ResponsiveContainer width="100%" height={320}>
                   <LineChart data={summary12LineData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="dynoUnits" stroke="#6f42c1" strokeWidth={2} name="Dyno Units" />
-                    <Line type="monotone" dataKey="connectRowsThousands" stroke="#0ea5e9" strokeWidth={2} name="Connect Rows (K)" />
-                    <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2} name="Data Add-ons" />
-                    <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2} name="General Add-ons" />
-                    <Line type="monotone" dataKey="privateSpaces" stroke="#3b82f6" strokeWidth={2} name="Private Spaces" />
-                    <Line type="monotone" dataKey="shieldSpaces" stroke="#f59e0b" strokeWidth={2} name="Shield Spaces" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12 }}
+                      stroke="#6b7280"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      stroke="#6b7280"
+                    />
+                    <Tooltip
+                      contentStyle={{ fontSize: '13px', borderRadius: '8px' }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '13px', paddingTop: '16px' }}
+                    />
+                    <Line type="monotone" dataKey="dynoUnits" stroke="#6f42c1" strokeWidth={2.5} name="Dyno Units" dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="connectRowsThousands" stroke="#0ea5e9" strokeWidth={2.5} name="Connect Rows (K)" dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2.5} name="Data Add-ons" dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2.5} name="General Add-ons" dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="privateSpaces" stroke="#3b82f6" strokeWidth={2.5} name="Private Spaces" dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="shieldSpaces" stroke="#f59e0b" strokeWidth={2.5} name="Shield Spaces" dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
-              <h3 className="summary12-subtitle">12-Month Resource Breakdown</h3>
+              <h2 className="summary12-resources-title">Resource Breakdown by Type</h2>
 
               <div className="resource-charts-grid">
                 <div className="resource-chart-item">
                   <h4>Dyno Units</h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendSummary.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="dynoUnits" fill="#6f42c1" name="Dyno Units" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -420,12 +432,12 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 <div className="resource-chart-item">
                   <h4>Connect Rows</h4>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={trendSummary.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="connectRows" fill="#0ea5e9" name="Connect Rows" />
+                    <BarChart data={summary12LineData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ fontSize: '12px' }} />
+                      <Bar dataKey="connectRowsThousands" fill="#0ea5e9" name="Connect Rows (K)" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -434,10 +446,10 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <h4>Data Add-ons</h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendSummary.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="dataAddons" fill="#22c55e" name="Data Add-ons" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -447,10 +459,10 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <h4>General Add-ons</h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendSummary.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="generalAddons" fill="#f97316" name="General Add-ons" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -460,10 +472,10 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <h4>Private Spaces</h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendSummary.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="privateSpaces" fill="#3b82f6" name="Private Spaces" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -473,10 +485,10 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <h4>Shield Spaces</h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendSummary.monthly}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="shieldSpaces" fill="#f59e0b" name="Shield Spaces" />
                     </BarChart>
                   </ResponsiveContainer>
