@@ -16,24 +16,25 @@
 }
 
 .calendar-icon {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
 }
 
 .selector-header label {
-  font-weight: 600;
-  color: #333;
-  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1.2rem;
   margin: 0;
+  letter-spacing: -0.2px;
 }
 
 .month-dropdown {
   flex: 1;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
   background: white;
   cursor: pointer;
   transition: all 0.2s;
@@ -41,13 +42,13 @@
 }
 
 .month-dropdown:hover {
-  border-color: #667eea;
+  border-color: #6f42c1;
 }
 
 .month-dropdown:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
 }
 
 @media (max-width: 768px) {

@@ -109,11 +109,13 @@
 }
 
 .summary12-resources-title {
-  margin: 32px 0 20px;
+  margin: 48px 0 20px;
+  padding-top: 32px;
   color: #4c1d95;
   font-size: 1.5rem;
   font-weight: 700;
   padding-bottom: 12px;
+  border-top: 3px solid #e9defd;
   border-bottom: 2px solid #e9defd;
 }
 
@@ -461,7 +463,7 @@
 
 .team-filter-dropdown label {
   color: #475569;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
