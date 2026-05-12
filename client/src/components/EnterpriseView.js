@@ -29,6 +29,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [dailyLoading, setDailyLoading] = useState(false);
   const [dailyStartDate, setDailyStartDate] = useState('');
   const [dailyEndDate, setDailyEndDate] = useState('');
+  const [dailyFetchAttempted, setDailyFetchAttempted] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -107,6 +108,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   }, [accounts, reportView, fetchTrendSummary]);
 
   const fetchDailyReport = useCallback(async () => {
+    setDailyFetchAttempted(true);
+
     if (!dailyStartDate || !dailyEndDate) {
       setDailyReport(null);
       return;
@@ -135,6 +138,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       setDailyReport(null);
       setDailyStartDate('');
       setDailyEndDate('');
+      setDailyFetchAttempted(false);
     }
   }, [reportView]);
 
@@ -149,13 +153,23 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     .sort((a, b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
       if (a.teamName !== b.teamName) return a.teamName.localeCompare(b.teamName);
+      const aPrivate = Number(a.privateSpaces) > 0 ? 1 : 0;
+      const bPrivate = Number(b.privateSpaces) > 0 ? 1 : 0;
+      if (aPrivate !== bPrivate) return bPrivate - aPrivate;
+      const aShield = Number(a.shieldSpaces) > 0 ? 1 : 0;
+      const bShield = Number(b.shieldSpaces) > 0 ? 1 : 0;
+      if (aShield !== bShield) return bShield - aShield;
       return a.appName.localeCompare(b.appName);
     })
     .map((row, idx, arr) => {
       const prev = idx > 0 ? arr[idx - 1] : null;
+      const privateLabel = Number(row.privateSpaces) > 0 ? 'Yes' : 'No';
+      const shieldLabel = Number(row.shieldSpaces) > 0 ? 'Yes' : 'No';
       const showDate = !prev || prev.date !== row.date;
       const showTeam = !prev || prev.date !== row.date || prev.teamName !== row.teamName;
-      return { ...row, showDate, showTeam };
+      const showPrivate = !prev || prev.date !== row.date || prev.teamName !== row.teamName || (Number(prev.privateSpaces) > 0 ? 'Yes' : 'No') !== privateLabel;
+      const showShield = !prev || prev.date !== row.date || prev.teamName !== row.teamName || (Number(prev.privateSpaces) > 0 ? 'Yes' : 'No') !== privateLabel || (Number(prev.shieldSpaces) > 0 ? 'Yes' : 'No') !== shieldLabel;
+      return { ...row, privateLabel, shieldLabel, showDate, showTeam, showPrivate, showShield };
     });
 
   if (loading) {
@@ -163,7 +177,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       <div className="enterprise-view">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>Loading enterprise structure...</p>
+          <p>Loading enterprise usage/utilization Data...</p>
         </div>
       </div>
     );
@@ -279,9 +293,16 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
         />
       )}
 
+      {billingRestrictions.length === 0 && reportView === 'monthly' && (
+        <h3 className="monthly-summary-title">Enterprise Account Usage Summary</h3>
+      )}
+
       {billingRestrictions.length === 0 && reportView === 'summary12' && (
-        <div className="trend-summary-panel">
-          <h3>Summary of past 12 months - trend, analysis</h3>
+        <div className="trend-summary-panel summary12-panel">
+          <div className="summary12-header">
+            <h3>Summary of past 12 months - trend, analysis</h3>
+            <p>Enterprise utilization trend, capacity pattern, and platform usage signals.</p>
+          </div>
           {trendLoading ? (
             <p className="trend-loading">Loading trend summary...</p>
           ) : trendSummary ? (
@@ -303,8 +324,16 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-label">Dyno Trend (12M)</span>
                   <span className="trend-value">{formatUsage(trendSummary.analysis.dynoTrendPct)}%</span>
                 </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Private Spaces</span>
+                  <span className="trend-value">{formatCount(summaryData.totalPrivateSpaces)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Shield Spaces</span>
+                  <span className="trend-value">{formatCount(summaryData.totalShieldSpaces)}</span>
+                </div>
               </div>
-              <div className="trend-chart-wrap">
+              <div className="trend-chart-wrap summary12-chart">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={trendSummary.monthly}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -360,6 +389,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   onClick={() => {
                     setDailyStartDate('');
                     setDailyEndDate('');
+                    setDailyReport(null);
+                    setDailyFetchAttempted(false);
                   }}
                   className="clear-dates-btn"
                 >
@@ -368,9 +399,9 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
               )}
             </div>
           </div>
-          {dailyLoading ? (
+          {dailyFetchAttempted && dailyLoading ? (
             <p className="trend-loading">Loading daily report...</p>
-          ) : dailyReport?.dailyUsage?.days?.length ? (
+          ) : dailyFetchAttempted && dailyReport?.dailyUsage?.days?.length ? (
             <>
               <div className="trend-analysis-grid">
                 <div className="trend-analysis-card">
@@ -470,21 +501,25 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(row.connectRows)}</td>
                         <td>{formatUsage(row.dataAddons)}</td>
                         <td>{formatUsage(row.generalAddons)}</td>
-                        <td>{Number(row.privateSpaces) > 0 ? 'Yes' : 'No'}</td>
-                        <td>{Number(row.shieldSpaces) > 0 ? 'Yes' : 'No'}</td>
+                        <td className={row.showPrivate ? 'group-value' : 'group-continued'}>
+                          {row.showPrivate ? <span className={`group-pill ${row.privateLabel === 'Yes' ? 'private-yes' : 'private-no'}`}>{row.privateLabel}</span> : ''}
+                        </td>
+                        <td className={row.showShield ? 'group-value' : 'group-continued'}>
+                          {row.showShield ? <span className={`group-pill ${row.shieldLabel === 'Yes' ? 'shield-yes' : 'shield-no'}`}>{row.shieldLabel}</span> : ''}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </>
-          ) : (
+          ) : dailyFetchAttempted ? (
             <p className="trend-loading">
               {dailyStartDate && dailyEndDate
                 ? 'No daily datewise data available for the selected range.'
                 : 'Select From and To dates, then click Fetch Data.'}
             </p>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -588,14 +623,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   className={`teams-filter-btn ${!showAllTeamsInAccount ? 'active' : ''}`}
                   onClick={() => setShowAllTeamsInAccount(false)}
                 >
-                  Active Teams ({activeTeams.length})
+                  My Enterprise Teams ({activeTeams.length})
                 </button>
                 <button
                   type="button"
                   className={`teams-filter-btn ${showAllTeamsInAccount ? 'active' : ''}`}
                   onClick={() => setShowAllTeamsInAccount(true)}
                 >
-                  All Teams ({enterpriseTeams.length})
+                  All Enterprise Teams ({enterpriseTeams.length})
                 </button>
               </div>
             </div>

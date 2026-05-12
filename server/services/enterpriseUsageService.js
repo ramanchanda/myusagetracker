@@ -561,6 +561,8 @@ async function getAllEnterpriseAccountsStructure(month) {
 
           // Fetch actual team apps to determine space assignments
           const teamApps = await getTeamApps(client, team.id);
+          // Monthly usage payload may omit zero-usage apps; use canonical team app list for count.
+          teamResources.totalApps = Math.max(teamResources.totalApps || 0, teamApps.length);
           teamResources.appsInPrivateSpaces = 0;
           teamResources.appsInShieldSpaces = 0;
 
