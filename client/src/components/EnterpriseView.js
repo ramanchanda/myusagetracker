@@ -167,9 +167,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       const shieldLabel = Number(row.shieldSpaces) > 0 ? 'Yes' : 'No';
       const showDate = !prev || prev.date !== row.date;
       const showTeam = !prev || prev.date !== row.date || prev.teamName !== row.teamName;
-      const showPrivate = !prev || prev.date !== row.date || prev.teamName !== row.teamName || (Number(prev.privateSpaces) > 0 ? 'Yes' : 'No') !== privateLabel;
-      const showShield = !prev || prev.date !== row.date || prev.teamName !== row.teamName || (Number(prev.privateSpaces) > 0 ? 'Yes' : 'No') !== privateLabel || (Number(prev.shieldSpaces) > 0 ? 'Yes' : 'No') !== shieldLabel;
-      return { ...row, privateLabel, shieldLabel, showDate, showTeam, showPrivate, showShield };
+      return { ...row, privateLabel, shieldLabel, showDate, showTeam };
     });
 
   if (loading) {
@@ -517,11 +515,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(row.connectRows)}</td>
                         <td>{formatUsage(row.dataAddons)}</td>
                         <td>{formatUsage(row.generalAddons)}</td>
-                        <td className={row.showPrivate ? 'group-value' : 'group-continued'}>
-                          {row.showPrivate ? <span className={`group-pill ${row.privateLabel === 'Yes' ? 'private-yes' : 'private-no'}`}>{row.privateLabel}</span> : ''}
+                        <td className="group-value">
+                          <span className={`group-pill ${row.privateLabel === 'Yes' ? 'private-yes' : 'private-no'}`}>{row.privateLabel}</span>
                         </td>
-                        <td className={row.showShield ? 'group-value' : 'group-continued'}>
-                          {row.showShield ? <span className={`group-pill ${row.shieldLabel === 'Yes' ? 'shield-yes' : 'shield-no'}`}>{row.shieldLabel}</span> : ''}
+                        <td className="group-value">
+                          <span className={`group-pill ${row.shieldLabel === 'Yes' ? 'shield-yes' : 'shield-no'}`}>{row.shieldLabel}</span>
                         </td>
                       </tr>
                     ))}
