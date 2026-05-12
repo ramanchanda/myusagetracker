@@ -21,7 +21,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [accounts, setAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
-  const [showAllTeamsInAccount, setShowAllTeamsInAccount] = useState(false);
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState('all');
   const [expandedTeams, setExpandedTeams] = useState({});
   const [trendSummary, setTrendSummary] = useState(null);
   const [trendLoading, setTrendLoading] = useState(false);
@@ -231,8 +231,10 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     }
   }
 
-  const activeTeams = enterpriseTeams.filter(team => isTeamActive(team));
-  const displayedTeams = showAllTeamsInAccount ? enterpriseTeams : activeTeams;
+  const displayedTeams = selectedTeamFilter === 'all'
+    ? enterpriseTeams
+    : enterpriseTeams.filter(team => team.id === selectedTeamFilter);
+
   const toggleTeamDetails = (teamKey) => {
     setExpandedTeams(prev => ({
       ...prev,
@@ -717,21 +719,21 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
           <div className="teams-section">
             <div className="teams-section-header">
               <h2>Enterprise Account Usage Summary {showAllAccounts ? '(All Accounts)' : ''}</h2>
-              <div className="teams-view-toggle">
-                <button
-                  type="button"
-                  className={`teams-filter-btn ${!showAllTeamsInAccount ? 'active' : ''}`}
-                  onClick={() => setShowAllTeamsInAccount(false)}
+              <div className="team-filter-dropdown">
+                <label htmlFor="teamFilter">Filter Team: </label>
+                <select
+                  id="teamFilter"
+                  value={selectedTeamFilter}
+                  onChange={(e) => setSelectedTeamFilter(e.target.value)}
+                  className="team-filter-select"
                 >
-                  My Enterprise Teams ({activeTeams.length})
-                </button>
-                <button
-                  type="button"
-                  className={`teams-filter-btn ${showAllTeamsInAccount ? 'active' : ''}`}
-                  onClick={() => setShowAllTeamsInAccount(true)}
-                >
-                  All Enterprise Teams ({enterpriseTeams.length})
-                </button>
+                  <option value="all">All Teams ({enterpriseTeams.length})</option>
+                  {enterpriseTeams.map((team, idx) => (
+                    <option key={idx} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             {displayedTeams.length === 0 && (
