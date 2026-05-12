@@ -653,36 +653,48 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
         const usageTeams = monthData.teams || [];
         row.teams += usageTeams.length;
 
-        usageTeams.forEach(team => {
-          const dynos = toNumber(team.dynos);
-          const connect = toNumber(team.connect);
-          const data = toNumber(team.data);
-          const addons = toNumber(team.addons);
-          const partner = toNumber(team.partner);
-          const general = Math.max(addons - data, partner, 0);
-          const spaceCost = toNumber(team.space);
+        // Use account-level totals directly from API (not team aggregation)
+        row.dynoUnits += toNumber(monthData.dynos);
+        row.connectRows += toNumber(monthData.connect);
+        row.dataAddons += toNumber(monthData.data);
 
-          row.dynoUnits += dynos;
-          row.connectRows += connect;
-          row.dataAddons += data;
-          row.generalAddons += general;
+        // Calculate general addons from account-level data
+        const accountAddons = toNumber(monthData.addons);
+        const accountData = toNumber(monthData.data);
+        const accountPartner = toNumber(monthData.partner);
+        row.generalAddons += Math.max(accountAddons - accountData, accountPartner, 0);
 
-          // Categorize space cost based on team's space types
-          const spaceTypes = teamSpaceTypeMap.get(team.id);
-          if (spaceTypes && spaceCost > 0) {
-            if (spaceTypes.hasShield && !spaceTypes.hasPrivate) {
-              // Team has only shield spaces
-              row.shieldSpaceCost += spaceCost;
-            } else if (spaceTypes.hasPrivate && !spaceTypes.hasShield) {
-              // Team has only private spaces
-              row.privateSpaceCost += spaceCost;
-            } else if (spaceTypes.hasShield && spaceTypes.hasPrivate) {
-              // Team has both - split evenly (best approximation)
-              row.privateSpaceCost += spaceCost / 2;
-              row.shieldSpaceCost += spaceCost / 2;
-            }
+        // For space costs, use account-level fields if available
+        const privateSpaceCost = toNumber(monthData.private_space_credits);
+        const shieldSpaceCost = toNumber(monthData.shield_space_credits);
+
+        if (privateSpaceCost > 0 || shieldSpaceCost > 0) {
+          // API provides breakdown
+          row.privateSpaceCost += privateSpaceCost;
+          row.shieldSpaceCost += shieldSpaceCost;
+        } else {
+          // Fallback: categorize total space cost by team types
+          const totalSpaceCost = toNumber(monthData.space);
+
+          if (totalSpaceCost > 0) {
+            // Aggregate team space costs and categorize
+            usageTeams.forEach(team => {
+              const teamSpaceCost = toNumber(team.space);
+              const spaceTypes = teamSpaceTypeMap.get(team.id);
+
+              if (spaceTypes && teamSpaceCost > 0) {
+                if (spaceTypes.hasShield && !spaceTypes.hasPrivate) {
+                  row.shieldSpaceCost += teamSpaceCost;
+                } else if (spaceTypes.hasPrivate && !spaceTypes.hasShield) {
+                  row.privateSpaceCost += teamSpaceCost;
+                } else if (spaceTypes.hasShield && spaceTypes.hasPrivate) {
+                  row.privateSpaceCost += teamSpaceCost / 2;
+                  row.shieldSpaceCost += teamSpaceCost / 2;
+                }
+              }
+            });
           }
-        });
+        }
       });
     } catch (error) {
       console.error(`Trend summary fetch failed for ${account.id}:`, error.message);
