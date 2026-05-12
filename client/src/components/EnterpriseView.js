@@ -323,20 +323,20 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-value">{formatUsage(trendSummary.analysis.dynoTrendPct)}%</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Avg Private Spaces / Month</span>
-                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgPrivateSpacesPerMonth)}</span>
+                  <span className="trend-label">Avg Private Space Cost / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgPrivateSpaceCostPerMonth)}</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Avg Shield Spaces / Month</span>
-                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgShieldSpacesPerMonth)}</span>
+                  <span className="trend-label">Avg Shield Space Cost / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgShieldSpaceCostPerMonth)}</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Private Spaces Trend (12M)</span>
-                  <span className="trend-value">{formatUsage(trendSummary.analysis.privateSpacesTrendPct)}%</span>
+                  <span className="trend-label">Private Space Cost Trend (12M)</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.privateSpaceCostTrendPct)}%</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Shield Spaces Trend (12M)</span>
-                  <span className="trend-value">{formatUsage(trendSummary.analysis.shieldSpacesTrendPct)}%</span>
+                  <span className="trend-label">Shield Space Cost Trend (12M)</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.shieldSpaceCostTrendPct)}%</span>
                 </div>
               </div>
               <div className="trend-chart-wrap summary12-chart">
@@ -351,8 +351,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <Line type="monotone" dataKey="connectRows" stroke="#0ea5e9" strokeWidth={2} name="Connect Rows" />
                     <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2} name="Data Add-ons" />
                     <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2} name="General Add-ons" />
-                    <Line type="monotone" dataKey="privateSpaces" stroke="#3b82f6" strokeWidth={2} name="Private Spaces" />
-                    <Line type="monotone" dataKey="shieldSpaces" stroke="#f59e0b" strokeWidth={2} name="Shield Spaces" />
+                    <Line type="monotone" dataKey="privateSpaceCost" stroke="#3b82f6" strokeWidth={2} name="Private Space Cost" />
+                    <Line type="monotone" dataKey="shieldSpaceCost" stroke="#f59e0b" strokeWidth={2} name="Shield Space Cost" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

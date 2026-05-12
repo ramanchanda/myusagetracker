@@ -692,28 +692,23 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     if (all[0]) accounts = [all[0]];
   }
 
-  // Fetch current space counts once (spaces don't change per month in historical data)
-  const currentSpaceCounts = {
-    privateSpaces: 0,
-    shieldSpaces: 0
-  };
-
+  // Build a map of team ID to space types for cost categorization
+  const teamSpaceTypeMap = new Map();
   for (const account of accounts) {
     try {
       const allTeams = await getEnterpriseAccountTeams(client, account.id);
       for (const team of allTeams) {
         try {
           const teamSpaces = await getTeamSpaces(client, team.id);
-          const shieldSpaces = teamSpaces.filter(space => Boolean(space.shield));
-          const privateSpaces = teamSpaces.filter(space => !Boolean(space.shield));
-          currentSpaceCounts.privateSpaces += privateSpaces.length;
-          currentSpaceCounts.shieldSpaces += shieldSpaces.length;
+          const hasShield = teamSpaces.some(space => Boolean(space.shield));
+          const hasPrivate = teamSpaces.some(space => !Boolean(space.shield));
+          teamSpaceTypeMap.set(team.id, { hasShield, hasPrivate });
         } catch (error) {
           // Ignore space fetch errors for individual teams
         }
       }
     } catch (error) {
-      console.error(`Error fetching teams for space count:`, error.message);
+      console.error(`Error fetching teams for space types:`, error.message);
     }
   }
 
@@ -726,8 +721,8 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       connectRows: 0,
       dataAddons: 0,
       generalAddons: 0,
-      privateSpaces: currentSpaceCounts.privateSpaces,
-      shieldSpaces: currentSpaceCounts.shieldSpaces
+      privateSpaceCost: 0,
+      shieldSpaceCost: 0
     };
 
     for (const account of accounts) {
@@ -743,11 +738,28 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
           const addons = toNumber(team.addons);
           const partner = toNumber(team.partner);
           const general = Math.max(addons - data, partner, 0);
+          const spaceCost = toNumber(team.space);
 
           row.dynoUnits += dynos;
           row.connectRows += connect;
           row.dataAddons += data;
           row.generalAddons += general;
+
+          // Categorize space cost based on team's space types
+          const spaceTypes = teamSpaceTypeMap.get(team.id);
+          if (spaceTypes && spaceCost > 0) {
+            if (spaceTypes.hasShield && !spaceTypes.hasPrivate) {
+              // Team has only shield spaces
+              row.shieldSpaceCost += spaceCost;
+            } else if (spaceTypes.hasPrivate && !spaceTypes.hasShield) {
+              // Team has only private spaces
+              row.privateSpaceCost += spaceCost;
+            } else if (spaceTypes.hasShield && spaceTypes.hasPrivate) {
+              // Team has both - split evenly (best approximation)
+              row.privateSpaceCost += spaceCost / 2;
+              row.shieldSpaceCost += spaceCost / 2;
+            }
+          }
         });
       } catch (error) {
         console.error(`Trend summary fetch failed for ${account.id} ${m}:`, error.message);
@@ -763,12 +775,12 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     connectRows: acc.connectRows + item.connectRows,
     dataAddons: acc.dataAddons + item.dataAddons,
     generalAddons: acc.generalAddons + item.generalAddons,
-    privateSpaces: acc.privateSpaces + item.privateSpaces,
-    shieldSpaces: acc.shieldSpaces + item.shieldSpaces
-  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0, privateSpaces: 0, shieldSpaces: 0 });
+    privateSpaceCost: acc.privateSpaceCost + item.privateSpaceCost,
+    shieldSpaceCost: acc.shieldSpaceCost + item.shieldSpaceCost
+  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0, privateSpaceCost: 0, shieldSpaceCost: 0 });
 
-  const first = monthly[0] || { dynoUnits: 0, connectRows: 0 };
-  const last = monthly[monthly.length - 1] || { dynoUnits: 0, connectRows: 0 };
+  const first = monthly[0] || { dynoUnits: 0, connectRows: 0, privateSpaceCost: 0, shieldSpaceCost: 0 };
+  const last = monthly[monthly.length - 1] || { dynoUnits: 0, connectRows: 0, privateSpaceCost: 0, shieldSpaceCost: 0 };
   const safePct = (a, b) => (a > 0 ? (((b - a) / a) * 100) : 0);
 
   return {
@@ -778,12 +790,12 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       avgTeamsPerMonth: monthly.length ? total.teams / monthly.length : 0,
       avgDynoUnitsPerMonth: monthly.length ? total.dynoUnits / monthly.length : 0,
       avgConnectRowsPerMonth: monthly.length ? total.connectRows / monthly.length : 0,
-      avgPrivateSpacesPerMonth: monthly.length ? total.privateSpaces / monthly.length : 0,
-      avgShieldSpacesPerMonth: monthly.length ? total.shieldSpaces / monthly.length : 0,
+      avgPrivateSpaceCostPerMonth: monthly.length ? total.privateSpaceCost / monthly.length : 0,
+      avgShieldSpaceCostPerMonth: monthly.length ? total.shieldSpaceCost / monthly.length : 0,
       dynoTrendPct: safePct(first.dynoUnits, last.dynoUnits),
       connectTrendPct: safePct(first.connectRows, last.connectRows),
-      privateSpacesTrendPct: safePct(first.privateSpaces, last.privateSpaces),
-      shieldSpacesTrendPct: safePct(first.shieldSpaces, last.shieldSpaces)
+      privateSpaceCostTrendPct: safePct(first.privateSpaceCost, last.privateSpaceCost),
+      shieldSpaceCostTrendPct: safePct(first.shieldSpaceCost, last.shieldSpaceCost)
     }
   };
 }
