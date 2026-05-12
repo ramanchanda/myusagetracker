@@ -442,8 +442,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="dynoCost" fill="#6f42c1" name="Dyno Units" />
+                    <Bar dataKey="connectCost" fill="#0ea5e9" name="Connect Rows" />
                     <Bar dataKey="dataCost" fill="#22c55e" name="Data Add-ons" />
                     <Bar dataKey="otherCost" fill="#f97316" name="General Add-ons" />
+                    <Bar dataKey="privateSpaces" fill="#3b82f6" name="Private Spaces" />
+                    <Bar dataKey="shieldSpaces" fill="#f59e0b" name="Shield Spaces" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -454,6 +457,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <tr>
                       <th>Date</th>
                       <th>Dyno Units</th>
+                      <th>Connect Rows</th>
                       <th>Data Add-ons</th>
                       <th>General Add-ons</th>
                       <th>Private Spaces</th>
@@ -466,6 +470,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <tr key={day.date}>
                         <td>{day.date}</td>
                         <td>{formatUsage(day.dynoCost)}</td>
+                        <td>{formatUsage(day.connectCost)}</td>
                         <td>{formatUsage(day.dataCost)}</td>
                         <td>{formatUsage(day.otherCost)}</td>
                         <td>{formatCount(dailyReport.spaceSummary?.privateSpaces)}</td>

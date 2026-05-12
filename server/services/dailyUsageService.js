@@ -207,19 +207,33 @@ function parseDailyUsage(dailyUsageData) {
 
   const days = dailyUsageData.map(day => {
     const dynoCost = Number(day.dynos || 0);
+    const connectCost = Number(day.connect || 0);
     const dataCost = Number(day.data || 0);
     const partnerCost = Number(day.partner || 0);
     const addonCost = Number(day.addons || 0);
+    const spaceCost = Number(day.space || 0);
     const otherCost = Math.max(addonCost - dataCost, partnerCost, 0);
-    const totalCost = dynoCost + addonCost + Number(day.space || 0);
+    const totalCost = dynoCost + addonCost + connectCost + spaceCost;
+
+    // Count spaces from teams data (if available)
+    let privateSpaces = 0;
+    let shieldSpaces = 0;
+    if (day.teams && Array.isArray(day.teams)) {
+      // Note: Daily usage API doesn't provide per-team space breakdown
+      // We'll need to aggregate this differently
+    }
 
     return {
       date: day.date,
       totalCost,
       dynoCost,
+      connectCost,
       addonCost,
       dataCost,
-      otherCost
+      otherCost,
+      spaceCost,
+      privateSpaces,
+      shieldSpaces
     };
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -227,9 +241,11 @@ function parseDailyUsage(dailyUsageData) {
   days.forEach(day => {
     day.totalCost = parseFloat(day.totalCost.toFixed(2));
     day.dynoCost = parseFloat(day.dynoCost.toFixed(2));
+    day.connectCost = parseFloat(day.connectCost.toFixed(2));
     day.addonCost = parseFloat(day.addonCost.toFixed(2));
     day.dataCost = parseFloat(day.dataCost.toFixed(2));
     day.otherCost = parseFloat(day.otherCost.toFixed(2));
+    day.spaceCost = parseFloat(day.spaceCost.toFixed(2));
   });
 
   // Calculate summary
@@ -307,9 +323,11 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
     const teamAppSpaceMap = new Map();
     for (const teamId of uniqueTeamIds) {
       const spaces = await getTeamSpaces(client, teamId);
+      const shieldSpaces = spaces.filter(space => Boolean(space.shield));
+      const privateSpaces = spaces.filter(space => !Boolean(space.shield));
       teamSpaceMap.set(teamId, {
-        privateSpaces: spaces.length,
-        shieldSpaces: spaces.filter(space => Boolean(space.shield)).length
+        privateSpaces: privateSpaces.length,
+        shieldSpaces: shieldSpaces.length
       });
 
       const appSpaceByName = new Map();
@@ -317,9 +335,11 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
       apps.forEach(app => {
         const appName = app.name;
         const appSpace = app.space || null;
+        const isInShieldSpace = Boolean(appSpace?.shield);
+        const isInPrivateSpace = Boolean(appSpace) && !isInShieldSpace;
         appSpaceByName.set(appName, {
-          inPrivateSpace: Boolean(appSpace),
-          inShieldSpace: Boolean(appSpace?.shield)
+          inPrivateSpace: isInPrivateSpace,
+          inShieldSpace: isInShieldSpace
         });
       });
       teamAppSpaceMap.set(teamId, appSpaceByName);
@@ -329,6 +349,14 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
       privateSpaces: acc.privateSpaces + item.privateSpaces,
       shieldSpaces: acc.shieldSpaces + item.shieldSpaces
     }), { privateSpaces: 0, shieldSpaces: 0 });
+
+    // Add space counts to each day (spaces don't change daily, so same count for all days)
+    if (structure.dailyUsage && structure.dailyUsage.days) {
+      structure.dailyUsage.days.forEach(day => {
+        day.privateSpaces = structure.spaceSummary.privateSpaces;
+        day.shieldSpaces = structure.spaceSummary.shieldSpaces;
+      });
+    }
 
     // Build team daily usage from enterprise payload directly
     const teamMap = new Map();
