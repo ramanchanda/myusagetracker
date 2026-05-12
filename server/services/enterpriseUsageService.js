@@ -699,7 +699,9 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       dynoUnits: 0,
       connectRows: 0,
       dataAddons: 0,
-      generalAddons: 0
+      generalAddons: 0,
+      privateSpaces: 0,
+      shieldSpaces: 0
     };
 
     for (const account of accounts) {
@@ -707,6 +709,22 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
         const usage = await getEnterpriseMonthlyUsage(client, account.id, m);
         const usageTeams = extractUsageTeamsFromMonthlyResponse(usage, m);
         row.teams += usageTeams.length;
+
+        // Get all teams for space counting (usage API may not include all teams)
+        const allTeams = await getEnterpriseAccountTeams(client, account.id);
+
+        // Count spaces across all teams
+        for (const team of allTeams) {
+          try {
+            const teamSpaces = await getTeamSpaces(client, team.id);
+            const shieldSpaces = teamSpaces.filter(space => Boolean(space.shield));
+            const privateSpaces = teamSpaces.filter(space => !Boolean(space.shield));
+            row.privateSpaces += privateSpaces.length;
+            row.shieldSpaces += shieldSpaces.length;
+          } catch (error) {
+            // Ignore space fetch errors for individual teams
+          }
+        }
 
         usageTeams.forEach(team => {
           const dynos = toNumber(team.dynos);
@@ -734,8 +752,10 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     dynoUnits: acc.dynoUnits + item.dynoUnits,
     connectRows: acc.connectRows + item.connectRows,
     dataAddons: acc.dataAddons + item.dataAddons,
-    generalAddons: acc.generalAddons + item.generalAddons
-  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0 });
+    generalAddons: acc.generalAddons + item.generalAddons,
+    privateSpaces: acc.privateSpaces + item.privateSpaces,
+    shieldSpaces: acc.shieldSpaces + item.shieldSpaces
+  }), { teams: 0, dynoUnits: 0, connectRows: 0, dataAddons: 0, generalAddons: 0, privateSpaces: 0, shieldSpaces: 0 });
 
   const first = monthly[0] || { dynoUnits: 0, connectRows: 0 };
   const last = monthly[monthly.length - 1] || { dynoUnits: 0, connectRows: 0 };
@@ -748,8 +768,12 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       avgTeamsPerMonth: monthly.length ? total.teams / monthly.length : 0,
       avgDynoUnitsPerMonth: monthly.length ? total.dynoUnits / monthly.length : 0,
       avgConnectRowsPerMonth: monthly.length ? total.connectRows / monthly.length : 0,
+      avgPrivateSpacesPerMonth: monthly.length ? total.privateSpaces / monthly.length : 0,
+      avgShieldSpacesPerMonth: monthly.length ? total.shieldSpaces / monthly.length : 0,
       dynoTrendPct: safePct(first.dynoUnits, last.dynoUnits),
-      connectTrendPct: safePct(first.connectRows, last.connectRows)
+      connectTrendPct: safePct(first.connectRows, last.connectRows),
+      privateSpacesTrendPct: safePct(first.privateSpaces, last.privateSpaces),
+      shieldSpacesTrendPct: safePct(first.shieldSpaces, last.shieldSpaces)
     }
   };
 }

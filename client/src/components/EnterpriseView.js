@@ -325,12 +325,20 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-value">{formatUsage(trendSummary.analysis.dynoTrendPct)}%</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Private Spaces</span>
-                  <span className="trend-value">{formatCount(summaryData.totalPrivateSpaces)}</span>
+                  <span className="trend-label">Avg Private Spaces / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgPrivateSpacesPerMonth)}</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Shield Spaces</span>
-                  <span className="trend-value">{formatCount(summaryData.totalShieldSpaces)}</span>
+                  <span className="trend-label">Avg Shield Spaces / Month</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.avgShieldSpacesPerMonth)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Private Spaces Trend (12M)</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.privateSpacesTrendPct)}%</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Shield Spaces Trend (12M)</span>
+                  <span className="trend-value">{formatUsage(trendSummary.analysis.shieldSpacesTrendPct)}%</span>
                 </div>
               </div>
               <div className="trend-chart-wrap summary12-chart">
@@ -340,10 +348,13 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="dynoUnits" stroke="#6f42c1" strokeWidth={2} />
-                    <Line type="monotone" dataKey="connectRows" stroke="#0ea5e9" strokeWidth={2} />
-                    <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2} />
-                    <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2} />
+                    <Legend />
+                    <Line type="monotone" dataKey="dynoUnits" stroke="#6f42c1" strokeWidth={2} name="Dyno Units" />
+                    <Line type="monotone" dataKey="connectRows" stroke="#0ea5e9" strokeWidth={2} name="Connect Rows" />
+                    <Line type="monotone" dataKey="dataAddons" stroke="#22c55e" strokeWidth={2} name="Data Add-ons" />
+                    <Line type="monotone" dataKey="generalAddons" stroke="#f97316" strokeWidth={2} name="General Add-ons" />
+                    <Line type="monotone" dataKey="privateSpaces" stroke="#3b82f6" strokeWidth={2} name="Private Spaces" />
+                    <Line type="monotone" dataKey="shieldSpaces" stroke="#f59e0b" strokeWidth={2} name="Shield Spaces" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
