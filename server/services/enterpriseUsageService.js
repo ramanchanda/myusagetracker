@@ -677,8 +677,9 @@ function extractUsageTeamsFromMonthlyResponse(enterpriseUsage, month) {
 
 async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllAccounts = false) {
   const client = createHerokuClient();
-  const targetMonth = month || getCurrentMonth();
-  const months = getPastMonths(targetMonth, 12);
+  // Always use the last 12 months from current date, not from selected month
+  const currentMonth = getCurrentMonth();
+  const months = getPastMonths(currentMonth, 12);
 
   let accounts = [];
   if (includeAllAccounts) {
@@ -691,6 +692,31 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
     if (all[0]) accounts = [all[0]];
   }
 
+  // Fetch current space counts once (spaces don't change per month in historical data)
+  const currentSpaceCounts = {
+    privateSpaces: 0,
+    shieldSpaces: 0
+  };
+
+  for (const account of accounts) {
+    try {
+      const allTeams = await getEnterpriseAccountTeams(client, account.id);
+      for (const team of allTeams) {
+        try {
+          const teamSpaces = await getTeamSpaces(client, team.id);
+          const shieldSpaces = teamSpaces.filter(space => Boolean(space.shield));
+          const privateSpaces = teamSpaces.filter(space => !Boolean(space.shield));
+          currentSpaceCounts.privateSpaces += privateSpaces.length;
+          currentSpaceCounts.shieldSpaces += shieldSpaces.length;
+        } catch (error) {
+          // Ignore space fetch errors for individual teams
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching teams for space count:`, error.message);
+    }
+  }
+
   const monthly = [];
   for (const m of months) {
     const row = {
@@ -700,8 +726,8 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
       connectRows: 0,
       dataAddons: 0,
       generalAddons: 0,
-      privateSpaces: 0,
-      shieldSpaces: 0
+      privateSpaces: currentSpaceCounts.privateSpaces,
+      shieldSpaces: currentSpaceCounts.shieldSpaces
     };
 
     for (const account of accounts) {
@@ -709,22 +735,6 @@ async function getEnterpriseTrendSummary(month, enterpriseAccountId, includeAllA
         const usage = await getEnterpriseMonthlyUsage(client, account.id, m);
         const usageTeams = extractUsageTeamsFromMonthlyResponse(usage, m);
         row.teams += usageTeams.length;
-
-        // Get all teams for space counting (usage API may not include all teams)
-        const allTeams = await getEnterpriseAccountTeams(client, account.id);
-
-        // Count spaces across all teams
-        for (const team of allTeams) {
-          try {
-            const teamSpaces = await getTeamSpaces(client, team.id);
-            const shieldSpaces = teamSpaces.filter(space => Boolean(space.shield));
-            const privateSpaces = teamSpaces.filter(space => !Boolean(space.shield));
-            row.privateSpaces += privateSpaces.length;
-            row.shieldSpaces += shieldSpaces.length;
-          } catch (error) {
-            // Ignore space fetch errors for individual teams
-          }
-        }
 
         usageTeams.forEach(team => {
           const dynos = toNumber(team.dynos);
