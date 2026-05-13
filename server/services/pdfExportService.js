@@ -2,9 +2,34 @@ const PDFDocument = require('pdfkit');
 const { Chart } = require('chart.js');
 const { createCanvas } = require('canvas');
 
-// Register Chart.js components
-const { CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend } = require('chart.js');
-Chart.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
+// Register Chart.js components (including controllers)
+const {
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  BarController,
+  LineElement,
+  LineController,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+} = require('chart.js');
+
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  BarController,
+  LineElement,
+  LineController,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // Color palette matching the app design
 const COLORS = {
