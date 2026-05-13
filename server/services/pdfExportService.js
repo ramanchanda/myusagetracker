@@ -438,7 +438,11 @@ class PDFExportService {
         { label: 'Total Teams', value: String(monthlySummary.totalTeams || 0), subtext: 'Active teams' },
         { label: 'Total Apps', value: String(monthlySummary.totalApps || 0), subtext: 'Applications' },
         { label: 'Total Dyno Units', value: (monthlySummary.totalDynoUnits || 0).toLocaleString(), subtext: 'This month' },
-        { label: 'Total Connect Rows', value: (monthlySummary.totalConnectRows || 0).toLocaleString(), subtext: 'Database usage' }
+        { label: 'Total Connect Rows', value: (monthlySummary.totalConnectRows || 0).toLocaleString(), subtext: 'This month' },
+        { label: 'Data Add-ons', value: (monthlySummary.totalDataAddons || 0).toLocaleString(), subtext: 'This month' },
+        { label: 'General Add-ons', value: (monthlySummary.totalGeneralAddons || 0).toLocaleString(), subtext: 'This month' },
+        { label: 'Private Spaces', value: (monthlySummary.totalPrivateSpaces || 0).toLocaleString(), subtext: 'Current total' },
+        { label: 'Shield Spaces', value: (monthlySummary.totalShieldSpaces || 0).toLocaleString(), subtext: 'Current total' }
       ];
 
       monthlyCards.forEach((card, index) => {
@@ -457,15 +461,19 @@ class PDFExportService {
         doc.moveDown(1);
         this.addSectionHeader('Teams Usage', '👥');
 
-        const headers = ['Team Name', 'Dyno Units', 'Connect Rows', 'Apps'];
+        const headers = ['Team Name', 'Dyno', 'Connect', 'Data', 'General', 'Private', 'Shield', 'Apps'];
         const rows = monthlyData.teams.slice(0, 15).map(t => [
           t.teamName || 'Unknown',
           (t.totalDynoUnits || 0).toLocaleString(),
           (t.totalConnectRows || 0).toLocaleString(),
+          (t.dataAddons || 0).toLocaleString(),
+          (t.generalAddons || 0).toLocaleString(),
+          String(t.privateSpaces || 0),
+          String(t.shieldSpaces || 0),
           String(t.appCount || 0)
         ]);
 
-        this.addTable(headers, rows, { columnWidths: [200, 110, 110, 75] });
+        this.addTable(headers, rows, { columnWidths: [105, 55, 62, 58, 58, 45, 45, 40], fontSize: 8 });
 
         if (monthlyData.teams.length > 15) {
           doc.fontSize(9)
@@ -477,14 +485,23 @@ class PDFExportService {
     }
 
     // ========== DAILY REPORT ==========
-    if (dailyData && dailyData.dateRange) {
+    if (dailyData) {
       doc.addPage();
       this.pageNumber++;
 
-      this.addHeader('Daily Report', `${dailyData.dateRange}`);
+      this.addHeader('Daily Report', dailyData.dateRange || 'Date range not selected');
       this.addFooter();
 
       doc.moveDown(2);
+
+      if (dailyData.message) {
+        this.addSectionHeader('Status', 'ℹ️');
+        doc.fontSize(11)
+          .fillColor(COLORS.warning)
+          .font('Helvetica-Bold')
+          .text(dailyData.message, 50, doc.y, { width: doc.page.width - 100 });
+        doc.moveDown(1.5);
+      }
 
       // Daily Summary
       this.addSectionHeader('Daily Summary', '📆');
@@ -506,23 +523,38 @@ class PDFExportService {
 
       doc.y = currentY + cardHeight + spacing + 20;
 
+      if (dailyData.periodTotals && Object.keys(dailyData.periodTotals).length > 0) {
+        this.addSectionHeader('Period Totals', '🧮');
+        const pt = dailyData.periodTotals;
+        this.addKeyValue('Dyno Units (Total)', Number(pt.dynoUnits || 0).toLocaleString());
+        this.addKeyValue('Connect Rows (Max)', Number(pt.connectRows || 0).toLocaleString());
+        this.addKeyValue('Data Add-ons (Total)', Number(pt.dataAddons || 0).toLocaleString());
+        this.addKeyValue('General Add-ons (Total)', Number(pt.generalAddons || 0).toLocaleString());
+        this.addKeyValue('Private Spaces (Total)', Number(pt.privateSpaces || 0).toLocaleString());
+        this.addKeyValue('Shield Spaces (Total)', Number(pt.shieldSpaces || 0).toLocaleString());
+      }
+
       // Daily Breakdown Table
       if (dailyData.dailyBreakdown && dailyData.dailyBreakdown.length > 0) {
         doc.moveDown(1);
         this.addSectionHeader('Daily Breakdown', '📋');
 
-        const headers = ['Date', 'Team', 'App', 'Dyno', 'Connect'];
+        const headers = ['Date', 'Team', 'App', 'Dyno', 'Connect', 'Data', 'General', 'Private', 'Shield'];
         const rows = dailyData.dailyBreakdown.slice(0, 30).map(d => [
           d.date || '',
           d.teamName || '',
           d.appName || '',
           (d.dynoUnits || 0).toFixed(2),
-          (d.connectRows || 0).toLocaleString()
+          (d.connectRows || 0).toLocaleString(),
+          (d.dataAddons || 0).toFixed(2),
+          (d.generalAddons || 0).toFixed(2),
+          Number(d.privateSpaces || 0) > 0 ? 'Yes' : 'No',
+          Number(d.shieldSpaces || 0) > 0 ? 'Yes' : 'No'
         ]);
 
         this.addTable(headers, rows, {
-          columnWidths: [90, 130, 130, 70, 75],
-          fontSize: 8
+          columnWidths: [56, 86, 76, 40, 50, 40, 46, 30, 30],
+          fontSize: 7
         });
 
         if (dailyData.dailyBreakdown.length > 30) {

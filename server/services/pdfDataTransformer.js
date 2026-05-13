@@ -124,9 +124,14 @@ function transformMonthlyData(structureData, selectedMonth) {
   let totalApps = 0;
 
   const transformedTeams = teams.map(team => {
-    const dyno = team.totalDynoUnits || 0;
-    const connect = team.totalConnectRows || 0;
-    const apps = team.appCount || 0;
+    const resources = team.resources || {};
+    const dyno = Number(resources?.dynos?.count || 0);
+    const connect = Number(resources?.connect?.used || 0);
+    const dataAddons = Number(resources?.dataAddons?.count || 0);
+    const generalAddons = Number(resources?.otherAddons?.count || 0);
+    const privateSpaces = Number(resources?.privateSpaces || 0);
+    const shieldSpaces = Number(resources?.shieldSpaces || 0);
+    const apps = Number(resources?.totalApps || 0);
 
     totalDynoUnits += dyno;
     totalConnectRows += connect;
@@ -136,6 +141,10 @@ function transformMonthlyData(structureData, selectedMonth) {
       teamName: team.teamName || team.name || 'Unknown',
       totalDynoUnits: dyno,
       totalConnectRows: connect,
+      dataAddons,
+      generalAddons,
+      privateSpaces,
+      shieldSpaces,
       appCount: apps
     };
   });
@@ -145,8 +154,12 @@ function transformMonthlyData(structureData, selectedMonth) {
     summary: {
       totalTeams: teams.length,
       totalApps: totalApps || summary.totalApps || 0,
-      totalDynoUnits: totalDynoUnits || summary.totalDynoUnits || 0,
-      totalConnectRows: totalConnectRows || summary.totalConnectRows || 0
+      totalDynoUnits: totalDynoUnits || Number(summary.totalDynos || 0),
+      totalConnectRows: totalConnectRows || Number(summary.totalConnect || 0),
+      totalDataAddons: Number(summary.totalDataAddons || 0),
+      totalGeneralAddons: Number(summary.totalOtherAddons || 0),
+      totalPrivateSpaces: Number(summary.totalPrivateSpaces || 0),
+      totalShieldSpaces: Number(summary.totalShieldSpaces || 0)
     },
     teams: transformedTeams
   };
@@ -155,12 +168,24 @@ function transformMonthlyData(structureData, selectedMonth) {
 /**
  * Transform daily usage data for daily report
  */
-function transformDailyData(dailyUsageData, startDate, endDate) {
+function transformDailyData(dailyUsageData, startDate, endDate, includeDaily = true) {
+  if (!includeDaily) {
+    return {
+      dateRange: startDate && endDate ? `${startDate} to ${endDate}` : '',
+      summary: {},
+      dailyBreakdown: [],
+      periodTotals: {},
+      message: 'Daily report not generated: please select both From and To dates in Daily - Datewise Report before exporting.'
+    };
+  }
+
   if (!dailyUsageData) {
     return {
       dateRange: `${startDate} to ${endDate}`,
       summary: {},
-      dailyBreakdown: []
+      dailyBreakdown: [],
+      periodTotals: {},
+      message: 'No daily data available for the selected date range.'
     };
   }
 
@@ -199,13 +224,19 @@ function transformDailyData(dailyUsageData, startDate, endDate) {
       peakDayDyno,
       peakDate
     },
+    periodTotals: dailyUsageData?.dailyUsage?.summary?.periodTotals || {},
     dailyBreakdown: breakdown.map(row => ({
       date: row.date || '',
       teamName: row.teamName || 'Unknown',
       appName: row.appName || 'Unknown',
       dynoUnits: row.dynoUnits || 0,
-      connectRows: row.connectRows || 0
-    }))
+      connectRows: row.connectRows || 0,
+      dataAddons: row.dataAddons || 0,
+      generalAddons: row.generalAddons || 0,
+      privateSpaces: row.privateSpaces || 0,
+      shieldSpaces: row.shieldSpaces || 0
+    })),
+    message: ''
   };
 }
 

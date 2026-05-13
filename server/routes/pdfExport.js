@@ -38,8 +38,9 @@ router.post('/export', async (req, res) => {
 
     const accountId = account.id;
     const selectedMonth = monthForMonthly || new Date().toISOString().slice(0, 7);
-    const startDate = startDateForDaily || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const endDate = endDateForDaily || new Date().toISOString().split('T')[0];
+    const shouldIncludeDaily = Boolean(startDateForDaily && endDateForDaily);
+    const startDate = startDateForDaily || '';
+    const endDate = endDateForDaily || '';
 
     // Fetch all required data
     console.log('Fetching Summary of past 12 months data...');
@@ -55,19 +56,22 @@ router.post('/export', async (req, res) => {
       accountId
     );
 
-    console.log('Fetching Daily report data...');
-    const dailyData = await dailyUsageService.getEnterpriseDailyUsageStructure(
-      selectedMonth,
-      accountId,
-      startDate,
-      endDate
-    );
+    let dailyData = null;
+    if (shouldIncludeDaily) {
+      console.log('Fetching Daily report data...');
+      dailyData = await dailyUsageService.getEnterpriseDailyUsageStructure(
+        selectedMonth,
+        accountId,
+        startDate,
+        endDate
+      );
+    }
 
     // Transform data to PDF format
     console.log('Transforming data for PDF...');
     const transformedSummary12 = transformSummary12Data(summary12Data);
     const transformedMonthly = transformMonthlyData(monthlyData, selectedMonth);
-    const transformedDaily = transformDailyData(dailyData, startDate, endDate);
+    const transformedDaily = transformDailyData(dailyData, startDate, endDate, shouldIncludeDaily);
 
     console.log('Summary12 data:', JSON.stringify(transformedSummary12, null, 2).substring(0, 500));
     console.log('Monthly data:', JSON.stringify(transformedMonthly, null, 2).substring(0, 500));
@@ -147,8 +151,9 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
 
     const accountId = account.id;
     const selectedMonth = monthForMonthly || new Date().toISOString().slice(0, 7);
-    const startDate = startDateForDaily || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const endDate = endDateForDaily || new Date().toISOString().split('T')[0];
+    const shouldIncludeDaily = Boolean(startDateForDaily && endDateForDaily);
+    const startDate = startDateForDaily || '';
+    const endDate = endDateForDaily || '';
 
     console.log(`[PDF Export] Account ID: ${accountId}`);
     console.log(`[PDF Export] Date ranges: Month=${selectedMonth}, Daily=${startDate} to ${endDate}`);
@@ -181,18 +186,22 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
       throw new Error(`Failed to fetch monthly structure: ${err.message}`);
     }
 
-    try {
-      console.log('[PDF Export] Step 4: Fetching daily usage...');
-      dailyData = await dailyUsageService.getEnterpriseDailyUsageStructure(
-        selectedMonth,
-        accountId,
-        startDate,
-        endDate
-      );
-      console.log(`[PDF Export] ✓ Daily data fetched: ${dailyData?.dailyBreakdown?.length || 0} rows`);
-    } catch (err) {
-      console.error('[PDF Export] Error fetching daily data:', err.message);
-      throw new Error(`Failed to fetch daily usage: ${err.message}`);
+    if (shouldIncludeDaily) {
+      try {
+        console.log('[PDF Export] Step 4: Fetching daily usage...');
+        dailyData = await dailyUsageService.getEnterpriseDailyUsageStructure(
+          selectedMonth,
+          accountId,
+          startDate,
+          endDate
+        );
+        console.log(`[PDF Export] ✓ Daily data fetched: ${dailyData?.dailyBreakdown?.length || 0} rows`);
+      } catch (err) {
+        console.error('[PDF Export] Error fetching daily data:', err.message);
+        throw new Error(`Failed to fetch daily usage: ${err.message}`);
+      }
+    } else {
+      console.log('[PDF Export] Step 4: Daily usage skipped (date range not selected)');
     }
 
     // Transform data to PDF format
@@ -201,7 +210,7 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
     try {
       transformedSummary12 = transformSummary12Data(summary12Data);
       transformedMonthly = transformMonthlyData(monthlyData, selectedMonth);
-      transformedDaily = transformDailyData(dailyData, startDate, endDate);
+      transformedDaily = transformDailyData(dailyData, startDate, endDate, shouldIncludeDaily);
       console.log('[PDF Export] ✓ Data transformation complete');
       console.log(`[PDF Export] Summary12 chartData: ${transformedSummary12?.chartData?.length || 0} months`);
       console.log(`[PDF Export] Monthly teams: ${transformedMonthly?.teams?.length || 0}`);
