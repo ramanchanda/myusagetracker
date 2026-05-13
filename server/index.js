@@ -16,6 +16,9 @@ const invoiceService = require('./services/invoiceService');
 const enterpriseUsageService = require('./services/enterpriseUsageService');
 const personalUsageService = require('./services/personalUsageService');
 const dailyUsageService = require('./services/dailyUsageService');
+const configService = require('./services/configService');
+const enhancedNotificationService = require('./services/enhancedNotificationService');
+const thresholdMonitor = require('./services/thresholdMonitor');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -275,6 +278,178 @@ app.get('/api/personal/daily-usage', async (req, res) => {
   }
 });
 
+// ============================================
+// NOTIFICATION CONFIGURATION ENDPOINTS
+// ============================================
+
+// Get full notification configuration
+app.get('/api/notifications/config', async (req, res) => {
+  try {
+    const config = await configService.getConfig();
+    res.json(config);
+  } catch (error) {
+    console.error('Error fetching notification config:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update full notification configuration
+app.put('/api/notifications/config', async (req, res) => {
+  try {
+    const config = await configService.updateConfig(req.body);
+    res.json(config);
+  } catch (error) {
+    console.error('Error updating notification config:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get email configuration
+app.get('/api/notifications/email-config', async (req, res) => {
+  try {
+    const emailConfig = await configService.getEmailConfig();
+    res.json(emailConfig);
+  } catch (error) {
+    console.error('Error fetching email config:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update email configuration
+app.put('/api/notifications/email-config', async (req, res) => {
+  try {
+    const emailConfig = await configService.updateEmailConfig(req.body);
+    res.json(emailConfig);
+  } catch (error) {
+    console.error('Error updating email config:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test email configuration
+app.post('/api/notifications/test-email', async (req, res) => {
+  try {
+    const testResult = await enhancedNotificationService.testEmailConfiguration();
+    res.json(testResult);
+  } catch (error) {
+    console.error('Error testing email:', error.message);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+// Send test notification
+app.post('/api/notifications/send-test', async (req, res) => {
+  try {
+    const result = await enhancedNotificationService.sendTestNotification();
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending test notification:', error.message);
+    res.status(500).json({ error: error.message, sent: false });
+  }
+});
+
+// Get thresholds
+app.get('/api/notifications/thresholds', async (req, res) => {
+  try {
+    const thresholds = await configService.getThresholds();
+    res.json(thresholds);
+  } catch (error) {
+    console.error('Error fetching thresholds:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update thresholds
+app.put('/api/notifications/thresholds', async (req, res) => {
+  try {
+    const thresholds = await configService.updateThresholds(req.body);
+    res.json(thresholds);
+  } catch (error) {
+    console.error('Error updating thresholds:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update single threshold
+app.put('/api/notifications/thresholds/:resourceType', async (req, res) => {
+  try {
+    const { resourceType } = req.params;
+    const threshold = await configService.updateThreshold(resourceType, req.body);
+    res.json(threshold);
+  } catch (error) {
+    console.error('Error updating threshold:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get trigger schedule
+app.get('/api/notifications/schedule', async (req, res) => {
+  try {
+    const schedule = await configService.getTriggerSchedule();
+    res.json(schedule);
+  } catch (error) {
+    console.error('Error fetching schedule:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update trigger schedule
+app.put('/api/notifications/schedule', async (req, res) => {
+  try {
+    const schedule = await configService.updateTriggerSchedule(req.body);
+    res.json(schedule);
+  } catch (error) {
+    console.error('Error updating schedule:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get alert history
+app.get('/api/notifications/history', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const history = await configService.getAlertHistory(limit);
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching alert history:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear alert history
+app.delete('/api/notifications/history', async (req, res) => {
+  try {
+    const result = await configService.clearAlertHistory();
+    res.json(result);
+  } catch (error) {
+    console.error('Error clearing alert history:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Manually trigger threshold monitoring
+app.post('/api/notifications/check-thresholds', async (req, res) => {
+  try {
+    const result = await thresholdMonitor.monitorEnterpriseThresholds();
+    res.json(result);
+  } catch (error) {
+    console.error('Error checking thresholds:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Manually send usage summary
+app.post('/api/notifications/send-summary', async (req, res) => {
+  try {
+    const period = req.body.period || 'daily';
+    const result = await thresholdMonitor.sendScheduledSummary(period);
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending summary:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug endpoint to check addon pricing
 app.get('/api/debug/addons', async (req, res) => {
   try {
@@ -321,8 +496,18 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// Scheduled threshold monitoring (every hour)
+cron.schedule('0 * * * *', async () => {
+  console.log('Running scheduled threshold check...');
+  const config = await configService.getConfig();
+  if (config.triggerSchedule.realtimeAlerts.enabled) {
+    await thresholdMonitor.monitorEnterpriseThresholds();
+  }
+});
+
+// Legacy scheduled check (keep for backward compatibility)
 cron.schedule('0 */6 * * *', async () => {
-  console.log('Running scheduled usage check...');
+  console.log('Running legacy scheduled usage check...');
   await usageMonitor.checkAndNotify();
 });
 

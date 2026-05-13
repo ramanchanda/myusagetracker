@@ -1,0 +1,71 @@
+{
+  "emailConfig": {
+    "enabled": false,
+    "provider": "mailtogo",
+    "recipients": [],
+    "fromName": "Heroku Usage Monitor",
+    "fromEmail": ""
+  },
+  "thresholds": {
+    "dynoUnits": {
+      "enabled": true,
+      "limit": 1000,
+      "warningPercentage": 80,
+      "criticalPercentage": 95
+    },
+    "connectRows": {
+      "enabled": true,
+      "limit": 10000,
+      "warningPercentage": 80,
+      "criticalPercentage": 95
+    },
+    "dataAddons": {
+      "enabled": true,
+      "limit": 500,
+      "warningPercentage": 80,
+      "criticalPercentage": 95
+    },
+    "generalAddons": {
+      "enabled": true,
+      "limit": 300,
+      "warningPercentage": 80,
+      "criticalPercentage": 95
+    },
+    "privateSpaces": {
+      "enabled": true,
+      "limit": 5,
+      "warningPercentage": 80,
+      "criticalPercentage": 100
+    },
+    "shieldSpaces": {
+      "enabled": true,
+      "limit": 3,
+      "warningPercentage": 80,
+      "criticalPercentage": 100
+    }
+  },
+  "triggerSchedule": {
+    "dailySummary": {
+      "enabled": false,
+      "time": "09:00",
+      "timezone": "UTC"
+    },
+    "weeklySummary": {
+      "enabled": false,
+      "dayOfWeek": "Monday",
+      "time": "09:00",
+      "timezone": "UTC"
+    },
+    "monthlySummary": {
+      "enabled": false,
+      "dayOfMonth": 1,
+      "time": "09:00",
+      "timezone": "UTC"
+    },
+    "realtimeAlerts": {
+      "enabled": true,
+      "checkIntervalMinutes": 60
+    }
+  },
+  "alertHistory": []
+}
