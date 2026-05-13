@@ -17,7 +17,7 @@ The notification service provides comprehensive email alerts for Heroku resource
 
 ### 1. Add Mailgun Addon to Heroku
 ```bash
-heroku addons:create mailgun:starter -a myusagetracker
+heroku addons:create mailgun:starter -a herokuusagetracker
 ```
 
 This automatically sets these environment variables:
@@ -34,7 +34,7 @@ The notification service will automatically detect and use these settings.
 
 ### 1. Add MailtoGo Addon to Heroku
 ```bash
-heroku addons:create mailtogo:free -a myusagetracker
+heroku addons:create mailtogo:free -a herokuusagetracker
 ```
 
 This automatically sets these environment variables:
@@ -238,8 +238,8 @@ Location: `server/config/notificationConfig.json`
 1. Check if email notifications are enabled in config
 2. Verify recipient emails are configured
 3. Test SMTP connection: `POST /api/notifications/test-email`
-4. Check Heroku logs: `heroku logs --tail -a myusagetracker`
-5. Verify MailtoGo addon is attached: `heroku addons -a myusagetracker`
+4. Check Heroku logs: `heroku logs --tail -a herokuusagetracker`
+5. Verify MailtoGo addon is attached: `heroku addons -a herokuusagetracker`
 
 ### No Threshold Alerts
 1. Verify thresholds are enabled for each resource
@@ -251,7 +251,7 @@ Location: `server/config/notificationConfig.json`
 ### Mailgun Connection Issues
 ```bash
 # Verify Mailgun config
-heroku config -a myusagetracker | grep MAILGUN
+heroku config -a herokuusagetracker | grep MAILGUN
 
 # Should see:
 # MAILGUN_SMTP_SERVER
@@ -263,7 +263,7 @@ heroku config -a myusagetracker | grep MAILGUN
 ### MailtoGo Connection Issues
 ```bash
 # Verify MailtoGo config
-heroku config -a myusagetracker | grep MAILTOGO
+heroku config -a herokuusagetracker | grep MAILTOGO
 
 # Should see:
 # MAILTOGO_SMTP_HOST

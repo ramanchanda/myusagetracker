@@ -266,7 +266,7 @@ Potential improvements:
 ## Support
 
 For issues or questions:
-1. Check Heroku logs: `heroku logs --tail -a myusagetracker`
+1. Check Heroku logs: `heroku logs --tail -a herokuusagetracker`
 2. Verify system dependencies are installed
 3. Ensure sufficient dyno memory
 4. Review error messages in browser console
@@ -282,7 +282,7 @@ For issues or questions:
 ### From API (cURL)
 ```bash
 curl -X GET \
-  "https://myusagetracker-0684662c08ff.herokuapp.com/api/pdf/export/myaccount@example.com?monthForMonthly=2024-01" \
+  "https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/pdf/export/myaccount@example.com?monthForMonthly=2024-01" \
   -o report.pdf
 ```
 

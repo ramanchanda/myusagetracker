@@ -2,14 +2,14 @@
 
 ## 🚀 Your notification service is now deployed!
 
-App URL: https://myusagetracker-0684662c08ff.herokuapp.com/
+App URL: https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 
 ## Step 1: Add Mailgun Addon
 
 Add the Mailgun addon to your Heroku app:
 
 ```bash
-heroku addons:create mailgun:starter -a myusagetracker
+heroku addons:create mailgun:starter -a herokuusagetracker
 ```
 
 This automatically configures:
@@ -21,7 +21,7 @@ This automatically configures:
 
 ## Step 2: Access Notification Settings
 
-1. Open your app: https://myusagetracker-0684662c08ff.herokuapp.com/
+1. Open your app: https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 2. Click the **"📧 Notification Settings"** button in the top-right header
 3. You'll see a beautiful configuration interface with 3 tabs
 
@@ -138,22 +138,22 @@ You'll receive beautiful HTML emails with:
 
 1. Verify Mailgun addon is attached:
    ```bash
-   heroku addons -a myusagetracker
+   heroku addons -a herokuusagetracker
    ```
 
 2. Check Mailgun config vars:
    ```bash
-   heroku config -a myusagetracker | grep MAILGUN
+   heroku config -a herokuusagetracker | grep MAILGUN
    ```
 
 3. Check server logs:
    ```bash
-   heroku logs --tail -a myusagetracker
+   heroku logs --tail -a herokuusagetracker
    ```
 
 4. Test email configuration via API:
    ```bash
-   curl -X POST https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/test-email
+   curl -X POST https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/test-email
    ```
 
 ### No threshold alerts?
@@ -200,7 +200,7 @@ See `NOTIFICATION_SETUP.md` for:
 
 Check Heroku logs for detailed error messages:
 ```bash
-heroku logs --tail -a myusagetracker
+heroku logs --tail -a herokuusagetracker
 ```
 
 The notification service logs all operations including:

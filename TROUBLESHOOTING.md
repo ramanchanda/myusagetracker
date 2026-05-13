@@ -16,13 +16,13 @@ If you're seeing "Failed to fetch enterprise structure: Request failed with stat
 ### Step 1: Verify API Key is Set
 
 ```bash
-heroku config:get HEROKU_API_KEY --app myusagetracker
+heroku config:get HEROKU_API_KEY --app herokuusagetracker
 ```
 
 If empty or shows placeholder, set it:
 
 ```bash
-heroku config:set HEROKU_API_KEY=$(heroku auth:token) --app myusagetracker
+heroku config:set HEROKU_API_KEY=$(heroku auth:token) --app herokuusagetracker
 ```
 
 ### Step 2: Check Enterprise Account Access
@@ -65,7 +65,7 @@ The API key needs these permissions:
 If you have multiple enterprise accounts, specify which one:
 
 ```bash
-heroku config:set ENTERPRISE_ACCOUNT_ID_OR_NAME="your-enterprise-account-id" --app myusagetracker
+heroku config:set ENTERPRISE_ACCOUNT_ID_OR_NAME="your-enterprise-account-id" --app herokuusagetracker
 ```
 
 ### Step 5: Test API Access
@@ -130,7 +130,7 @@ async function getEnterpriseStructure(month) {
 View all environment variables:
 
 ```bash
-heroku config --app myusagetracker
+heroku config --app herokuusagetracker
 ```
 
 Required variables:
@@ -143,7 +143,7 @@ Required variables:
 
 **Solution:**
 ```bash
-heroku config:set HEROKU_API_KEY=$(heroku auth:token) --app myusagetracker
+heroku config:set HEROKU_API_KEY=$(heroku auth:token) --app herokuusagetracker
 ```
 
 ### Issue: "No enterprise account found"
@@ -160,7 +160,7 @@ API key expired or invalid. Generate new token:
 ```bash
 heroku auth:token
 # Copy token and set it
-heroku config:set HEROKU_API_KEY=<new-token> --app myusagetracker
+heroku config:set HEROKU_API_KEY=<new-token> --app herokuusagetracker
 ```
 
 ### Issue: 403 Forbidden (Even with Valid Key)
@@ -172,7 +172,7 @@ heroku config:set HEROKU_API_KEY=<new-token> --app myusagetracker
 
 **Check your Heroku plan:**
 ```bash
-heroku info --app myusagetracker
+heroku info --app herokuusagetracker
 ```
 
 ### Issue: Rate Limiting (429 Too Many Requests)
@@ -265,7 +265,7 @@ To get the app working quickly without enterprise features:
 
 Check Heroku logs:
 ```bash
-heroku logs --tail --app myusagetracker
+heroku logs --tail --app herokuusagetracker
 ```
 
 Look for:

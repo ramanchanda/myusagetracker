@@ -152,40 +152,40 @@ Results in:
 ## 🚀 Setting Up Config Vars
 
 ### Method 1: Heroku Dashboard
-1. Go to https://dashboard.heroku.com/apps/myusagetracker/settings
+1. Go to https://dashboard.heroku.com/apps/herokuusagetracker/settings
 2. Click "Reveal Config Vars"
 3. Add the variables
 
 ### Method 2: Heroku CLI
 ```bash
 # Set global percentages
-heroku config:set THRESHOLD_WARNING_PERCENTAGE=80 -a myusagetracker
-heroku config:set THRESHOLD_CRITICAL_PERCENTAGE=95 -a myusagetracker
+heroku config:set THRESHOLD_WARNING_PERCENTAGE=80 -a herokuusagetracker
+heroku config:set THRESHOLD_CRITICAL_PERCENTAGE=95 -a herokuusagetracker
 
 # Set resource limits
-heroku config:set THRESHOLD_DYNO_LIMIT=1000 -a myusagetracker
-heroku config:set THRESHOLD_CONNECT_LIMIT=10000 -a myusagetracker
-heroku config:set THRESHOLD_DATA_ADDONS_LIMIT=500 -a myusagetracker
-heroku config:set THRESHOLD_GENERAL_ADDONS_LIMIT=300 -a myusagetracker
-heroku config:set THRESHOLD_PRIVATE_SPACES_LIMIT=5 -a myusagetracker
-heroku config:set THRESHOLD_SHIELD_SPACES_LIMIT=3 -a myusagetracker
+heroku config:set THRESHOLD_DYNO_LIMIT=1000 -a herokuusagetracker
+heroku config:set THRESHOLD_CONNECT_LIMIT=10000 -a herokuusagetracker
+heroku config:set THRESHOLD_DATA_ADDONS_LIMIT=500 -a herokuusagetracker
+heroku config:set THRESHOLD_GENERAL_ADDONS_LIMIT=300 -a herokuusagetracker
+heroku config:set THRESHOLD_PRIVATE_SPACES_LIMIT=5 -a herokuusagetracker
+heroku config:set THRESHOLD_SHIELD_SPACES_LIMIT=3 -a herokuusagetracker
 
 # Enable resources
-heroku config:set THRESHOLD_DYNO_ENABLED=true -a myusagetracker
-heroku config:set THRESHOLD_CONNECT_ENABLED=true -a myusagetracker
-heroku config:set THRESHOLD_DATA_ADDONS_ENABLED=true -a myusagetracker
-heroku config:set THRESHOLD_GENERAL_ADDONS_ENABLED=true -a myusagetracker
-heroku config:set THRESHOLD_PRIVATE_SPACES_ENABLED=true -a myusagetracker
-heroku config:set THRESHOLD_SHIELD_SPACES_ENABLED=true -a myusagetracker
+heroku config:set THRESHOLD_DYNO_ENABLED=true -a herokuusagetracker
+heroku config:set THRESHOLD_CONNECT_ENABLED=true -a herokuusagetracker
+heroku config:set THRESHOLD_DATA_ADDONS_ENABLED=true -a herokuusagetracker
+heroku config:set THRESHOLD_GENERAL_ADDONS_ENABLED=true -a herokuusagetracker
+heroku config:set THRESHOLD_PRIVATE_SPACES_ENABLED=true -a herokuusagetracker
+heroku config:set THRESHOLD_SHIELD_SPACES_ENABLED=true -a herokuusagetracker
 
 # Enable email notifications
-heroku config:set NOTIFICATION_EMAIL_ENABLED=true -a myusagetracker
-heroku config:set NOTIFICATION_RECIPIENTS=your-email@example.com -a myusagetracker
-heroku config:set NOTIFICATION_FROM_NAME="Heroku Usage Monitor" -a myusagetracker
+heroku config:set NOTIFICATION_EMAIL_ENABLED=true -a herokuusagetracker
+heroku config:set NOTIFICATION_RECIPIENTS=your-email@example.com -a herokuusagetracker
+heroku config:set NOTIFICATION_FROM_NAME="Heroku Usage Monitor" -a herokuusagetracker
 
 # Enable realtime alerts
-heroku config:set SCHEDULE_REALTIME_ENABLED=true -a myusagetracker
-heroku config:set SCHEDULE_REALTIME_INTERVAL=60 -a myusagetracker
+heroku config:set SCHEDULE_REALTIME_ENABLED=true -a herokuusagetracker
+heroku config:set SCHEDULE_REALTIME_INTERVAL=60 -a herokuusagetracker
 ```
 
 ## 🔄 Migration Guide
@@ -194,22 +194,22 @@ If you had the old individual percentage config vars, you can remove them:
 
 ```bash
 # Remove old vars (no longer used)
-heroku config:unset THRESHOLD_DYNO_WARNING -a myusagetracker
-heroku config:unset THRESHOLD_DYNO_CRITICAL -a myusagetracker
-heroku config:unset THRESHOLD_CONNECT_WARNING -a myusagetracker
-heroku config:unset THRESHOLD_CONNECT_CRITICAL -a myusagetracker
-heroku config:unset THRESHOLD_DATA_ADDONS_WARNING -a myusagetracker
-heroku config:unset THRESHOLD_DATA_ADDONS_CRITICAL -a myusagetracker
-heroku config:unset THRESHOLD_GENERAL_ADDONS_WARNING -a myusagetracker
-heroku config:unset THRESHOLD_GENERAL_ADDONS_CRITICAL -a myusagetracker
-heroku config:unset THRESHOLD_PRIVATE_SPACES_WARNING -a myusagetracker
-heroku config:unset THRESHOLD_PRIVATE_SPACES_CRITICAL -a myusagetracker
-heroku config:unset THRESHOLD_SHIELD_SPACES_WARNING -a myusagetracker
-heroku config:unset THRESHOLD_SHIELD_SPACES_CRITICAL -a myusagetracker
+heroku config:unset THRESHOLD_DYNO_WARNING -a herokuusagetracker
+heroku config:unset THRESHOLD_DYNO_CRITICAL -a herokuusagetracker
+heroku config:unset THRESHOLD_CONNECT_WARNING -a herokuusagetracker
+heroku config:unset THRESHOLD_CONNECT_CRITICAL -a herokuusagetracker
+heroku config:unset THRESHOLD_DATA_ADDONS_WARNING -a herokuusagetracker
+heroku config:unset THRESHOLD_DATA_ADDONS_CRITICAL -a herokuusagetracker
+heroku config:unset THRESHOLD_GENERAL_ADDONS_WARNING -a herokuusagetracker
+heroku config:unset THRESHOLD_GENERAL_ADDONS_CRITICAL -a herokuusagetracker
+heroku config:unset THRESHOLD_PRIVATE_SPACES_WARNING -a herokuusagetracker
+heroku config:unset THRESHOLD_PRIVATE_SPACES_CRITICAL -a herokuusagetracker
+heroku config:unset THRESHOLD_SHIELD_SPACES_WARNING -a herokuusagetracker
+heroku config:unset THRESHOLD_SHIELD_SPACES_CRITICAL -a herokuusagetracker
 
 # Add new global vars
-heroku config:set THRESHOLD_WARNING_PERCENTAGE=80 -a myusagetracker
-heroku config:set THRESHOLD_CRITICAL_PERCENTAGE=95 -a myusagetracker
+heroku config:set THRESHOLD_WARNING_PERCENTAGE=80 -a herokuusagetracker
+heroku config:set THRESHOLD_CRITICAL_PERCENTAGE=95 -a herokuusagetracker
 ```
 
 ## ✨ Benefits
@@ -246,13 +246,13 @@ After setting config vars, test the configuration:
 
 ```bash
 # View current config
-curl https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/config
+curl https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/config
 
 # Test email
-curl -X POST https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/send-test
+curl -X POST https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/send-test
 
 # Check thresholds
-curl -X POST https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/check-thresholds
+curl -X POST https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/check-thresholds
 ```
 
 ## 🎯 Default Values

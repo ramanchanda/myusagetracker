@@ -115,7 +115,7 @@ Accept: application/vnd.heroku+json; version=3
 ### 4. Account Type
 Check your account type:
 ```bash
-heroku info --app myusagetracker
+heroku info --app herokuusagetracker
 ```
 
 Required: Enterprise or Teams subscription

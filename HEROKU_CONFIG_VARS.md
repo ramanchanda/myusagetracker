@@ -17,11 +17,11 @@ The notification service uses **Mailgun API** (not SMTP) for better reliability.
 
 ```bash
 # After adding Mailgun addon
-heroku addons:create mailgun:starter -a myusagetracker
+heroku addons:create mailgun:starter -a herokuusagetracker
 
 # Get your API credentials
-heroku config:get MAILGUN_API_KEY -a myusagetracker
-heroku config:get MAILGUN_DOMAIN -a myusagetracker
+heroku config:get MAILGUN_API_KEY -a herokuusagetracker
+heroku config:get MAILGUN_DOMAIN -a herokuusagetracker
 ```
 
 These are automatically set when you add the Mailgun addon:
@@ -34,7 +34,7 @@ Since Mailgun starts in **sandbox mode**, you MUST authorize recipients:
 
 1. Open Mailgun dashboard:
    ```bash
-   heroku addons:open mailgun -a myusagetracker
+   heroku addons:open mailgun -a herokuusagetracker
    ```
 
 2. Go to **"Authorized Recipients"**
@@ -50,7 +50,7 @@ Since Mailgun starts in **sandbox mode**, you MUST authorize recipients:
 
 ### Option 1: Via Heroku Dashboard (Easiest)
 
-1. Open your app dashboard: https://dashboard.heroku.com/apps/myusagetracker
+1. Open your app dashboard: https://dashboard.heroku.com/apps/herokuusagetracker
 2. Click **Settings** tab
 3. Click **Reveal Config Vars**
 4. Add the variables below
@@ -92,7 +92,7 @@ heroku config:set \
   THRESHOLD_SHIELD_SPACES_CRITICAL=100 \
   SCHEDULE_REALTIME_ENABLED=true \
   SCHEDULE_REALTIME_INTERVAL=60 \
-  -a myusagetracker
+  -a herokuusagetracker
 ```
 
 ## Complete Config Vars Reference
@@ -194,7 +194,7 @@ heroku config:set \
 
 ### 1. Configure via UI (Recommended)
 
-1. Go to https://myusagetracker-0684662c08ff.herokuapp.com/notifications
+1. Go to https://herokuusagetracker-7fb7cd593de9.herokuapp.com/notifications
 2. Configure your settings
 3. Click "Save Configuration"
 4. Copy the Heroku commands shown
@@ -210,13 +210,13 @@ After setting Config Vars:
 
 ```bash
 # View all notification config vars
-heroku config -a myusagetracker | grep -E "NOTIFICATION|THRESHOLD|SCHEDULE"
+heroku config -a herokuusagetracker | grep -E "NOTIFICATION|THRESHOLD|SCHEDULE"
 
 # Restart app to apply changes
-heroku restart -a myusagetracker
+heroku restart -a herokuusagetracker
 
 # Check if config is loaded
-heroku logs --tail -a myusagetracker | grep "notification config"
+heroku logs --tail -a herokuusagetracker | grep "notification config"
 ```
 
 You should see:
@@ -236,7 +236,7 @@ Reading notification config from environment variables (Heroku Config Vars)
 If using Mailgun sandbox:
 ```bash
 # Open Mailgun dashboard
-heroku addons:open mailgun -a myusagetracker
+heroku addons:open mailgun -a herokuusagetracker
 
 # Add recipients in "Authorized Recipients" section
 # Verify each email address
@@ -268,13 +268,13 @@ After setting Config Vars:
 
 ```bash
 # Test email configuration
-curl -X POST https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/send-test
+curl -X POST https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/send-test
 
 # Manually check thresholds
-curl -X POST https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/check-thresholds
+curl -X POST https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/check-thresholds
 
 # View current config
-curl https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/config
+curl https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/notifications/config
 ```
 
 ## Updating Configuration
@@ -287,10 +287,10 @@ curl https://myusagetracker-0684662c08ff.herokuapp.com/api/notifications/config
 ### Via CLI:
 ```bash
 # Update a single variable
-heroku config:set THRESHOLD_DYNO_LIMIT=2000 -a myusagetracker
+heroku config:set THRESHOLD_DYNO_LIMIT=2000 -a herokuusagetracker
 
 # Update multiple variables
-heroku config:set THRESHOLD_DYNO_LIMIT=2000 THRESHOLD_CONNECT_LIMIT=20000 -a myusagetracker
+heroku config:set THRESHOLD_DYNO_LIMIT=2000 THRESHOLD_CONNECT_LIMIT=20000 -a herokuusagetracker
 ```
 
 ### Via Dashboard:
@@ -306,7 +306,7 @@ Save your current config:
 
 ```bash
 # Export all notification config vars
-heroku config -a myusagetracker | grep -E "NOTIFICATION|THRESHOLD|SCHEDULE" > notification-config-backup.txt
+heroku config -a herokuusagetracker | grep -E "NOTIFICATION|THRESHOLD|SCHEDULE" > notification-config-backup.txt
 ```
 
 Restore from backup:
@@ -322,13 +322,13 @@ Restore from backup:
 
 ```bash
 # Check if config vars are set
-heroku config -a myusagetracker | grep NOTIFICATION
+heroku config -a herokuusagetracker | grep NOTIFICATION
 
 # Restart app
-heroku restart -a myusagetracker
+heroku restart -a herokuusagetracker
 
 # Check logs for config loading
-heroku logs --tail -a myusagetracker
+heroku logs --tail -a herokuusagetracker
 ```
 
 ### Emails not sending?
@@ -337,7 +337,7 @@ heroku logs --tail -a myusagetracker
 2. Check recipients are in Mailgun authorized list
 3. Verify Mailgun credentials exist:
    ```bash
-   heroku config -a myusagetracker | grep MAILGUN
+   heroku config -a herokuusagetracker | grep MAILGUN
    ```
 
 ### Thresholds not triggering?
@@ -347,7 +347,7 @@ heroku logs --tail -a myusagetracker
 3. Check if usage exceeds threshold percentage
 4. View logs for threshold checks:
    ```bash
-   heroku logs --tail -a myusagetracker | grep -i threshold
+   heroku logs --tail -a herokuusagetracker | grep -i threshold
    ```
 
 ## Security
@@ -360,7 +360,7 @@ heroku logs --tail -a myusagetracker
 ## Support
 
 For issues:
-1. Check Heroku logs: `heroku logs --tail -a myusagetracker`
+1. Check Heroku logs: `heroku logs --tail -a herokuusagetracker`
 2. Verify Config Vars are set correctly
 3. Test email connectivity: POST `/api/notifications/send-test`
 4. Check Mailgun dashboard for delivery issues

@@ -230,10 +230,10 @@ PORT=auto-set-by-heroku
 
 ```bash
 # If not set, configure:
-heroku config:set HEROKU_API_KEY=$(heroku auth:token) --app myusagetracker
+heroku config:set HEROKU_API_KEY=$(heroku auth:token) --app herokuusagetracker
 
 # Optional: Specify default enterprise account
-heroku config:set ENTERPRISE_ACCOUNT_ID_OR_NAME=uuid --app myusagetracker
+heroku config:set ENTERPRISE_ACCOUNT_ID_OR_NAME=uuid --app herokuusagetracker
 ```
 
 ## Known Limitations
@@ -303,13 +303,13 @@ heroku config:set ENTERPRISE_ACCOUNT_ID_OR_NAME=uuid --app myusagetracker
 ### Monitoring
 ```bash
 # Watch logs
-heroku logs --tail --app myusagetracker
+heroku logs --tail --app herokuusagetracker
 
 # Check dyno status
-heroku ps --app myusagetracker
+heroku ps --app herokuusagetracker
 
 # View recent errors
-heroku logs --tail --app myusagetracker | grep ERROR
+heroku logs --tail --app herokuusagetracker | grep ERROR
 ```
 
 ### Updates
@@ -401,4 +401,4 @@ All code is committed and ready for deployment when you are!
 **Version:** v26  
 **Last Updated:** 2026-05-11  
 **Status:** Ready for Deployment  
-**URL:** https://myusagetracker-0684662c08ff.herokuapp.com/
+**URL:** https://herokuusagetracker-7fb7cd593de9.herokuapp.com/

@@ -142,12 +142,12 @@ Raw structure  Calculations  Rendering   Final PDF
 
 2. **Via API**:
    ```bash
-   curl "https://myusagetracker-0684662c08ff.herokuapp.com/api/pdf/export/heroku-demo?monthForMonthly=2026-05" -o test.pdf
+   curl "https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/pdf/export/heroku-demo?monthForMonthly=2026-05" -o test.pdf
    ```
 
 3. **Check Logs** (for debugging):
    ```bash
-   heroku logs --tail -a myusagetracker | grep "PDF"
+   heroku logs --tail -a herokuusagetracker | grep "PDF"
    ```
 
 ### What to Verify in Generated PDF
@@ -181,7 +181,7 @@ Raw structure  Calculations  Rendering   Final PDF
 When generating PDFs, check Heroku logs for transformation output:
 
 ```bash
-heroku logs --tail -a myusagetracker
+heroku logs --tail -a herokuusagetracker
 ```
 
 Look for:

@@ -216,7 +216,7 @@ Status: ⚠️ May approach limit on personal accounts
 
 Check Heroku logs:
 ```bash
-heroku logs --tail -a myusagetracker | grep "Fetching daily usage"
+heroku logs --tail -a herokuusagetracker | grep "Fetching daily usage"
 ```
 
 Output shows:

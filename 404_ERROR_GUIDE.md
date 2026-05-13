@@ -52,7 +52,7 @@ After deploying the fix, check logs for:
 
 ```bash
 # Watch logs in real-time (when ready to deploy)
-heroku logs --tail --app myusagetracker
+heroku logs --tail --app herokuusagetracker
 ```
 
 Look for these log messages:

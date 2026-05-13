@@ -2,13 +2,13 @@
 
 ## ✅ Successfully Deployed!
 
-Your PDF export service is now live at: https://myusagetracker-0684662c08ff.herokuapp.com/
+Your PDF export service is now live at: https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 
 ## 🎯 How to Use
 
 ### From the Web UI (Easiest Method)
 
-1. **Navigate to the app**: Open https://myusagetracker-0684662c08ff.herokuapp.com/
+1. **Navigate to the app**: Open https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 
 2. **Select your enterprise account** using the dropdown at the top
 
@@ -68,7 +68,7 @@ GET /api/pdf/export/:enterpriseEmail?monthForMonthly=YYYY-MM&startDateForDaily=Y
 
 **Example:**
 ```
-https://myusagetracker-0684662c08ff.herokuapp.com/api/pdf/export/myaccount@example.com?monthForMonthly=2024-01&startDateForDaily=2024-01-01&endDateForDaily=2024-01-31
+https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/pdf/export/myaccount@example.com?monthForMonthly=2024-01&startDateForDaily=2024-01-01&endDateForDaily=2024-01-31
 ```
 
 You can paste this URL directly in your browser to download the PDF!
@@ -90,7 +90,7 @@ You can paste this URL directly in your browser to download the PDF!
 **cURL Example:**
 ```bash
 curl -X POST \
-  https://myusagetracker-0684662c08ff.herokuapp.com/api/pdf/export \
+  https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/pdf/export \
   -H "Content-Type: application/json" \
   -d '{
     "enterpriseEmail": "myaccount@example.com",
@@ -184,7 +184,7 @@ link.click();
 - Verify enterprise account is selected
 
 ### PDF Generation Failed?
-- Check Heroku logs: `heroku logs --tail -a myusagetracker`
+- Check Heroku logs: `heroku logs --tail -a herokuusagetracker`
 - Verify the enterprise account has data
 - Ensure date ranges are valid
 

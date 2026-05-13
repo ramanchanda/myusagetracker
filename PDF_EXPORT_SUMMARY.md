@@ -2,7 +2,7 @@
 
 ## ✅ Status: SUCCESSFULLY DEPLOYED
 
-**Live URL**: https://myusagetracker-0684662c08ff.herokuapp.com/
+**Live URL**: https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 
 **Deployment Version**: v100
 
@@ -50,7 +50,7 @@ A comprehensive PDF export service that generates beautiful, professional report
 
 ### Method 1: Web UI (Easiest)
 
-1. Open: https://myusagetracker-0684662c08ff.herokuapp.com/
+1. Open: https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 2. Select your enterprise account from dropdown
 3. Configure date ranges (optional):
    - Monthly Report: Select month
@@ -64,7 +64,7 @@ A comprehensive PDF export service that generates beautiful, professional report
 Paste this URL in your browser (replace with your account):
 
 ```
-https://myusagetracker-0684662c08ff.herokuapp.com/api/pdf/export/heroku?monthForMonthly=2024-01&startDateForDaily=2024-01-01&endDateForDaily=2024-01-31
+https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/pdf/export/heroku?monthForMonthly=2024-01&startDateForDaily=2024-01-01&endDateForDaily=2024-01-31
 ```
 
 PDF downloads immediately!
@@ -73,7 +73,7 @@ PDF downloads immediately!
 
 ```bash
 curl -X GET \
-  "https://myusagetracker-0684662c08ff.herokuapp.com/api/pdf/export/heroku?monthForMonthly=2024-01" \
+  "https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/pdf/export/heroku?monthForMonthly=2024-01" \
   -o usage_report.pdf
 ```
 
@@ -246,13 +246,13 @@ A typical PDF report for an enterprise account includes:
 
 ### Health Check
 ```bash
-$ curl https://myusagetracker-0684662c08ff.herokuapp.com/api/health
+$ curl https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/health
 {"status":"healthy","timestamp":"2026-05-13T07:35:00.000Z"}
 ```
 
 ### Enterprise Accounts
 ```bash
-$ curl https://myusagetracker-0684662c08ff.herokuapp.com/api/enterprise/accounts
+$ curl https://herokuusagetracker-7fb7cd593de9.herokuapp.com/api/enterprise/accounts
 [{"id":"56597751...","name":"heroku",...}, {"id":"a8d12a48...","name":"heroku-demo",...}]
 ```
 
@@ -344,7 +344,7 @@ Potential improvements:
 - Check browser console for errors
 - Verify enterprise account exists
 - Ensure date ranges are valid (max 31 days)
-- Check Heroku logs: `heroku logs --tail -a myusagetracker`
+- Check Heroku logs: `heroku logs --tail -a herokuusagetracker`
 
 **Slow generation?**
 - Normal for large accounts (wait up to 12 seconds)
@@ -369,7 +369,7 @@ Potential improvements:
 The PDF export service is **fully operational** and ready for production use.
 
 **Test it now:**
-1. Visit: https://myusagetracker-0684662c08ff.herokuapp.com/
+1. Visit: https://herokuusagetracker-7fb7cd593de9.herokuapp.com/
 2. Click the green "📥 Export PDF Report" button
 3. Enjoy your beautiful usage report! 📊✨
 
