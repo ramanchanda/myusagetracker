@@ -259,6 +259,72 @@
   min-width: 1100px;
 }
 
+.breakdown-filters {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin: 20px 0;
+  padding: 16px;
+  background: #f8f6ff;
+  border: 1px solid #e9defd;
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4c1d95;
+}
+
+.breakdown-filter-select {
+  padding: 10px 12px;
+  border: 2px solid #e9defd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #5a31a3;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.breakdown-filter-select:hover {
+  border-color: #6f42c1;
+}
+
+.breakdown-filter-select:focus {
+  outline: none;
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+}
+
+.clear-filters-btn {
+  padding: 10px 20px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-end;
+}
+
+.clear-filters-btn:hover {
+  background: #d97706;
+  transform: translateY(-2px);
+}
+
 .daily-table th,
 .daily-table td {
   padding: 9px 10px;

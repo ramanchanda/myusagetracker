@@ -33,6 +33,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [dailyEndDate, setDailyEndDate] = useState('');
   const [dailyFetchAttempted, setDailyFetchAttempted] = useState(false);
   const [dailyDateError, setDailyDateError] = useState('');
+  const [selectedBreakdownDate, setSelectedBreakdownDate] = useState('all');
+  const [selectedBreakdownApp, setSelectedBreakdownApp] = useState('all');
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -147,6 +149,9 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
 
       const response = await axios.get('/api/enterprise/daily-usage', { params });
       setDailyReport(response.data);
+      // Reset filters when new data is fetched
+      setSelectedBreakdownDate('all');
+      setSelectedBreakdownApp('all');
     } catch (err) {
       console.error('Error fetching daily report:', err);
       setDailyReport(null);
@@ -162,6 +167,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       setDailyEndDate('');
       setDailyFetchAttempted(false);
       setDailyDateError('');
+      setSelectedBreakdownDate('all');
+      setSelectedBreakdownApp('all');
     }
   }, [reportView]);
 
@@ -170,7 +177,17 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     maximumFractionDigits: 3
   });
   const formatCount = (value) => Number(value || 0).toLocaleString();
+
+  // Get unique dates and apps from daily breakdown
+  const uniqueDates = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.date))].sort();
+  const uniqueApps = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.appName))].sort();
+
   const groupedDailyBreakdown = (dailyReport?.dailyBreakdown || [])
+    .filter(row => {
+      const dateMatch = selectedBreakdownDate === 'all' || row.date === selectedBreakdownDate;
+      const appMatch = selectedBreakdownApp === 'all' || row.appName === selectedBreakdownApp;
+      return dateMatch && appMatch;
+    })
     .slice()
     .sort((a, b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -658,6 +675,51 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
               </div>
 
               <h4 className="chart-section-title" style={{ marginTop: '40px' }}>Detailed Team & App Breakdown</h4>
+
+              <div className="breakdown-filters">
+                <div className="filter-group">
+                  <label htmlFor="breakdown-date-filter">Filter by Date:</label>
+                  <select
+                    id="breakdown-date-filter"
+                    value={selectedBreakdownDate}
+                    onChange={(e) => setSelectedBreakdownDate(e.target.value)}
+                    className="breakdown-filter-select"
+                  >
+                    <option value="all">All Dates ({uniqueDates.length})</option>
+                    {uniqueDates.map(date => (
+                      <option key={date} value={date}>{date}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label htmlFor="breakdown-app-filter">Filter by App:</label>
+                  <select
+                    id="breakdown-app-filter"
+                    value={selectedBreakdownApp}
+                    onChange={(e) => setSelectedBreakdownApp(e.target.value)}
+                    className="breakdown-filter-select"
+                  >
+                    <option value="all">All Apps ({uniqueApps.length})</option>
+                    {uniqueApps.map(app => (
+                      <option key={app} value={app}>{app}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {(selectedBreakdownDate !== 'all' || selectedBreakdownApp !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setSelectedBreakdownDate('all');
+                      setSelectedBreakdownApp('all');
+                    }}
+                    className="clear-filters-btn"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+
               <div className="daily-table-wrap breakdown-table-wrap">
                 <table className="daily-table breakdown-table">
                   <thead>
