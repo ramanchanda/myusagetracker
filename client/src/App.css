@@ -60,14 +60,16 @@
 }
 
 .btn-primary {
-  background-color: #ffffff;
-  color: #5a31a3;
+  background-color: #ffffff !important;
+  color: #5a31a3 !important;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  font-weight: 700;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+  background-color: #f8f9fa !important;
 }
 
 .btn-notification {

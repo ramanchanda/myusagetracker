@@ -77,8 +77,15 @@ function NotificationConfig() {
   const saveConfig = async () => {
     try {
       setSaving(true);
-      await axios.put('/api/notifications/config', config);
-      showMessage('success', 'Configuration saved successfully!');
+      const response = await axios.put('/api/notifications/config', config);
+
+      // Check if Heroku commands are returned
+      if (response.data._herokuCommands) {
+        setConfig(response.data);
+        showMessage('success', 'Configuration saved! Scroll down to see Heroku Config Vars commands to persist settings.');
+      } else {
+        showMessage('success', 'Configuration saved successfully!');
+      }
     } catch (error) {
       console.error('Error saving config:', error);
       showMessage('error', 'Failed to save configuration');
@@ -428,6 +435,56 @@ function NotificationConfig() {
           {saving ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
+
+      {config._herokuCommands && config._herokuCommands.length > 0 && (
+        <div className="heroku-commands-section">
+          <h3>📝 Heroku Config Vars Commands</h3>
+          <p className="section-note">
+            {config._note}
+          </p>
+          <p className="commands-instruction">
+            Run these commands to persist your configuration across app restarts:
+          </p>
+          <div className="commands-box">
+            <pre className="commands-pre">
+              {config._herokuCommands.map(cmd => cmd + ' -a myusagetracker').join('\n')}
+            </pre>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(config._herokuCommands.map(cmd => cmd + ' -a myusagetracker').join('\n'));
+                showMessage('success', 'Commands copied to clipboard!');
+              }}
+              className="copy-btn"
+            >
+              📋 Copy All Commands
+            </button>
+          </div>
+          <div className="env-vars-alternative">
+            <h4>Alternative: Set via Heroku Dashboard</h4>
+            <p>You can also set these in the Heroku Dashboard → Settings → Config Vars:</p>
+            <div className="env-vars-list">
+              <strong>Email Configuration:</strong>
+              <ul>
+                <li>NOTIFICATION_EMAIL_ENABLED = {config.emailConfig.enabled.toString()}</li>
+                <li>NOTIFICATION_RECIPIENTS = {config.emailConfig.recipients.join(',')}</li>
+                <li>NOTIFICATION_FROM_NAME = {config.emailConfig.fromName}</li>
+              </ul>
+              <strong>Thresholds:</strong>
+              <ul>
+                <li>THRESHOLD_DYNO_LIMIT = {config.thresholds.dynoUnits.limit}</li>
+                <li>THRESHOLD_CONNECT_LIMIT = {config.thresholds.connectRows.limit}</li>
+                <li>THRESHOLD_DATA_ADDONS_LIMIT = {config.thresholds.dataAddons.limit}</li>
+                <li>THRESHOLD_GENERAL_ADDONS_LIMIT = {config.thresholds.generalAddons.limit}</li>
+                <li>THRESHOLD_PRIVATE_SPACES_LIMIT = {config.thresholds.privateSpaces.limit}</li>
+                <li>THRESHOLD_SHIELD_SPACES_LIMIT = {config.thresholds.shieldSpaces.limit}</li>
+              </ul>
+              <p style={{fontSize: '0.85rem', color: '#64748b', marginTop: '12px'}}>
+                See the commands above for all configuration variables including warning/critical percentages and schedules.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -218,10 +218,10 @@
   gap: 12px;
 }
 
-.btn-primary,
-.btn-secondary {
+.notification-config .btn-primary,
+.notification-config .btn-secondary {
   padding: 12px 28px;
-  border: none;
+  border: none !important;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
@@ -229,35 +229,35 @@
   transition: all 0.2s;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #6f42c1 0%, #5a31a3 100%);
-  color: white;
+.notification-config .btn-primary {
+  background: linear-gradient(135deg, #6f42c1 0%, #5a31a3 100%) !important;
+  color: white !important;
   box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
 }
 
-.btn-primary:hover {
+.notification-config .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(111, 66, 193, 0.4);
 }
 
-.btn-primary:disabled {
+.notification-config .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-.btn-secondary {
-  background: #f8f9fa;
-  color: #475569;
-  border: 2px solid #e2e8f0;
+.notification-config .btn-secondary {
+  background: #f8f9fa !important;
+  color: #475569 !important;
+  border: 2px solid #e2e8f0 !important;
 }
 
-.btn-secondary:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+.notification-config .btn-secondary:hover {
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
 }
 
-.btn-secondary:disabled {
+.notification-config .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -272,6 +272,120 @@
 
 .error {
   color: #ef4444;
+}
+
+.heroku-commands-section {
+  background: #fff9e6;
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+}
+
+.heroku-commands-section h3 {
+  margin: 0 0 12px 0;
+  color: #92400e;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.commands-instruction {
+  margin: 16px 0;
+  color: #78350f;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.commands-box {
+  position: relative;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.commands-pre {
+  margin: 0;
+  color: #e2e8f0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 8px 16px;
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #0284c7;
+  transform: translateY(-2px);
+}
+
+.env-vars-alternative {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #fbbf24;
+}
+
+.env-vars-alternative h4 {
+  margin: 0 0 12px 0;
+  color: #92400e;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.env-vars-alternative p {
+  color: #78350f;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.env-vars-list {
+  background: white;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.env-vars-list strong {
+  display: block;
+  margin: 16px 0 8px 0;
+  color: #92400e;
+  font-size: 0.95rem;
+}
+
+.env-vars-list strong:first-child {
+  margin-top: 0;
+}
+
+.env-vars-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+}
+
+.env-vars-list li {
+  padding: 6px 12px;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  margin-bottom: 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  color: #78350f;
+  border-radius: 4px;
 }
 
 @media (max-width: 768px) {
@@ -296,5 +410,16 @@
 
   .config-content {
     padding: 20px;
+  }
+
+  .commands-pre {
+    font-size: 0.75rem;
+  }
+
+  .copy-btn {
+    position: static;
+    display: block;
+    width: 100%;
+    margin-top: 12px;
   }
 }
