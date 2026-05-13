@@ -17,10 +17,12 @@ function transformSummary12Data(trendData) {
     };
   }
 
-  // Extract overall totals
-  const totalDynoUnits = trendData.totalDynoUnits || 0;
-  const totalConnectRows = trendData.totalConnectRows || 0;
-  const months = trendData.chartData || [];
+  // Extract monthly data - API returns { months, monthly, analysis }
+  const months = trendData.monthly || [];
+
+  // Calculate overall totals from monthly data
+  const totalDynoUnits = months.reduce((sum, m) => sum + (m.dynoUnits || 0), 0);
+  const totalConnectRows = months.reduce((sum, m) => sum + (m.connectRows || 0), 0);
 
   const avgMonthlyDyno = months.length > 0
     ? totalDynoUnits / months.length
@@ -36,32 +38,21 @@ function transformSummary12Data(trendData) {
     }
   });
 
-  // Calculate trend
+  // Extract trend from analysis object or calculate
+  const analysis = trendData.analysis || {};
+
+  const dynoTrendPct = analysis.dynoTrendPct || 0;
+  const connectTrendPct = analysis.connectTrendPct || 0;
+
   let dynoTrend = 'Stable';
+  if (dynoTrendPct > 10) dynoTrend = 'Increasing';
+  else if (dynoTrendPct < -10) dynoTrend = 'Decreasing';
+
   let connectTrend = 'Stable';
-  let growthRate = '0%';
+  if (connectTrendPct > 10) connectTrend = 'Increasing';
+  else if (connectTrendPct < -10) connectTrend = 'Decreasing';
 
-  if (months.length >= 2) {
-    const firstMonth = months[0];
-    const lastMonth = months[months.length - 1];
-
-    if (lastMonth.dynoUnits > firstMonth.dynoUnits * 1.1) {
-      dynoTrend = 'Increasing';
-    } else if (lastMonth.dynoUnits < firstMonth.dynoUnits * 0.9) {
-      dynoTrend = 'Decreasing';
-    }
-
-    if (lastMonth.connectRows > firstMonth.connectRows * 1.1) {
-      connectTrend = 'Increasing';
-    } else if (lastMonth.connectRows < firstMonth.connectRows * 0.9) {
-      connectTrend = 'Decreasing';
-    }
-
-    if (firstMonth.dynoUnits > 0) {
-      const growth = ((lastMonth.dynoUnits - firstMonth.dynoUnits) / firstMonth.dynoUnits) * 100;
-      growthRate = `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
-    }
-  }
+  const growthRate = `${dynoTrendPct > 0 ? '+' : ''}${dynoTrendPct.toFixed(1)}%`;
 
   // Build resource breakdown
   const resourceBreakdown = [];
