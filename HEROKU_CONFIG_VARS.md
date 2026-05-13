@@ -9,6 +9,43 @@ Heroku's filesystem is **ephemeral** - it resets on every:
 
 To persist notification configuration, you must set **Config Vars** (environment variables).
 
+## Mailgun Setup (Required)
+
+The notification service uses **Mailgun API** (not SMTP) for better reliability.
+
+### Get Your Mailgun Credentials
+
+```bash
+# After adding Mailgun addon
+heroku addons:create mailgun:starter -a myusagetracker
+
+# Get your API credentials
+heroku config:get MAILGUN_API_KEY -a myusagetracker
+heroku config:get MAILGUN_DOMAIN -a myusagetracker
+```
+
+These are automatically set when you add the Mailgun addon:
+- `MAILGUN_API_KEY` - Your API key
+- `MAILGUN_DOMAIN` - Your sandbox domain (e.g., sandbox123...mailgun.org)
+
+### Important: Authorize Recipients
+
+Since Mailgun starts in **sandbox mode**, you MUST authorize recipients:
+
+1. Open Mailgun dashboard:
+   ```bash
+   heroku addons:open mailgun -a myusagetracker
+   ```
+
+2. Go to **"Authorized Recipients"**
+3. Click **"Add Recipient"**
+4. Enter each email address you want to send to
+5. Each recipient will receive a confirmation email
+6. They must click the verification link
+7. Status changes to "Verified" ✓
+
+**Only verified emails will receive notifications!**
+
 ## Quick Setup
 
 ### Option 1: Via Heroku Dashboard (Easiest)

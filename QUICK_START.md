@@ -6,19 +6,18 @@ App URL: https://myusagetracker-0684662c08ff.herokuapp.com/
 
 ## Step 1: Add Mailgun Addon
 
-Since you're using Mailgun, add the addon to your Heroku app:
+Add the Mailgun addon to your Heroku app:
 
 ```bash
 heroku addons:create mailgun:starter -a myusagetracker
 ```
 
-This will automatically configure these environment variables:
-- `MAILGUN_SMTP_SERVER`
-- `MAILGUN_SMTP_PORT`
-- `MAILGUN_SMTP_LOGIN`
-- `MAILGUN_SMTP_PASSWORD`
+This automatically configures:
+- `MAILGUN_API_KEY` - Your API key for sending emails
+- `MAILGUN_DOMAIN` - Your sandbox domain
+- `MAILGUN_SMTP_*` - SMTP credentials (fallback)
 
-**No additional Heroku config vars needed!** The app auto-detects Mailgun.
+**The app uses Mailgun API** (not SMTP) for better reliability and deliverability.
 
 ## Step 2: Access Notification Settings
 

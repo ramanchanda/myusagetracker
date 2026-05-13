@@ -1,7 +1,31 @@
 const nodemailer = require('nodemailer');
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
 const configService = require('./configService');
 
 let transporter = null;
+let mailgunClient = null;
+
+// Initialize Mailgun API client
+function initMailgunClient() {
+  if (mailgunClient) {
+    return mailgunClient;
+  }
+
+  // Check for Mailgun API key and domain
+  if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) {
+    console.log('Initializing Mailgun API client...');
+    const mailgun = new Mailgun(formData);
+    mailgunClient = mailgun.client({
+      username: 'api',
+      key: process.env.MAILGUN_API_KEY,
+      url: process.env.MAILGUN_API_URL || 'https://api.mailgun.net'
+    });
+    return mailgunClient;
+  }
+
+  return null;
+}
 
 // Initialize transporter with Mailgun, MailtoGo or custom SMTP
 function initTransporter() {
@@ -9,7 +33,7 @@ function initTransporter() {
     return transporter;
   }
 
-  // Check for Mailgun addon first (Heroku sets these env vars)
+  // Check for Mailgun addon (SMTP fallback if API not available)
   if (process.env.MAILGUN_SMTP_SERVER) {
     console.log('Initializing Mailgun SMTP transporter...');
     transporter = nodemailer.createTransporter({
@@ -54,15 +78,38 @@ function initTransporter() {
 
 // Test email configuration
 async function testEmailConfiguration() {
+  // Test Mailgun API first
+  const mgClient = initMailgunClient();
+  if (mgClient && process.env.MAILGUN_DOMAIN) {
+    try {
+      // Test by getting domain info
+      const domain = await mgClient.domains.get(process.env.MAILGUN_DOMAIN);
+      return {
+        success: true,
+        message: 'Mailgun API configuration is valid',
+        method: 'mailgun-api',
+        domain: domain.name
+      };
+    } catch (error) {
+      console.error('Mailgun API test failed:', error.message);
+      console.log('Trying SMTP fallback...');
+    }
+  }
+
+  // Test SMTP
   const trans = initTransporter();
 
   if (!trans) {
-    throw new Error('Email transporter not configured. Please configure MailtoGo or SMTP settings.');
+    throw new Error('Email not configured. Please set MAILGUN_API_KEY + MAILGUN_DOMAIN or configure SMTP settings.');
   }
 
   try {
     await trans.verify();
-    return { success: true, message: 'Email configuration is valid' };
+    return {
+      success: true,
+      message: 'SMTP configuration is valid',
+      method: 'smtp'
+    };
   } catch (error) {
     console.error('Email configuration test failed:', error);
     throw new Error(`Email configuration test failed: ${error.message}`);
@@ -71,13 +118,6 @@ async function testEmailConfiguration() {
 
 // Send email with configuration from database
 async function sendEmail(subject, htmlContent, recipients = null) {
-  const trans = initTransporter();
-
-  if (!trans) {
-    console.log('Email notifications not configured. Skipping email send.');
-    return { sent: false, reason: 'Email not configured' };
-  }
-
   const emailConfig = await configService.getEmailConfig();
 
   if (!emailConfig.enabled) {
@@ -92,6 +132,41 @@ async function sendEmail(subject, htmlContent, recipients = null) {
     return { sent: false, reason: 'No recipients configured' };
   }
 
+  // Try Mailgun API first (preferred method)
+  const mgClient = initMailgunClient();
+  if (mgClient && process.env.MAILGUN_DOMAIN) {
+    try {
+      console.log('Sending email via Mailgun API...');
+
+      const fromEmail = emailConfig.fromEmail || `postmaster@${process.env.MAILGUN_DOMAIN}`;
+      const fromName = emailConfig.fromName || 'Heroku Usage Monitor';
+
+      const messageData = {
+        from: `${fromName} <${fromEmail}>`,
+        to: recipientList,
+        subject: subject,
+        html: htmlContent
+      };
+
+      const result = await mgClient.messages.create(process.env.MAILGUN_DOMAIN, messageData);
+      console.log(`Email sent via Mailgun API: ${subject} to ${recipientList.join(', ')}`);
+      console.log('Mailgun response:', result);
+
+      return { sent: true, info: result, recipients: recipientList, method: 'mailgun-api' };
+    } catch (error) {
+      console.error('Error sending via Mailgun API:', error.message);
+      console.log('Falling back to SMTP...');
+    }
+  }
+
+  // Fallback to SMTP
+  const trans = initTransporter();
+
+  if (!trans) {
+    console.log('Email notifications not configured. Skipping email send.');
+    return { sent: false, reason: 'Email not configured' };
+  }
+
   const mailOptions = {
     from: `"${emailConfig.fromName || 'Heroku Usage Monitor'}" <${emailConfig.fromEmail || process.env.MAILGUN_SMTP_LOGIN || process.env.MAILTOGO_SMTP_USER || process.env.SMTP_USER}>`,
     to: recipientList.join(', '),
@@ -100,11 +175,12 @@ async function sendEmail(subject, htmlContent, recipients = null) {
   };
 
   try {
+    console.log('Sending email via SMTP...');
     const info = await trans.sendMail(mailOptions);
-    console.log(`Email sent: ${subject} to ${recipientList.join(', ')}`);
-    return { sent: true, info, recipients: recipientList };
+    console.log(`Email sent via SMTP: ${subject} to ${recipientList.join(', ')}`);
+    return { sent: true, info, recipients: recipientList, method: 'smtp' };
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error('Error sending email via SMTP:', error.message);
     throw error;
   }
 }

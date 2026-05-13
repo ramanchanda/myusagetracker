@@ -33,60 +33,6 @@ function NotificationConfig() {
     setTimeout(() => setMessage(null), 5000);
   };
 
-  const handleEmailConfigChange = (field, value) => {
-    setConfig(prev => ({
-      ...prev,
-      emailConfig: {
-        ...prev.emailConfig,
-        [field]: value
-      }
-    }));
-  };
-
-  const handleRecipientsChange = (value) => {
-    const recipients = value.split(',').map(email => email.trim()).filter(Boolean);
-    handleEmailConfigChange('recipients', recipients);
-  };
-
-  const handleThresholdChange = (resourceType, field, value) => {
-    setConfig(prev => ({
-      ...prev,
-      thresholds: {
-        ...prev.thresholds,
-        [resourceType]: {
-          ...prev.thresholds[resourceType],
-          [field]: field === 'enabled' ? value : Number(value)
-        }
-      }
-    }));
-  };
-
-  const handleScheduleChange = (scheduleType, field, value) => {
-    setConfig(prev => ({
-      ...prev,
-      triggerSchedule: {
-        ...prev.triggerSchedule,
-        [scheduleType]: {
-          ...prev.triggerSchedule[scheduleType],
-          [field]: field === 'enabled' ? value : value
-        }
-      }
-    }));
-  };
-
-  const saveConfig = async () => {
-    try {
-      setSaving(true);
-      await axios.put('/api/notifications/config', config);
-      showMessage('success', 'Configuration saved successfully! Note: On Heroku, set Config Vars to persist across restarts.');
-    } catch (error) {
-      console.error('Error saving config:', error);
-      showMessage('error', 'Failed to save configuration');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const testEmail = async () => {
     try {
       setTesting(true);
@@ -130,7 +76,12 @@ function NotificationConfig() {
     <div className="notification-config">
       <div className="config-header">
         <h2>📧 Notification Configuration</h2>
-        <p>Configure email settings, thresholds, and notification schedules</p>
+        <p>View current notification settings from Heroku Config Vars</p>
+        <div className="config-note">
+          <strong>Note:</strong> This page displays read-only configuration from Heroku Config Vars.
+          To update settings, modify Config Vars in Heroku Dashboard or via CLI.
+          See <code>HEROKU_CONFIG_VARS.md</code> for complete reference.
+        </div>
       </div>
 
       {message && (
@@ -165,48 +116,45 @@ function NotificationConfig() {
           <div className="config-section">
             <h3>Email Configuration</h3>
             <p className="section-note">
-              Email service provider detected. SMTP settings will be used automatically from your configured addon (Mailgun, MailtoGo, etc.).
+              Email service provider: Mailgun API (with SMTP fallback)
             </p>
 
-            <div className="form-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={config.emailConfig.enabled}
-                  onChange={(e) => handleEmailConfigChange('enabled', e.target.checked)}
-                />
-                Enable Email Notifications
-              </label>
+            <div className="readonly-field">
+              <label>Email Notifications Status</label>
+              <div className="readonly-value">
+                <span className={`status-badge ${config.emailConfig.enabled ? 'enabled' : 'disabled'}`}>
+                  {config.emailConfig.enabled ? '✓ Enabled' : '✗ Disabled'}
+                </span>
+              </div>
+              <small>Config Var: <code>NOTIFICATION_EMAIL_ENABLED</code></small>
             </div>
 
-            <div className="form-group">
+            <div className="readonly-field">
               <label>From Name</label>
-              <input
-                type="text"
-                value={config.emailConfig.fromName}
-                onChange={(e) => handleEmailConfigChange('fromName', e.target.value)}
-                placeholder="Heroku Usage Monitor"
-              />
+              <div className="readonly-value">{config.emailConfig.fromName || '(Not set)'}</div>
+              <small>Config Var: <code>NOTIFICATION_FROM_NAME</code></small>
             </div>
 
-            <div className="form-group">
-              <label>From Email (optional - uses SMTP user if empty)</label>
-              <input
-                type="email"
-                value={config.emailConfig.fromEmail}
-                onChange={(e) => handleEmailConfigChange('fromEmail', e.target.value)}
-                placeholder="noreply@example.com"
-              />
+            <div className="readonly-field">
+              <label>From Email</label>
+              <div className="readonly-value">{config.emailConfig.fromEmail || '(Using default from Mailgun)'}</div>
+              <small>Config Var: <code>NOTIFICATION_FROM_EMAIL</code></small>
             </div>
 
-            <div className="form-group">
-              <label>Recipients (comma-separated emails)</label>
-              <textarea
-                value={config.emailConfig.recipients.join(', ')}
-                onChange={(e) => handleRecipientsChange(e.target.value)}
-                placeholder="admin@example.com, alerts@example.com"
-                rows="3"
-              />
+            <div className="readonly-field">
+              <label>Recipients</label>
+              <div className="readonly-value">
+                {config.emailConfig.recipients && config.emailConfig.recipients.length > 0 ? (
+                  <div className="recipients-list">
+                    {config.emailConfig.recipients.map((email, idx) => (
+                      <span key={idx} className="recipient-badge">{email}</span>
+                    ))}
+                  </div>
+                ) : (
+                  '(No recipients configured)'
+                )}
+              </div>
+              <small>Config Var: <code>NOTIFICATION_RECIPIENTS</code> (comma-separated)</small>
             </div>
 
             <div className="form-actions">
@@ -221,59 +169,44 @@ function NotificationConfig() {
           <div className="config-section">
             <h3>Resource Thresholds</h3>
             <p className="section-note">
-              Configure usage limits and alert thresholds for each resource type
+              Current usage limits and alert thresholds from Heroku Config Vars
             </p>
 
-            {Object.entries(config.thresholds).map(([key, threshold]) => (
-              <div key={key} className="threshold-card">
-                <div className="threshold-header">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={threshold.enabled}
-                      onChange={(e) => handleThresholdChange(key, 'enabled', e.target.checked)}
-                    />
-                    <strong>{key.replace(/([A-Z])/g, ' $1').trim()}</strong>
-                  </label>
-                </div>
+            {Object.entries(config.thresholds).map(([key, threshold]) => {
+              const resourceLabel = key.replace(/([A-Z])/g, ' $1').trim();
+              const configPrefix = 'THRESHOLD_' + key.replace(/([A-Z])/g, '_$1').toUpperCase();
 
-                {threshold.enabled && (
-                  <div className="threshold-fields">
-                    <div className="form-row">
-                      <div className="form-group">
+              return (
+                <div key={key} className="threshold-card readonly">
+                  <div className="threshold-header">
+                    <strong>{resourceLabel}</strong>
+                    <span className={`status-badge ${threshold.enabled ? 'enabled' : 'disabled'}`}>
+                      {threshold.enabled ? '✓ Enabled' : '✗ Disabled'}
+                    </span>
+                  </div>
+
+                  <div className="threshold-fields readonly">
+                    <div className="readonly-grid">
+                      <div className="readonly-field-inline">
                         <label>Limit</label>
-                        <input
-                          type="number"
-                          value={threshold.limit}
-                          onChange={(e) => handleThresholdChange(key, 'limit', e.target.value)}
-                          min="0"
-                        />
+                        <div className="readonly-value-inline">{threshold.limit.toLocaleString()}</div>
                       </div>
-                      <div className="form-group">
-                        <label>Warning %</label>
-                        <input
-                          type="number"
-                          value={threshold.warningPercentage}
-                          onChange={(e) => handleThresholdChange(key, 'warningPercentage', e.target.value)}
-                          min="0"
-                          max="100"
-                        />
+                      <div className="readonly-field-inline">
+                        <label>Warning</label>
+                        <div className="readonly-value-inline">{threshold.warningPercentage}%</div>
                       </div>
-                      <div className="form-group">
-                        <label>Critical %</label>
-                        <input
-                          type="number"
-                          value={threshold.criticalPercentage}
-                          onChange={(e) => handleThresholdChange(key, 'criticalPercentage', e.target.value)}
-                          min="0"
-                          max="100"
-                        />
+                      <div className="readonly-field-inline">
+                        <label>Critical</label>
+                        <div className="readonly-value-inline">{threshold.criticalPercentage}%</div>
                       </div>
                     </div>
+                    <div className="config-var-hint">
+                      Config Vars: <code>{configPrefix}_LIMIT</code>, <code>{configPrefix}_WARNING</code>, <code>{configPrefix}_CRITICAL</code>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
 
             <div className="form-actions">
               <button onClick={checkThresholds} className="btn-secondary">
@@ -287,147 +220,106 @@ function NotificationConfig() {
           <div className="config-section">
             <h3>Notification Schedule</h3>
             <p className="section-note">
-              Configure when to send automated usage summaries and real-time alerts
+              Current schedule configuration from Heroku Config Vars
             </p>
 
-            <div className="schedule-card">
+            <div className="schedule-card readonly">
               <h4>Real-time Alerts</h4>
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={config.triggerSchedule.realtimeAlerts.enabled}
-                    onChange={(e) => handleScheduleChange('realtimeAlerts', 'enabled', e.target.checked)}
-                  />
-                  Enable Real-time Threshold Alerts
-                </label>
+              <div className="readonly-field">
+                <label>Status</label>
+                <div className="readonly-value">
+                  <span className={`status-badge ${config.triggerSchedule.realtimeAlerts.enabled ? 'enabled' : 'disabled'}`}>
+                    {config.triggerSchedule.realtimeAlerts.enabled ? '✓ Enabled' : '✗ Disabled'}
+                  </span>
+                </div>
+                <small>Config Var: <code>SCHEDULE_REALTIME_ENABLED</code></small>
               </div>
               {config.triggerSchedule.realtimeAlerts.enabled && (
-                <div className="form-group">
-                  <label>Check Interval (minutes)</label>
-                  <input
-                    type="number"
-                    value={config.triggerSchedule.realtimeAlerts.checkIntervalMinutes}
-                    onChange={(e) => handleScheduleChange('realtimeAlerts', 'checkIntervalMinutes', e.target.value)}
-                    min="15"
-                    max="1440"
-                  />
-                  <small>Minimum: 15 minutes, Maximum: 1440 minutes (24 hours)</small>
+                <div className="readonly-field">
+                  <label>Check Interval</label>
+                  <div className="readonly-value">{config.triggerSchedule.realtimeAlerts.checkIntervalMinutes} minutes</div>
+                  <small>Config Var: <code>SCHEDULE_REALTIME_INTERVAL</code></small>
                 </div>
               )}
             </div>
 
-            <div className="schedule-card">
+            <div className="schedule-card readonly">
               <h4>Daily Summary</h4>
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={config.triggerSchedule.dailySummary.enabled}
-                    onChange={(e) => handleScheduleChange('dailySummary', 'enabled', e.target.checked)}
-                  />
-                  Enable Daily Summary Emails
-                </label>
+              <div className="readonly-field">
+                <label>Status</label>
+                <div className="readonly-value">
+                  <span className={`status-badge ${config.triggerSchedule.dailySummary.enabled ? 'enabled' : 'disabled'}`}>
+                    {config.triggerSchedule.dailySummary.enabled ? '✓ Enabled' : '✗ Disabled'}
+                  </span>
+                </div>
+                <small>Config Var: <code>SCHEDULE_DAILY_ENABLED</code></small>
               </div>
               {config.triggerSchedule.dailySummary.enabled && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Time (UTC)</label>
-                    <input
-                      type="time"
-                      value={config.triggerSchedule.dailySummary.time}
-                      onChange={(e) => handleScheduleChange('dailySummary', 'time', e.target.value)}
-                    />
-                  </div>
+                <div className="readonly-field">
+                  <label>Time (UTC)</label>
+                  <div className="readonly-value">{config.triggerSchedule.dailySummary.time}</div>
+                  <small>Config Var: <code>SCHEDULE_DAILY_TIME</code></small>
                 </div>
               )}
             </div>
 
-            <div className="schedule-card">
+            <div className="schedule-card readonly">
               <h4>Weekly Summary</h4>
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={config.triggerSchedule.weeklySummary.enabled}
-                    onChange={(e) => handleScheduleChange('weeklySummary', 'enabled', e.target.checked)}
-                  />
-                  Enable Weekly Summary Emails
-                </label>
+              <div className="readonly-field">
+                <label>Status</label>
+                <div className="readonly-value">
+                  <span className={`status-badge ${config.triggerSchedule.weeklySummary.enabled ? 'enabled' : 'disabled'}`}>
+                    {config.triggerSchedule.weeklySummary.enabled ? '✓ Enabled' : '✗ Disabled'}
+                  </span>
+                </div>
+                <small>Config Var: <code>SCHEDULE_WEEKLY_ENABLED</code></small>
               </div>
               {config.triggerSchedule.weeklySummary.enabled && (
-                <div className="form-row">
-                  <div className="form-group">
+                <>
+                  <div className="readonly-field">
                     <label>Day of Week</label>
-                    <select
-                      value={config.triggerSchedule.weeklySummary.dayOfWeek}
-                      onChange={(e) => handleScheduleChange('weeklySummary', 'dayOfWeek', e.target.value)}
-                    >
-                      <option>Monday</option>
-                      <option>Tuesday</option>
-                      <option>Wednesday</option>
-                      <option>Thursday</option>
-                      <option>Friday</option>
-                      <option>Saturday</option>
-                      <option>Sunday</option>
-                    </select>
+                    <div className="readonly-value">{config.triggerSchedule.weeklySummary.dayOfWeek}</div>
+                    <small>Config Var: <code>SCHEDULE_WEEKLY_DAY</code></small>
                   </div>
-                  <div className="form-group">
+                  <div className="readonly-field">
                     <label>Time (UTC)</label>
-                    <input
-                      type="time"
-                      value={config.triggerSchedule.weeklySummary.time}
-                      onChange={(e) => handleScheduleChange('weeklySummary', 'time', e.target.value)}
-                    />
+                    <div className="readonly-value">{config.triggerSchedule.weeklySummary.time}</div>
+                    <small>Config Var: <code>SCHEDULE_WEEKLY_TIME</code></small>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
-            <div className="schedule-card">
+            <div className="schedule-card readonly">
               <h4>Monthly Summary</h4>
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={config.triggerSchedule.monthlySummary.enabled}
-                    onChange={(e) => handleScheduleChange('monthlySummary', 'enabled', e.target.checked)}
-                  />
-                  Enable Monthly Summary Emails
-                </label>
+              <div className="readonly-field">
+                <label>Status</label>
+                <div className="readonly-value">
+                  <span className={`status-badge ${config.triggerSchedule.monthlySummary.enabled ? 'enabled' : 'disabled'}`}>
+                    {config.triggerSchedule.monthlySummary.enabled ? '✓ Enabled' : '✗ Disabled'}
+                  </span>
+                </div>
+                <small>Config Var: <code>SCHEDULE_MONTHLY_ENABLED</code></small>
               </div>
               {config.triggerSchedule.monthlySummary.enabled && (
-                <div className="form-row">
-                  <div className="form-group">
+                <>
+                  <div className="readonly-field">
                     <label>Day of Month</label>
-                    <input
-                      type="number"
-                      value={config.triggerSchedule.monthlySummary.dayOfMonth}
-                      onChange={(e) => handleScheduleChange('monthlySummary', 'dayOfMonth', e.target.value)}
-                      min="1"
-                      max="28"
-                    />
+                    <div className="readonly-value">{config.triggerSchedule.monthlySummary.dayOfMonth}</div>
+                    <small>Config Var: <code>SCHEDULE_MONTHLY_DAY</code></small>
                   </div>
-                  <div className="form-group">
+                  <div className="readonly-field">
                     <label>Time (UTC)</label>
-                    <input
-                      type="time"
-                      value={config.triggerSchedule.monthlySummary.time}
-                      onChange={(e) => handleScheduleChange('monthlySummary', 'time', e.target.value)}
-                    />
+                    <div className="readonly-value">{config.triggerSchedule.monthlySummary.time}</div>
+                    <small>Config Var: <code>SCHEDULE_MONTHLY_TIME</code></small>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>
         )}
       </div>
 
-      <div className="config-footer">
-        <button onClick={saveConfig} disabled={saving} className="btn-primary">
-          {saving ? 'Saving...' : 'Save Configuration'}
-        </button>
-      </div>
     </div>
   );
 }
