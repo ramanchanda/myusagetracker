@@ -5,7 +5,6 @@ import './NotificationConfig.css';
 function NotificationConfig() {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('email');
