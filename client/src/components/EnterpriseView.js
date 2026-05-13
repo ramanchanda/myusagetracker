@@ -34,6 +34,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [dailyFetchAttempted, setDailyFetchAttempted] = useState(false);
   const [dailyDateError, setDailyDateError] = useState('');
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState('all');
+  const [selectedBreakdownTeam, setSelectedBreakdownTeam] = useState('all');
   const [selectedBreakdownApp, setSelectedBreakdownApp] = useState('all');
   const [exportingPDF, setExportingPDF] = useState(false);
 
@@ -152,6 +153,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       setDailyReport(response.data);
       // Reset filters when new data is fetched
       setSelectedBreakdownDate('all');
+      setSelectedBreakdownTeam('all');
       setSelectedBreakdownApp('all');
     } catch (err) {
       console.error('Error fetching daily report:', err);
@@ -169,6 +171,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       setDailyFetchAttempted(false);
       setDailyDateError('');
       setSelectedBreakdownDate('all');
+      setSelectedBreakdownTeam('all');
       setSelectedBreakdownApp('all');
     }
   }, [reportView]);
@@ -222,13 +225,15 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
 
   // Get unique dates and apps from daily breakdown
   const uniqueDates = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.date))].sort();
+  const uniqueTeams = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.teamName))].sort();
   const uniqueApps = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.appName))].sort();
 
   const groupedDailyBreakdown = (dailyReport?.dailyBreakdown || [])
     .filter(row => {
       const dateMatch = selectedBreakdownDate === 'all' || row.date === selectedBreakdownDate;
+      const teamMatch = selectedBreakdownTeam === 'all' || row.teamName === selectedBreakdownTeam;
       const appMatch = selectedBreakdownApp === 'all' || row.appName === selectedBreakdownApp;
-      return dateMatch && appMatch;
+      return dateMatch && teamMatch && appMatch;
     })
     .slice()
     .sort((a, b) => {
@@ -743,6 +748,21 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </div>
 
                 <div className="filter-group">
+                  <label htmlFor="breakdown-team-filter">Filter by Team Name:</label>
+                  <select
+                    id="breakdown-team-filter"
+                    value={selectedBreakdownTeam}
+                    onChange={(e) => setSelectedBreakdownTeam(e.target.value)}
+                    className="breakdown-filter-select"
+                  >
+                    <option value="all">All Teams ({uniqueTeams.length})</option>
+                    {uniqueTeams.map(team => (
+                      <option key={team} value={team}>{team}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-group">
                   <label htmlFor="breakdown-app-filter">Filter by App:</label>
                   <select
                     id="breakdown-app-filter"
@@ -757,10 +777,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   </select>
                 </div>
 
-                {(selectedBreakdownDate !== 'all' || selectedBreakdownApp !== 'all') && (
+                {(selectedBreakdownDate !== 'all' || selectedBreakdownTeam !== 'all' || selectedBreakdownApp !== 'all') && (
                   <button
                     onClick={() => {
                       setSelectedBreakdownDate('all');
+                      setSelectedBreakdownTeam('all');
                       setSelectedBreakdownApp('all');
                     }}
                     className="clear-filters-btn"
