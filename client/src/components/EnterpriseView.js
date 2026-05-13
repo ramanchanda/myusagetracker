@@ -35,6 +35,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [dailyDateError, setDailyDateError] = useState('');
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState('all');
   const [selectedBreakdownApp, setSelectedBreakdownApp] = useState('all');
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -171,6 +172,47 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
       setSelectedBreakdownApp('all');
     }
   }, [reportView]);
+
+  // PDF Export function
+  const handleExportPDF = async () => {
+    try {
+      setExportingPDF(true);
+
+      const selectedAccount = accounts.find(acc => acc.id === selectedAccountId);
+      const enterpriseEmail = selectedAccount?.email || selectedAccount?.name || 'unknown';
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('monthForMonthly', selectedMonth);
+
+      if (dailyStartDate && dailyEndDate) {
+        params.append('startDateForDaily', dailyStartDate);
+        params.append('endDateForDaily', dailyEndDate);
+      }
+
+      // Make request to download PDF
+      const response = await axios.get(`/api/pdf/export/${encodeURIComponent(enterpriseEmail)}?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Heroku_Usage_Report_${enterpriseEmail.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF report. Please try again.');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
 
   const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -357,6 +399,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
             onClick={() => onReportViewChange('daily')}
           >
             Daily - Datewise Report
+          </button>
+          <button
+            type="button"
+            className="report-option-btn export-pdf-btn"
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
+          >
+            {exportingPDF ? '📄 Generating PDF...' : '📥 Export PDF Report'}
           </button>
         </div>
       )}
