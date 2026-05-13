@@ -3,14 +3,27 @@ const configService = require('./configService');
 
 let transporter = null;
 
-// Initialize transporter with MailtoGo or custom SMTP
+// Initialize transporter with Mailgun, MailtoGo or custom SMTP
 function initTransporter() {
   if (transporter) {
     return transporter;
   }
 
-  // Check for MailtoGo addon first (Heroku sets these env vars)
-  if (process.env.MAILTOGO_SMTP_HOST) {
+  // Check for Mailgun addon first (Heroku sets these env vars)
+  if (process.env.MAILGUN_SMTP_SERVER) {
+    console.log('Initializing Mailgun SMTP transporter...');
+    transporter = nodemailer.createTransporter({
+      host: process.env.MAILGUN_SMTP_SERVER,
+      port: parseInt(process.env.MAILGUN_SMTP_PORT || '587'),
+      secure: false,
+      auth: {
+        user: process.env.MAILGUN_SMTP_LOGIN,
+        pass: process.env.MAILGUN_SMTP_PASSWORD
+      }
+    });
+  }
+  // Check for MailtoGo addon (Heroku sets these env vars)
+  else if (process.env.MAILTOGO_SMTP_HOST) {
     console.log('Initializing MailtoGo SMTP transporter...');
     transporter = nodemailer.createTransporter({
       host: process.env.MAILTOGO_SMTP_HOST,
@@ -80,7 +93,7 @@ async function sendEmail(subject, htmlContent, recipients = null) {
   }
 
   const mailOptions = {
-    from: `"${emailConfig.fromName || 'Heroku Usage Monitor'}" <${emailConfig.fromEmail || process.env.MAILTOGO_SMTP_USER || process.env.SMTP_USER}>`,
+    from: `"${emailConfig.fromName || 'Heroku Usage Monitor'}" <${emailConfig.fromEmail || process.env.MAILGUN_SMTP_LOGIN || process.env.MAILTOGO_SMTP_USER || process.env.SMTP_USER}>`,
     to: recipientList.join(', '),
     subject: subject,
     html: htmlContent

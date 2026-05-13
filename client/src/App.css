@@ -16,6 +16,20 @@
   z-index: 1000;
 }
 
+.header-left {
+  flex: 1;
+}
+
+.header-logo-link {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.header-logo-link:hover {
+  opacity: 0.9;
+}
+
 .App-header h1 {
   font-size: 1.8rem;
   font-weight: 700;
@@ -54,6 +68,24 @@
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+}
+
+.btn-notification {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.btn-notification:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .error-banner {

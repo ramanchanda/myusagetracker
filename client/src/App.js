@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import EnterpriseView from './components/EnterpriseView';
+import NotificationConfig from './components/NotificationConfig';
 import './App.css';
 
-function App() {
+function AppContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const location = useLocation();
 
   // Month selection - default to current month
   const getCurrentMonth = () => {
@@ -32,46 +35,75 @@ function App() {
   }, [selectedMonth]);
 
   useEffect(() => {
-    fetchEnterpriseHealth();
-    const interval = setInterval(fetchEnterpriseHealth, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchEnterpriseHealth]);
+    if (location.pathname === '/') {
+      fetchEnterpriseHealth();
+      const interval = setInterval(fetchEnterpriseHealth, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchEnterpriseHealth, location.pathname]);
 
   const handleRefresh = () => {
     fetchEnterpriseHealth();
   };
 
+  const isHomePage = location.pathname === '/';
+
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Heroku Enterprise Teams Usage</h1>
+        <div className="header-left">
+          <Link to="/" className="header-logo-link">
+            <h1>Heroku Enterprise Teams Usage</h1>
+          </Link>
+        </div>
         <div className="header-actions">
-          <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
+          {isHomePage && (
+            <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
+              {loading ? 'Loading...' : 'Refresh'}
+            </button>
+          )}
+          <Link to="/notifications" className="btn btn-notification">
+            📧 Notification Settings
+          </Link>
         </div>
       </header>
 
-      {error && (
+      {error && isHomePage && (
         <div className="error-banner">
           <strong>Error:</strong> {error}
           <button onClick={fetchEnterpriseHealth} className="retry-btn">Retry</button>
         </div>
       )}
 
-      {lastUpdate && (
+      {lastUpdate && isHomePage && (
         <div className="last-update">
           Last updated: {lastUpdate.toLocaleString()}
         </div>
       )}
 
-      <EnterpriseView
-        selectedMonth={selectedMonth}
-        onMonthChange={setSelectedMonth}
-        reportView={reportView}
-        onReportViewChange={setReportView}
-      />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <EnterpriseView
+              selectedMonth={selectedMonth}
+              onMonthChange={setSelectedMonth}
+              reportView={reportView}
+              onReportViewChange={setReportView}
+            />
+          }
+        />
+        <Route path="/notifications" element={<NotificationConfig />} />
+      </Routes>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

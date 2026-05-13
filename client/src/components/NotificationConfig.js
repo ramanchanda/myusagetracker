@@ -164,7 +164,7 @@ function NotificationConfig() {
           <div className="config-section">
             <h3>Email Configuration</h3>
             <p className="section-note">
-              MailtoGo addon detected. Email configuration will use MailtoGo SMTP settings automatically.
+              Email service provider detected. SMTP settings will be used automatically from your configured addon (Mailgun, MailtoGo, etc.).
             </p>
 
             <div className="form-group">
