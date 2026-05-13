@@ -176,6 +176,23 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     }
   }, [reportView]);
 
+  // Reset team filter when date filter changes
+  useEffect(() => {
+    if (dailyReport && selectedBreakdownDate !== 'all') {
+      setSelectedBreakdownTeam('all');
+      setSelectedBreakdownApp('all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBreakdownDate]);
+
+  // Reset app filter when team filter changes
+  useEffect(() => {
+    if (dailyReport && selectedBreakdownTeam !== 'all') {
+      setSelectedBreakdownApp('all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBreakdownTeam]);
+
   // PDF Export function
   const handleExportPDF = async () => {
     try {
@@ -223,10 +240,26 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   });
   const formatCount = (value) => Number(value || 0).toLocaleString();
 
-  // Get unique dates and apps from daily breakdown
+  // Get unique dates (always all dates)
   const uniqueDates = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.date))].sort();
-  const uniqueTeams = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.teamName))].sort();
-  const uniqueApps = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.appName))].sort();
+
+  // Get unique teams based on selected date
+  const uniqueTeams = [...new Set(
+    (dailyReport?.dailyBreakdown || [])
+      .filter(row => selectedBreakdownDate === 'all' || row.date === selectedBreakdownDate)
+      .map(row => row.teamName)
+  )].sort();
+
+  // Get unique apps based on selected date and team
+  const uniqueApps = [...new Set(
+    (dailyReport?.dailyBreakdown || [])
+      .filter(row => {
+        const dateMatch = selectedBreakdownDate === 'all' || row.date === selectedBreakdownDate;
+        const teamMatch = selectedBreakdownTeam === 'all' || row.teamName === selectedBreakdownTeam;
+        return dateMatch && teamMatch;
+      })
+      .map(row => row.appName)
+  )].sort();
 
   const groupedDailyBreakdown = (dailyReport?.dailyBreakdown || [])
     .filter(row => {
