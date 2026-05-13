@@ -264,9 +264,21 @@ function parseDailyUsage(dailyUsageData) {
     day.spaceCost = parseFloat(day.spaceCost.toFixed(2));
   });
 
-  // Calculate summary
+  // Calculate summary for each resource
   const totalCost = days.reduce((sum, day) => sum + day.totalCost, 0);
   const avgDailyCost = days.length > 0 ? totalCost / days.length : 0;
+
+  // Calculate per-resource statistics
+  const calculateResourceStats = (days, field) => {
+    if (days.length === 0) return { avg: 0, max: 0, min: 0 };
+    const values = days.map(d => d[field]);
+    const total = values.reduce((sum, val) => sum + val, 0);
+    return {
+      avg: parseFloat((total / days.length).toFixed(2)),
+      max: parseFloat(Math.max(...values).toFixed(2)),
+      min: parseFloat(Math.min(...values).toFixed(2))
+    };
+  };
 
   return {
     days: days,
@@ -275,7 +287,14 @@ function parseDailyUsage(dailyUsageData) {
       avgDailyCost: parseFloat(avgDailyCost.toFixed(2)),
       totalDays: days.length,
       maxDailyCost: Math.max(...days.map(d => d.totalCost), 0),
-      minDailyCost: days.length > 0 ? Math.min(...days.map(d => d.totalCost)) : 0
+      minDailyCost: days.length > 0 ? Math.min(...days.map(d => d.totalCost)) : 0,
+      // Per-resource statistics
+      dynoUnits: calculateResourceStats(days, 'dynoCost'),
+      connectRows: calculateResourceStats(days, 'connectCost'),
+      dataAddons: calculateResourceStats(days, 'dataCost'),
+      generalAddons: calculateResourceStats(days, 'otherCost'),
+      privateSpaces: calculateResourceStats(days, 'privateSpaces'),
+      shieldSpaces: calculateResourceStats(days, 'shieldSpaces')
     }
   };
 }

@@ -699,17 +699,61 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.totalDays)}</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Avg Daily Usage</span>
-                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.avgDailyCost)}</span>
+                  <span className="trend-label">Total Usage (Period)</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.totalCost)}</span>
                 </div>
-                <div className="trend-analysis-card">
-                  <span className="trend-label">Max Daily Usage</span>
-                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.maxDailyCost)}</span>
-                </div>
-                <div className="trend-analysis-card">
-                  <span className="trend-label">Min Daily Usage</span>
-                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.minDailyCost)}</span>
-                </div>
+              </div>
+
+              <h4 className="chart-section-title" style={{ marginTop: '32px', marginBottom: '16px' }}>Resource Usage Statistics</h4>
+              <div className="daily-table-wrap">
+                <table className="daily-table">
+                  <thead>
+                    <tr>
+                      <th>Resource</th>
+                      <th>Avg Daily</th>
+                      <th>Max Daily</th>
+                      <th>Min Daily</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Dyno Units</strong></td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.dynoUnits?.avg || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.dynoUnits?.max || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.dynoUnits?.min || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Connect Rows</strong></td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.connectRows?.avg || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.connectRows?.max || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.connectRows?.min || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Data Add-ons</strong></td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.dataAddons?.avg || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.dataAddons?.max || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.dataAddons?.min || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>General Add-ons</strong></td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.generalAddons?.avg || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.generalAddons?.max || 0)}</td>
+                      <td>{formatUsage(dailyReport.dailyUsage.summary.generalAddons?.min || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Private Spaces</strong></td>
+                      <td>{formatCount(dailyReport.dailyUsage.summary.privateSpaces?.avg || 0)}</td>
+                      <td>{formatCount(dailyReport.dailyUsage.summary.privateSpaces?.max || 0)}</td>
+                      <td>{formatCount(dailyReport.dailyUsage.summary.privateSpaces?.min || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Shield Spaces</strong></td>
+                      <td>{formatCount(dailyReport.dailyUsage.summary.shieldSpaces?.avg || 0)}</td>
+                      <td>{formatCount(dailyReport.dailyUsage.summary.shieldSpaces?.max || 0)}</td>
+                      <td>{formatCount(dailyReport.dailyUsage.summary.shieldSpaces?.min || 0)}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <div className="trend-chart-wrap">
@@ -742,7 +786,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <th>General Add-ons</th>
                       <th>Private Spaces</th>
                       <th>Shield Spaces</th>
-                      <th>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -755,7 +798,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(day.otherCost)}</td>
                         <td>{formatCount(dailyReport.spaceSummary?.privateSpaces)}</td>
                         <td>{formatCount(dailyReport.spaceSummary?.shieldSpaces)}</td>
-                        <td>{formatUsage(day.totalCost)}</td>
                       </tr>
                     ))}
                   </tbody>
