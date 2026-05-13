@@ -49,7 +49,7 @@ router.post('/export', async (req, res) => {
     );
 
     console.log('Fetching Monthly report data...');
-    const monthlyData = await enterpriseUsageService.getEnterpriseUsageStructure(
+    const monthlyData = await enterpriseUsageService.getEnterpriseStructure(
       selectedMonth,
       accountId
     );
@@ -134,7 +134,7 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
     );
 
     console.log('Fetching Monthly report data...');
-    const monthlyData = await enterpriseUsageService.getEnterpriseUsageStructure(
+    const monthlyData = await enterpriseUsageService.getEnterpriseStructure(
       selectedMonth,
       accountId
     );
