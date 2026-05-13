@@ -96,18 +96,26 @@ function getConfigFromEnv() {
     config.emailConfig.fromEmail = process.env.NOTIFICATION_FROM_EMAIL;
   }
 
+  // Global Threshold Percentages (apply to all resources)
+  const globalWarning = process.env.THRESHOLD_WARNING_PERCENTAGE
+    ? parseInt(process.env.THRESHOLD_WARNING_PERCENTAGE)
+    : 80;
+  const globalCritical = process.env.THRESHOLD_CRITICAL_PERCENTAGE
+    ? parseInt(process.env.THRESHOLD_CRITICAL_PERCENTAGE)
+    : 95;
+
+  // Apply global percentages to all resources
+  Object.keys(config.thresholds).forEach(resource => {
+    config.thresholds[resource].warningPercentage = globalWarning;
+    config.thresholds[resource].criticalPercentage = globalCritical;
+  });
+
   // Thresholds - Dyno Units
   if (process.env.THRESHOLD_DYNO_ENABLED) {
     config.thresholds.dynoUnits.enabled = process.env.THRESHOLD_DYNO_ENABLED === 'true';
   }
   if (process.env.THRESHOLD_DYNO_LIMIT) {
     config.thresholds.dynoUnits.limit = parseInt(process.env.THRESHOLD_DYNO_LIMIT);
-  }
-  if (process.env.THRESHOLD_DYNO_WARNING) {
-    config.thresholds.dynoUnits.warningPercentage = parseInt(process.env.THRESHOLD_DYNO_WARNING);
-  }
-  if (process.env.THRESHOLD_DYNO_CRITICAL) {
-    config.thresholds.dynoUnits.criticalPercentage = parseInt(process.env.THRESHOLD_DYNO_CRITICAL);
   }
 
   // Thresholds - Connect Rows
@@ -117,12 +125,6 @@ function getConfigFromEnv() {
   if (process.env.THRESHOLD_CONNECT_LIMIT) {
     config.thresholds.connectRows.limit = parseInt(process.env.THRESHOLD_CONNECT_LIMIT);
   }
-  if (process.env.THRESHOLD_CONNECT_WARNING) {
-    config.thresholds.connectRows.warningPercentage = parseInt(process.env.THRESHOLD_CONNECT_WARNING);
-  }
-  if (process.env.THRESHOLD_CONNECT_CRITICAL) {
-    config.thresholds.connectRows.criticalPercentage = parseInt(process.env.THRESHOLD_CONNECT_CRITICAL);
-  }
 
   // Thresholds - Data Addons
   if (process.env.THRESHOLD_DATA_ADDONS_ENABLED) {
@@ -130,12 +132,6 @@ function getConfigFromEnv() {
   }
   if (process.env.THRESHOLD_DATA_ADDONS_LIMIT) {
     config.thresholds.dataAddons.limit = parseInt(process.env.THRESHOLD_DATA_ADDONS_LIMIT);
-  }
-  if (process.env.THRESHOLD_DATA_ADDONS_WARNING) {
-    config.thresholds.dataAddons.warningPercentage = parseInt(process.env.THRESHOLD_DATA_ADDONS_WARNING);
-  }
-  if (process.env.THRESHOLD_DATA_ADDONS_CRITICAL) {
-    config.thresholds.dataAddons.criticalPercentage = parseInt(process.env.THRESHOLD_DATA_ADDONS_CRITICAL);
   }
 
   // Thresholds - General Addons
@@ -145,12 +141,6 @@ function getConfigFromEnv() {
   if (process.env.THRESHOLD_GENERAL_ADDONS_LIMIT) {
     config.thresholds.generalAddons.limit = parseInt(process.env.THRESHOLD_GENERAL_ADDONS_LIMIT);
   }
-  if (process.env.THRESHOLD_GENERAL_ADDONS_WARNING) {
-    config.thresholds.generalAddons.warningPercentage = parseInt(process.env.THRESHOLD_GENERAL_ADDONS_WARNING);
-  }
-  if (process.env.THRESHOLD_GENERAL_ADDONS_CRITICAL) {
-    config.thresholds.generalAddons.criticalPercentage = parseInt(process.env.THRESHOLD_GENERAL_ADDONS_CRITICAL);
-  }
 
   // Thresholds - Private Spaces
   if (process.env.THRESHOLD_PRIVATE_SPACES_ENABLED) {
@@ -159,12 +149,6 @@ function getConfigFromEnv() {
   if (process.env.THRESHOLD_PRIVATE_SPACES_LIMIT) {
     config.thresholds.privateSpaces.limit = parseInt(process.env.THRESHOLD_PRIVATE_SPACES_LIMIT);
   }
-  if (process.env.THRESHOLD_PRIVATE_SPACES_WARNING) {
-    config.thresholds.privateSpaces.warningPercentage = parseInt(process.env.THRESHOLD_PRIVATE_SPACES_WARNING);
-  }
-  if (process.env.THRESHOLD_PRIVATE_SPACES_CRITICAL) {
-    config.thresholds.privateSpaces.criticalPercentage = parseInt(process.env.THRESHOLD_PRIVATE_SPACES_CRITICAL);
-  }
 
   // Thresholds - Shield Spaces
   if (process.env.THRESHOLD_SHIELD_SPACES_ENABLED) {
@@ -172,12 +156,6 @@ function getConfigFromEnv() {
   }
   if (process.env.THRESHOLD_SHIELD_SPACES_LIMIT) {
     config.thresholds.shieldSpaces.limit = parseInt(process.env.THRESHOLD_SHIELD_SPACES_LIMIT);
-  }
-  if (process.env.THRESHOLD_SHIELD_SPACES_WARNING) {
-    config.thresholds.shieldSpaces.warningPercentage = parseInt(process.env.THRESHOLD_SHIELD_SPACES_WARNING);
-  }
-  if (process.env.THRESHOLD_SHIELD_SPACES_CRITICAL) {
-    config.thresholds.shieldSpaces.criticalPercentage = parseInt(process.env.THRESHOLD_SHIELD_SPACES_CRITICAL);
   }
 
   // Trigger Schedule - Realtime Alerts

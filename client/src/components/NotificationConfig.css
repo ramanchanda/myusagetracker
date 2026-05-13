@@ -213,6 +213,90 @@
   border: 1px solid #bae6fd;
 }
 
+.global-thresholds-panel {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.global-thresholds-panel h4 {
+  margin: 0 0 8px 0;
+  color: #92400e;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.global-note {
+  margin: 0 0 20px 0;
+  color: #78350f;
+  font-size: 0.9rem;
+}
+
+.global-note strong {
+  font-weight: 700;
+  color: #92400e;
+}
+
+.global-percentages {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.global-percentage-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.global-percentage-card.warning {
+  border: 2px solid #f59e0b;
+}
+
+.global-percentage-card.critical {
+  border: 2px solid #ef4444;
+}
+
+.global-percentage-card label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.global-percentage-card .percentage-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.global-percentage-card.warning .percentage-value {
+  color: #f59e0b;
+}
+
+.global-percentage-card.critical .percentage-value {
+  color: #ef4444;
+}
+
+.global-percentage-card small {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.global-percentage-card small code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+}
+
 .threshold-card.readonly {
   background: #f8f9fa;
   cursor: default;

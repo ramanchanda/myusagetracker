@@ -171,6 +171,33 @@ function NotificationConfig() {
               Current usage limits and alert thresholds from Heroku Config Vars
             </p>
 
+            <div className="global-thresholds-panel">
+              <h4>Global Alert Percentages</h4>
+              <p className="global-note">
+                These percentages apply to <strong>all resources</strong> below
+              </p>
+              <div className="global-percentages">
+                <div className="global-percentage-card warning">
+                  <label>⚠️ Warning Threshold</label>
+                  <div className="percentage-value">
+                    {config.thresholds.dynoUnits?.warningPercentage || 80}%
+                  </div>
+                  <small>Config Var: <code>THRESHOLD_WARNING_PERCENTAGE</code></small>
+                </div>
+                <div className="global-percentage-card critical">
+                  <label>🚨 Critical Threshold</label>
+                  <div className="percentage-value">
+                    {config.thresholds.dynoUnits?.criticalPercentage || 95}%
+                  </div>
+                  <small>Config Var: <code>THRESHOLD_CRITICAL_PERCENTAGE</code></small>
+                </div>
+              </div>
+            </div>
+
+            <h4 style={{ marginTop: '32px', marginBottom: '16px', color: '#4c1d95', fontSize: '1.1rem' }}>
+              Resource Limits
+            </h4>
+
             {Object.entries(config.thresholds).map(([key, threshold]) => {
               const resourceLabel = key.replace(/([A-Z])/g, ' $1').trim();
               const configPrefix = 'THRESHOLD_' + key.replace(/([A-Z])/g, '_$1').toUpperCase();
@@ -185,22 +212,15 @@ function NotificationConfig() {
                   </div>
 
                   <div className="threshold-fields readonly">
-                    <div className="readonly-grid">
-                      <div className="readonly-field-inline">
-                        <label>Limit</label>
-                        <div className="readonly-value-inline">{threshold.limit.toLocaleString()}</div>
-                      </div>
-                      <div className="readonly-field-inline">
-                        <label>Warning</label>
-                        <div className="readonly-value-inline">{threshold.warningPercentage}%</div>
-                      </div>
-                      <div className="readonly-field-inline">
-                        <label>Critical</label>
-                        <div className="readonly-value-inline">{threshold.criticalPercentage}%</div>
-                      </div>
+                    <div className="readonly-field-inline" style={{ maxWidth: '200px' }}>
+                      <label>Usage Limit</label>
+                      <div className="readonly-value-inline">{threshold.limit.toLocaleString()}</div>
+                      <small style={{ marginTop: '8px', display: 'block' }}>
+                        Config Var: <code>{configPrefix}_LIMIT</code>
+                      </small>
                     </div>
-                    <div className="config-var-hint">
-                      Config Vars: <code>{configPrefix}_LIMIT</code>, <code>{configPrefix}_WARNING</code>, <code>{configPrefix}_CRITICAL</code>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '12px' }}>
+                      Alert percentages: ⚠️ {threshold.warningPercentage}% (Warning) · 🚨 {threshold.criticalPercentage}% (Critical)
                     </div>
                   </div>
                 </div>
