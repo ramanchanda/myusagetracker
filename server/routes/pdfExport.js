@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const PDFExportService = require('../services/pdfExportService');
-const usageService = require('../services/usageService');
+const enterpriseUsageService = require('../services/enterpriseUsageService');
+const dailyUsageService = require('../services/dailyUsageService');
 
 /**
  * POST /api/pdf/export
@@ -25,21 +26,40 @@ router.post('/export', async (req, res) => {
 
     console.log(`Generating PDF report for ${enterpriseEmail}`);
 
+    // Find account ID from email
+    const client = enterpriseUsageService.createHerokuClient();
+    const accounts = await enterpriseUsageService.getAllEnterpriseAccounts(client);
+    const account = accounts.find(acc => acc.email === enterpriseEmail || acc.name === enterpriseEmail);
+
+    if (!account) {
+      return res.status(404).json({ error: 'Enterprise account not found' });
+    }
+
+    const accountId = account.id;
+    const selectedMonth = monthForMonthly || new Date().toISOString().slice(0, 7);
+    const startDate = startDateForDaily || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = endDateForDaily || new Date().toISOString().split('T')[0];
+
     // Fetch all required data
     console.log('Fetching Summary of past 12 months data...');
-    const summary12Data = await usageService.getSummaryOfPast12Months(enterpriseEmail);
+    const summary12Data = await enterpriseUsageService.getEnterpriseTrendSummary(
+      selectedMonth,
+      accountId,
+      false
+    );
 
     console.log('Fetching Monthly report data...');
-    const monthlyData = await usageService.getMonthlyReport(
-      enterpriseEmail,
-      monthForMonthly || new Date().toISOString().slice(0, 7)
+    const monthlyData = await enterpriseUsageService.getEnterpriseUsageStructure(
+      selectedMonth,
+      accountId
     );
 
     console.log('Fetching Daily report data...');
-    const dailyData = await usageService.getDailyReport(
-      enterpriseEmail,
-      startDateForDaily || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      endDateForDaily || new Date().toISOString().split('T')[0]
+    const dailyData = await dailyUsageService.getEnterpriseDailyUsageStructure(
+      selectedMonth,
+      accountId,
+      startDate,
+      endDate
     );
 
     // Generate PDF
@@ -91,21 +111,40 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
 
     console.log(`Generating PDF report for ${enterpriseEmail}`);
 
+    // Find account ID from email
+    const client = enterpriseUsageService.createHerokuClient();
+    const accounts = await enterpriseUsageService.getAllEnterpriseAccounts(client);
+    const account = accounts.find(acc => acc.email === enterpriseEmail || acc.name === enterpriseEmail);
+
+    if (!account) {
+      return res.status(404).json({ error: 'Enterprise account not found' });
+    }
+
+    const accountId = account.id;
+    const selectedMonth = monthForMonthly || new Date().toISOString().slice(0, 7);
+    const startDate = startDateForDaily || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = endDateForDaily || new Date().toISOString().split('T')[0];
+
     // Fetch all required data
     console.log('Fetching Summary of past 12 months data...');
-    const summary12Data = await usageService.getSummaryOfPast12Months(enterpriseEmail);
+    const summary12Data = await enterpriseUsageService.getEnterpriseTrendSummary(
+      selectedMonth,
+      accountId,
+      false
+    );
 
     console.log('Fetching Monthly report data...');
-    const monthlyData = await usageService.getMonthlyReport(
-      enterpriseEmail,
-      monthForMonthly || new Date().toISOString().slice(0, 7)
+    const monthlyData = await enterpriseUsageService.getEnterpriseUsageStructure(
+      selectedMonth,
+      accountId
     );
 
     console.log('Fetching Daily report data...');
-    const dailyData = await usageService.getDailyReport(
-      enterpriseEmail,
-      startDateForDaily || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      endDateForDaily || new Date().toISOString().split('T')[0]
+    const dailyData = await dailyUsageService.getEnterpriseDailyUsageStructure(
+      selectedMonth,
+      accountId,
+      startDate,
+      endDate
     );
 
     // Generate PDF
