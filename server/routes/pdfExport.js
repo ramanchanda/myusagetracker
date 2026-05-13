@@ -3,6 +3,7 @@ const router = express.Router();
 const PDFExportService = require('../services/pdfExportService');
 const enterpriseUsageService = require('../services/enterpriseUsageService');
 const dailyUsageService = require('../services/dailyUsageService');
+const { transformSummary12Data, transformMonthlyData, transformDailyData } = require('../services/pdfDataTransformer');
 
 /**
  * POST /api/pdf/export
@@ -62,14 +63,24 @@ router.post('/export', async (req, res) => {
       endDate
     );
 
+    // Transform data to PDF format
+    console.log('Transforming data for PDF...');
+    const transformedSummary12 = transformSummary12Data(summary12Data);
+    const transformedMonthly = transformMonthlyData(monthlyData, selectedMonth);
+    const transformedDaily = transformDailyData(dailyData, startDate, endDate);
+
+    console.log('Summary12 data:', JSON.stringify(transformedSummary12, null, 2).substring(0, 500));
+    console.log('Monthly data:', JSON.stringify(transformedMonthly, null, 2).substring(0, 500));
+    console.log('Daily data:', JSON.stringify(transformedDaily, null, 2).substring(0, 500));
+
     // Generate PDF
     console.log('Generating PDF document...');
     const pdfService = new PDFExportService();
     const pdfDoc = await pdfService.generateReport(
       enterpriseEmail,
-      summary12Data,
-      monthlyData,
-      dailyData
+      transformedSummary12,
+      transformedMonthly,
+      transformedDaily
     );
 
     // Set response headers
@@ -147,14 +158,24 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
       endDate
     );
 
+    // Transform data to PDF format
+    console.log('Transforming data for PDF...');
+    const transformedSummary12 = transformSummary12Data(summary12Data);
+    const transformedMonthly = transformMonthlyData(monthlyData, selectedMonth);
+    const transformedDaily = transformDailyData(dailyData, startDate, endDate);
+
+    console.log('Summary12 data:', JSON.stringify(transformedSummary12, null, 2).substring(0, 500));
+    console.log('Monthly data:', JSON.stringify(transformedMonthly, null, 2).substring(0, 500));
+    console.log('Daily data:', JSON.stringify(transformedDaily, null, 2).substring(0, 500));
+
     // Generate PDF
     console.log('Generating PDF document...');
     const pdfService = new PDFExportService();
     const pdfDoc = await pdfService.generateReport(
       enterpriseEmail,
-      summary12Data,
-      monthlyData,
-      dailyData
+      transformedSummary12,
+      transformedMonthly,
+      transformedDaily
     );
 
     // Set response headers
