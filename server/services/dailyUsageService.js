@@ -280,6 +280,23 @@ function parseDailyUsage(dailyUsageData) {
     };
   };
 
+  // Calculate Total Usage (Period) per resource type
+  // Different calculation methods for different resources:
+  // - Dyno Units: Total (sum of all days)
+  // - Connect Rows: Max (peak usage across date range)
+  // - Data Add-ons: Total (sum of all days)
+  // - General Add-ons: Total (sum of all days)
+  // - Private Spaces: Total/Max (count)
+  // - Shield Spaces: Total/Max (count)
+  const periodTotals = {
+    dynoUnits: days.reduce((sum, day) => sum + day.dynoCost, 0),
+    connectRows: days.length > 0 ? Math.max(...days.map(d => d.connectCost)) : 0,
+    dataAddons: days.reduce((sum, day) => sum + day.dataCost, 0),
+    generalAddons: days.reduce((sum, day) => sum + day.otherCost, 0),
+    privateSpaces: days.length > 0 ? Math.max(...days.map(d => d.privateSpaces)) : 0,
+    shieldSpaces: days.length > 0 ? Math.max(...days.map(d => d.shieldSpaces)) : 0
+  };
+
   return {
     days: days,
     summary: {
@@ -288,6 +305,15 @@ function parseDailyUsage(dailyUsageData) {
       totalDays: days.length,
       maxDailyCost: Math.max(...days.map(d => d.totalCost), 0),
       minDailyCost: days.length > 0 ? Math.min(...days.map(d => d.totalCost)) : 0,
+      // Period totals (different calculation per resource)
+      periodTotals: {
+        dynoUnits: parseFloat(periodTotals.dynoUnits.toFixed(2)),
+        connectRows: parseFloat(periodTotals.connectRows.toFixed(2)),
+        dataAddons: parseFloat(periodTotals.dataAddons.toFixed(2)),
+        generalAddons: parseFloat(periodTotals.generalAddons.toFixed(2)),
+        privateSpaces: periodTotals.privateSpaces,
+        shieldSpaces: periodTotals.shieldSpaces
+      },
       // Per-resource statistics
       dynoUnits: calculateResourceStats(days, 'dynoCost'),
       connectRows: calculateResourceStats(days, 'connectCost'),

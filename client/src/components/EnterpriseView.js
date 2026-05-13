@@ -698,10 +698,32 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-label">Total Days</span>
                   <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.totalDays)}</span>
                 </div>
-                <div className="trend-analysis-card">
-                  <span className="trend-label">Total Usage (Period)</span>
-                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.totalCost)}</span>
-                </div>
+              </div>
+
+              <h4 className="chart-section-title" style={{ marginTop: '32px', marginBottom: '16px' }}>Total Usage (Period)</h4>
+              <div className="daily-table-wrap">
+                <table className="daily-table">
+                  <thead>
+                    <tr>
+                      <th>Dyno Units (Total)</th>
+                      <th>Connect Rows (Max)</th>
+                      <th>Data Add-ons (Total)</th>
+                      <th>General Add-ons (Total)</th>
+                      <th>Private Spaces (Total)</th>
+                      <th>Shield Spaces (Total)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dynoUnits || 0)}</strong></td>
+                      <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.connectRows || 0)}</strong></td>
+                      <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dataAddons || 0)}</strong></td>
+                      <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.generalAddons || 0)}</strong></td>
+                      <td><strong>{formatCount(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</strong></td>
+                      <td><strong>{formatCount(dailyReport.dailyUsage.summary.periodTotals?.shieldSpaces || 0)}</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <h4 className="chart-section-title" style={{ marginTop: '32px', marginBottom: '16px' }}>Resource Usage Statistics</h4>
