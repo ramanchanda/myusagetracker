@@ -443,6 +443,7 @@ async function getEnterpriseDailyUsageStructure(month, enterpriseAccountId, cust
         teamMap.get(team.id).days.push({
           date: day.date,
           dynos: Number(team.dynos || 0),
+          connect: Number(team.connect || 0),
           addons: Number(team.addons || 0),
           data: Number(team.data || 0),
           partner: Number(team.partner || 0),
