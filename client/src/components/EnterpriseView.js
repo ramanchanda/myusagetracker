@@ -697,7 +697,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </ResponsiveContainer>
               </div>
 
-              <h4 className="chart-section-title" style={{ marginTop: '32px' }}>Daily Usage Summary</h4>
+              <h4 className="chart-section-title" style={{ marginTop: '60px' }}>Daily Usage Summary</h4>
               <div className="daily-table-wrap">
                 <table className="daily-table">
                   <thead>
