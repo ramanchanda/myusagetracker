@@ -445,7 +445,7 @@ class PDFExportService {
         if (monthlyData.teams.length > 15) {
           doc.fontSize(9)
             .fillColor(COLORS.textLight)
-            .font('Helvetica-Italic')
+            .font('Helvetica-Oblique')
             .text(`... and ${monthlyData.teams.length - 15} more teams`, 50, doc.y);
         }
       }
@@ -503,7 +503,7 @@ class PDFExportService {
         if (dailyData.dailyBreakdown.length > 30) {
           doc.fontSize(9)
             .fillColor(COLORS.textLight)
-            .font('Helvetica-Italic')
+            .font('Helvetica-Oblique')
             .text(`... and ${dailyData.dailyBreakdown.length - 30} more records`, 50, doc.y);
         }
       }
