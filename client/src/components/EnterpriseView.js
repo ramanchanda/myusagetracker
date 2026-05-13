@@ -228,7 +228,28 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
 
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      alert('Failed to export PDF report. Please try again.');
+
+      // Extract detailed error message
+      let errorMessage = 'Failed to export PDF report. ';
+
+      if (error.response) {
+        // Server responded with error
+        console.error('Server error response:', error.response.data);
+        if (error.response.data?.details) {
+          errorMessage += `\n\nDetails: ${error.response.data.details}`;
+        } else if (error.response.data?.error) {
+          errorMessage += `\n\nError: ${error.response.data.error}`;
+        }
+        errorMessage += `\n\nStatus: ${error.response.status}`;
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage += '\n\nNo response from server. Please check your connection.';
+      } else {
+        // Error setting up request
+        errorMessage += `\n\nError: ${error.message}`;
+      }
+
+      alert(errorMessage);
     } finally {
       setExportingPDF(false);
     }
