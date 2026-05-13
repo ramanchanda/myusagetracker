@@ -312,16 +312,12 @@ function generateEnvCommands(config) {
 
 // Update configuration
 async function updateConfig(newConfig) {
-  // On Heroku, return the config with instructions to set env vars
+  // On Heroku, just return the config
+  // Configuration must be set via Heroku Config Vars to persist
   if (process.env.DYNO || process.env.USE_ENV_CONFIG === 'true') {
-    console.log('Heroku environment detected - configuration will be read from Config Vars');
-
-    // Return the new config along with the commands needed
-    return {
-      ...newConfig,
-      _herokuCommands: generateEnvCommands(newConfig),
-      _note: 'Configuration saved temporarily. To persist across restarts, run the Heroku commands provided in _herokuCommands, or use the API endpoint to set Config Vars programmatically.'
-    };
+    console.log('Heroku environment detected - configuration is read from Config Vars');
+    console.log('To persist changes, set Config Vars via Heroku Dashboard or CLI');
+    return newConfig;
   }
 
   // For local development, write to file
