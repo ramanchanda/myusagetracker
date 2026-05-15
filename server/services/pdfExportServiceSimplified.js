@@ -163,19 +163,26 @@ class SimplifiedPDFExportService {
   // Key-value pair
   addKeyValue(key, value) {
     const doc = this.doc;
-    const y = this.ensureValidY();
+    let y = this.ensureValidY();
 
     // Ensure value is a valid string
     const safeValue = (value === null || value === undefined || value === 'NaN') ? 'N/A' : String(value);
 
+    // Draw key and value on same line without using continued
+    const keyText = key + ':';
+    const valueText = ' ' + safeValue;
+
     doc.fontSize(11)
       .fillColor(COLORS.textLight)
       .font('Helvetica')
-      .text(key + ':', 60, y, { continued: true, width: 180 });
+      .text(keyText, 60, y, { width: 180, continued: false });
+
+    // Calculate value position based on key width
+    const keyWidth = doc.widthOfString(keyText);
 
     doc.fillColor(COLORS.text)
       .font('Helvetica-Bold')
-      .text(' ' + safeValue);
+      .text(valueText, 60 + keyWidth, y, { width: 400 });
 
     doc.moveDown(0.3);
   }
