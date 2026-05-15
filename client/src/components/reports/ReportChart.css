@@ -1,0 +1,59 @@
+/**
+ * Print-optimized chart styles
+ */
+
+.report-chart-container {
+  margin: 20px 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-chart-title {
+  font-size: 16px;
+  color: #1e293b;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.report-chart-wrapper {
+  width: 100%;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 15px;
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Ensure chart container doesn't collapse */
+.report-chart-wrapper > div {
+  min-height: inherit;
+}
+
+.chart-ready-marker {
+  display: none !important;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Print-specific styles */
+@media print {
+  .report-chart-container {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-chart-wrapper {
+    border: 1px solid #cbd5e1;
+  }
+
+  /* Ensure SVG charts print with color */
+  .report-chart-wrapper svg {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -49,6 +49,7 @@ function AppContent() {
   };
 
   const isHomePage = location.pathname === '/';
+  const isNotificationsPage = location.pathname === '/notifications';
 
   return (
     <div className="App">
@@ -59,13 +60,11 @@ function AppContent() {
           </Link>
         </div>
         <div className="header-actions">
-          {isHomePage && (
-            <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
-          )}
-          <Link to="/notifications" className="btn btn-notification">
-            📧 Notification Settings
+          <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+          <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
+            {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}
           </Link>
         </div>
       </header>

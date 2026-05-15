@@ -727,7 +727,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <thead>
                     <tr>
                       <th>Dyno Units (Total)</th>
-                      <th>Connect Rows (Max)</th>
                       <th>Data Add-ons (Total)</th>
                       <th>General Add-ons (Total)</th>
                       <th>Private Spaces (Total)</th>
@@ -737,7 +736,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <tbody>
                     <tr>
                       <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dynoUnits || 0)}</strong></td>
-                      <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.connectRows || 0)}</strong></td>
                       <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dataAddons || 0)}</strong></td>
                       <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.generalAddons || 0)}</strong></td>
                       <td><strong>{formatCount(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</strong></td>
@@ -764,12 +762,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <td>{formatUsage(dailyReport.dailyUsage.summary.dynoUnits?.avg || 0)}</td>
                       <td>{formatUsage(dailyReport.dailyUsage.summary.dynoUnits?.max || 0)}</td>
                       <td>{formatUsage(dailyReport.dailyUsage.summary.dynoUnits?.min || 0)}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Connect Rows</strong></td>
-                      <td>{formatUsage(dailyReport.dailyUsage.summary.connectRows?.avg || 0)}</td>
-                      <td>{formatUsage(dailyReport.dailyUsage.summary.connectRows?.max || 0)}</td>
-                      <td>{formatUsage(dailyReport.dailyUsage.summary.connectRows?.min || 0)}</td>
                     </tr>
                     <tr>
                       <td><strong>Data Add-ons</strong></td>
@@ -808,7 +800,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="dynoCost" fill="#6f42c1" name="Dyno Units" />
-                    <Bar dataKey="connectCost" fill="#0ea5e9" name="Connect Rows" />
                     <Bar dataKey="dataCost" fill="#22c55e" name="Data Add-ons" />
                     <Bar dataKey="otherCost" fill="#f97316" name="General Add-ons" />
                     <Bar dataKey="privateSpaces" fill="#3b82f6" name="Private Spaces" />
@@ -824,7 +815,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <tr>
                       <th>Date</th>
                       <th>Dyno Units</th>
-                      <th>Connect Rows</th>
                       <th>Data Add-ons</th>
                       <th>General Add-ons</th>
                       <th>Private Spaces</th>
@@ -836,7 +826,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <tr key={day.date}>
                         <td>{day.date}</td>
                         <td>{formatUsage(day.dynoCost)}</td>
-                        <td>{formatUsage(day.connectCost)}</td>
                         <td>{formatUsage(day.dataCost)}</td>
                         <td>{formatUsage(day.otherCost)}</td>
                         <td>{formatCount(dailyReport.spaceSummary?.privateSpaces)}</td>
@@ -917,7 +906,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <th>Team Name</th>
                       <th>App Name</th>
                       <th>Dyno Units</th>
-                      <th>Connect Rows</th>
                       <th>Data Add-ons</th>
                       <th>General Add-ons</th>
                       <th>App in Private Spaces</th>
@@ -941,7 +929,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         </td>
                         <td>{row.appName}</td>
                         <td>{formatUsage(row.dynoUnits)}</td>
-                        <td>{formatUsage(row.connectRows)}</td>
                         <td>{formatUsage(row.dataAddons)}</td>
                         <td>{formatUsage(row.generalAddons)}</td>
                         <td className="group-value">

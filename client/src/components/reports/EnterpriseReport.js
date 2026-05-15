@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import ReportChart from './ReportChart';
 import './EnterpriseReport.css';
 
 /**
@@ -14,6 +15,7 @@ function EnterpriseReport() {
   const [error, setError] = useState(null);
   const [reportReady, setReportReady] = useState(false);
   const [reportData, setReportData] = useState(null);
+  const [chartsRendered, setChartsRendered] = useState(0);
 
   useEffect(() => {
     const fetchReportData = async () => {
@@ -44,19 +46,22 @@ function EnterpriseReport() {
     }
   }, [accountEmail]);
 
-  // Mark report as ready after data loads and render completes
+  // Mark report as ready after data loads and charts render
   useEffect(() => {
     if (!loading && reportData && !error) {
-      console.log('[Enterprise Report] Data loaded, waiting for render...');
+      console.log('[Enterprise Report] Data loaded, waiting for charts to render...');
+
+      // Wait for all charts to be ready (expect 2 charts in trend analysis)
+      const expectedCharts = reportData.trendAnalysis?.monthlyData?.length > 0 ? 2 : 0;
 
       const timer = setTimeout(() => {
-        console.log('[Enterprise Report] Marking report as ready');
+        console.log('[Enterprise Report] Charts rendered, marking report as ready');
         setReportReady(true);
-      }, 2000); // Wait 2 seconds for full render
+      }, 3000); // Wait 3 seconds for charts and full render
 
       return () => clearTimeout(timer);
     }
-  }, [loading, reportData, error]);
+  }, [loading, reportData, error, chartsRendered]);
 
   if (loading) {
     return (
@@ -184,31 +189,57 @@ function EnterpriseReport() {
         </div>
 
         {trendAnalysis.monthlyData && trendAnalysis.monthlyData.length > 0 && (
-          <div className="monthly-trend-table">
-            <h3>12-Month Trend</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Dyno Units</th>
-                  <th>Connect Rows</th>
-                  <th>Data Add-ons</th>
-                  <th>General Add-ons</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trendAnalysis.monthlyData.map((month, idx) => (
-                  <tr key={idx}>
-                    <td>{month.month}</td>
-                    <td>{formatNumber(month.dynoUnits)}</td>
-                    <td>{formatNumber(month.connectRows)}</td>
-                    <td>{formatNumber(month.dataAddons)}</td>
-                    <td>{formatNumber(month.generalAddons)}</td>
+          <>
+            <ReportChart
+              data={trendAnalysis.monthlyData.map(m => ({
+                name: m.month,
+                'Dyno Units': m.dynoUnits,
+                'Connect Rows': m.connectRows
+              }))}
+              type="line"
+              title="Compute & Connect Usage Trend"
+              dataKeys={['Dyno Units', 'Connect Rows']}
+              height={280}
+            />
+
+            <ReportChart
+              data={trendAnalysis.monthlyData.map(m => ({
+                name: m.month,
+                'Data Add-ons': m.dataAddons,
+                'General Add-ons': m.generalAddons
+              }))}
+              type="bar"
+              title="Add-ons Usage Trend"
+              dataKeys={['Data Add-ons', 'General Add-ons']}
+              height={280}
+            />
+
+            <div className="monthly-trend-table">
+              <h3>12-Month Trend Data</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Dyno Units</th>
+                    <th>Connect Rows</th>
+                    <th>Data Add-ons</th>
+                    <th>General Add-ons</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {trendAnalysis.monthlyData.map((month, idx) => (
+                    <tr key={idx}>
+                      <td>{month.month}</td>
+                      <td>{formatNumber(month.dynoUnits)}</td>
+                      <td>{formatNumber(month.connectRows)}</td>
+                      <td>{formatNumber(month.dataAddons)}</td>
+                      <td>{formatNumber(month.generalAddons)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -19,6 +19,7 @@ const dailyUsageService = require('./services/dailyUsageService');
 const configService = require('./services/configService');
 const enhancedNotificationService = require('./services/enhancedNotificationService');
 const thresholdMonitor = require('./services/thresholdMonitor');
+const autoThresholdMonitor = require('./services/autoThresholdMonitor');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
 
@@ -178,6 +179,12 @@ app.get('/api/enterprise/structure', async (req, res) => {
     const month = req.query.month;
     const enterpriseAccountId = req.query.accountId; // Optional: specific account
     const structure = await enterpriseUsageService.getEnterpriseStructure(month, enterpriseAccountId);
+
+    // Automatically check thresholds whenever usage data is fetched
+    autoThresholdMonitor.autoCheckThresholds(structure).catch(err => {
+      console.error('[Auto Monitor] Background threshold check failed:', err.message);
+    });
+
     res.json(structure);
   } catch (error) {
     console.error('Error fetching enterprise structure:', error.message);
@@ -190,6 +197,12 @@ app.get('/api/enterprise/all-accounts', async (req, res) => {
   try {
     const month = req.query.month;
     const structure = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
+
+    // Automatically check thresholds
+    autoThresholdMonitor.autoCheckThresholds(structure).catch(err => {
+      console.error('[Auto Monitor] Background threshold check failed:', err.message);
+    });
+
     res.json(structure);
   } catch (error) {
     console.error('Error fetching all enterprise accounts:', error.message);
@@ -442,6 +455,33 @@ app.post('/api/notifications/check-thresholds', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error checking thresholds:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get auto-monitor cooldown status
+app.get('/api/notifications/cooldown-status', async (req, res) => {
+  try {
+    const status = autoThresholdMonitor.getCooldownStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('Error fetching cooldown status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reset cooldown for testing (useful for development)
+app.post('/api/notifications/reset-cooldown', async (req, res) => {
+  try {
+    const { resourceType, severity } = req.body;
+    if (resourceType && severity) {
+      autoThresholdMonitor.resetCooldown(resourceType, severity);
+      res.json({ success: true, message: `Cooldown reset for ${resourceType} (${severity})` });
+    } else {
+      res.status(400).json({ error: 'resourceType and severity required' });
+    }
+  } catch (error) {
+    console.error('Error resetting cooldown:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

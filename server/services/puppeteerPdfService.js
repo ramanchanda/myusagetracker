@@ -58,6 +58,10 @@ async function generatePDF(url) {
       throw new Error('Report failed to render - data may not be available');
     }
 
+    // Additional wait to ensure all charts and content are fully rendered
+    console.log('[PDF] Step 4.5: Waiting extra time for charts to render...');
+    await page.waitForTimeout(2000);
+
     console.log('[PDF] ✓ Report fully rendered');
 
     console.log('[PDF] Step 5: Generating PDF...');
@@ -66,12 +70,13 @@ async function generatePDF(url) {
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      preferCSSPageSize: true,
+      preferCSSPageSize: false,
+      displayHeaderFooter: false,
       margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
+        top: '15mm',
+        right: '15mm',
+        bottom: '15mm',
+        left: '15mm'
       }
     });
 
