@@ -52,6 +52,33 @@ class SimplifiedPDFExportService {
     this.pageNumber = 0;
   }
 
+  // Safe text rendering with validation
+  safeText(text, x, y, options = {}) {
+    const doc = this.doc;
+
+    // Validate doc.y before rendering
+    if (!Number.isFinite(doc.y)) {
+      console.error('[PDF ERROR] Invalid doc.y detected:', doc.y);
+      doc.y = 100;
+    }
+
+    // Ensure all parameters are valid
+    const safeText = String(text || '');
+    const safeX = Number.isFinite(x) ? x : 60;
+    const safeY = Number.isFinite(y) ? y : (Number.isFinite(doc.y) ? doc.y : 100);
+
+    console.log('[PDF TEXT DEBUG]', {
+      textPreview: safeText.slice(0, 50),
+      docY: doc.y,
+      docYType: typeof doc.y,
+      x: safeX,
+      y: safeY,
+      hasOptions: Object.keys(options).length > 0
+    });
+
+    return doc.text(safeText, safeX, safeY, options);
+  }
+
   createDocument() {
     this.doc = new PDFDocument({
       size: 'A4',
@@ -82,22 +109,26 @@ class SimplifiedPDFExportService {
 
     // Title
     console.log('[PDF] Drawing title at (60, 30)...');
+    console.log('[PDF] Before title - doc.y:', doc.y, 'type:', typeof doc.y);
     doc.fontSize(20)
       .fillColor(COLORS.primary)
-      .font('Helvetica-Bold')
-      .text(title, 60, 30);
+      .font('Helvetica-Bold');
+    this.safeText(title, 60, 30, {});
+    console.log('[PDF] After title - doc.y:', doc.y, 'type:', typeof doc.y);
 
     if (subtitle) {
       console.log('[PDF] Drawing subtitle at (60, 55)...');
+      console.log('[PDF] Before subtitle - doc.y:', doc.y, 'type:', typeof doc.y);
       doc.fontSize(11)
         .fillColor(COLORS.textLight)
-        .font('Helvetica')
-        .text(subtitle, 60, 55);
+        .font('Helvetica');
+      this.safeText(subtitle, 60, 55, {});
+      console.log('[PDF] After subtitle - doc.y:', doc.y, 'type:', typeof doc.y);
     }
 
     console.log('[PDF] Moving down 3...');
     doc.moveDown(3);
-    console.log('[PDF] addPageHeader complete, doc.y:', doc.y);
+    console.log('[PDF] addPageHeader complete, doc.y:', doc.y, 'type:', typeof doc.y);
   }
 
   // Add page footer
@@ -168,21 +199,21 @@ class SimplifiedPDFExportService {
     // Ensure value is a valid string
     const safeValue = (value === null || value === undefined || value === 'NaN') ? 'N/A' : String(value);
 
-    // Draw key and value on same line without using continued
+    // Draw key and value on same line
     const keyText = key + ':';
     const valueText = ' ' + safeValue;
 
     doc.fontSize(11)
       .fillColor(COLORS.textLight)
-      .font('Helvetica')
-      .text(keyText, 60, y, { width: 180, continued: false });
+      .font('Helvetica');
+    this.safeText(keyText, 60, y, {});
 
     // Calculate value position based on key width
     const keyWidth = doc.widthOfString(keyText);
 
     doc.fillColor(COLORS.text)
-      .font('Helvetica-Bold')
-      .text(valueText, 60 + keyWidth, y, { width: 400 });
+      .font('Helvetica-Bold');
+    this.safeText(valueText, 60 + keyWidth, y, {});
 
     doc.moveDown(0.3);
   }
@@ -366,24 +397,22 @@ class SimplifiedPDFExportService {
     doc.roundedRect(60, summaryBoxY, doc.page.width - 120, 100, 5)
       .fillAndStroke(COLORS.bgLight, COLORS.border);
 
-    // Use implicit positioning - set doc.y and let PDFKit position text
-    doc.y = summaryBoxY + 20;
-    doc.x = 80;
+    // Use explicit safe text rendering
     doc.fontSize(12)
       .fillColor(COLORS.text)
-      .font('Helvetica-Bold')
-      .text('Executive Summary');
+      .font('Helvetica-Bold');
+    this.safeText('Executive Summary', 80, summaryBoxY + 20, {});
 
-    doc.y = summaryBoxY + 45;
-    doc.x = 80;
     doc.fontSize(10)
       .fillColor(COLORS.textLight)
-      .font('Helvetica')
-      .text(
-        'This report provides a comprehensive overview of your Heroku usage across ' +
-        'compute resources, database connections, add-ons, and spaces.',
-        { width: doc.page.width - 160 }
-      );
+      .font('Helvetica');
+    this.safeText(
+      'This report provides a comprehensive overview of your Heroku usage across ' +
+      'compute resources, database connections, add-ons, and spaces.',
+      80,
+      summaryBoxY + 45,
+      { width: doc.page.width - 160 }
+    );
 
     doc.y = summaryBoxY + 110;
 
@@ -428,24 +457,28 @@ class SimplifiedPDFExportService {
     doc.roundedRect(60, trendBoxY, doc.page.width - 120, 80, 5)
       .fill(COLORS.bgLight);
 
-    // Use implicit positioning
-    doc.y = trendBoxY + 15;
-    doc.x = 80;
+    // Use explicit safe text rendering
     doc.fontSize(11)
       .fillColor(COLORS.text)
-      .font('Helvetica-Bold')
-      .text('Trend Analysis');
+      .font('Helvetica-Bold');
+    this.safeText('Trend Analysis', 80, trendBoxY + 15, {});
 
-    doc.y = trendBoxY + 35;
-    doc.x = 80;
     doc.fontSize(10)
       .fillColor(COLORS.textLight)
-      .font('Helvetica')
-      .text(`Dyno Usage: ${trendAnalysis.dynoTrend || 'Stable'} (${trendAnalysis.growthRate || '0%'})`);
+      .font('Helvetica');
+    this.safeText(
+      `Dyno Usage: ${trendAnalysis.dynoTrend || 'Stable'} (${trendAnalysis.growthRate || '0%'})`,
+      80,
+      trendBoxY + 35,
+      {}
+    );
 
-    doc.y = trendBoxY + 55;
-    doc.x = 80;
-    doc.text(`Connect Rows: ${trendAnalysis.connectTrend || 'Stable'}`);
+    this.safeText(
+      `Connect Rows: ${trendAnalysis.connectTrend || 'Stable'}`,
+      80,
+      trendBoxY + 55,
+      {}
+    );
 
     doc.y = trendBoxY + 85;
 
