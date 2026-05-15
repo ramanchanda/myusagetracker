@@ -47,14 +47,15 @@ async function generatePDF(url) {
     console.log('[PDF] ✓ Page loaded');
     console.log('[PDF] Step 4: Waiting for dashboard to render...');
 
-    // Wait for dashboard-loaded marker
+    // Wait for dashboard-loaded marker with longer timeout
     try {
       await page.waitForSelector('.dashboard-loaded', {
-        timeout: 30000
+        timeout: 60000 // 60 seconds for data fetching + rendering
       });
       console.log('[PDF] ✓ Dashboard loaded marker found');
     } catch (err) {
-      console.warn('[PDF] ⚠ Dashboard loaded marker not found, taking screenshot...');
+      console.error('[PDF] ✗ Dashboard loaded marker not found after 60s');
+      console.log('[PDF] Taking debug screenshot...');
 
       // Take debug screenshot
       try {
@@ -66,13 +67,38 @@ async function generatePDF(url) {
       } catch (screenshotErr) {
         console.error('[PDF] Failed to capture screenshot:', screenshotErr.message);
       }
+
+      throw new Error('Dashboard failed to load - data may not be available');
     }
 
-    // Additional wait for charts/dynamic content
-    console.log('[PDF] Step 5: Waiting for dynamic content...');
-    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 3000)));
+    // Verify dashboard has actual data (not just placeholders)
+    console.log('[PDF] Step 5: Verifying dashboard has data...');
+    const hasData = await page.evaluate(() => {
+      // Check for metric cards with actual values
+      const metricCards = document.querySelectorAll('.metric-card .metric-value');
+      const hasValues = Array.from(metricCards).some(card => {
+        const text = card.textContent.trim();
+        return text && text !== '0' && text !== 'N/A' && text !== '';
+      });
 
-    console.log('[PDF] Step 6: Generating PDF...');
+      console.log('[Dashboard Check] Metric cards found:', metricCards.length);
+      console.log('[Dashboard Check] Has non-zero values:', hasValues);
+
+      return hasValues;
+    });
+
+    if (!hasData) {
+      console.error('[PDF] ✗ Dashboard appears to have no data');
+      throw new Error('Dashboard loaded but contains no data');
+    }
+
+    console.log('[PDF] ✓ Dashboard has data');
+
+    // Additional wait for any final animations/renders
+    console.log('[PDF] Step 6: Final wait for complete render...');
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 2000)));
+
+    console.log('[PDF] Step 7: Generating PDF...');
 
     // Generate PDF
     const pdfBuffer = await page.pdf({
@@ -101,7 +127,7 @@ async function generatePDF(url) {
     console.log('[PDF] ✓ PDF validation passed');
 
     // Close page and browser
-    console.log('[PDF] Step 7: Cleaning up...');
+    console.log('[PDF] Step 8: Cleaning up...');
     await page.close();
     await browser.close();
     console.log('[PDF] ✓ Cleanup complete');
