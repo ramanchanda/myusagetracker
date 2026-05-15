@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const PDFExportService = require('../services/pdfExportService');
+const SimplifiedPDFExportService = require('../services/pdfExportServiceSimplified');
 const enterpriseUsageService = require('../services/enterpriseUsageService');
 const dailyUsageService = require('../services/dailyUsageService');
 const { transformSummary12Data, transformMonthlyData, transformDailyData } = require('../services/pdfDataTransformer');
@@ -79,7 +79,7 @@ router.post('/export', async (req, res) => {
 
     // Generate PDF
     console.log('Generating PDF document...');
-    const pdfService = new PDFExportService();
+    const pdfService = new SimplifiedPDFExportService();
     const pdfDoc = await pdfService.generateReport(
       enterpriseEmail,
       transformedSummary12,
@@ -224,7 +224,7 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
     console.log('[PDF Export] Step 6: Generating PDF document...');
     let pdfDoc;
     try {
-      const pdfService = new PDFExportService();
+      const pdfService = new SimplifiedPDFExportService();
       pdfDoc = await pdfService.generateReport(
         enterpriseEmail,
         transformedSummary12,
