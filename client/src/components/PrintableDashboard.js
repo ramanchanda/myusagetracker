@@ -41,14 +41,15 @@ function PrintableDashboard() {
 
         setLoading(false);
 
-        // Mark as loaded after a short delay to ensure charts render
+        // Mark as loaded after ensuring all content is rendered
         setTimeout(() => {
           const loadedMarker = document.createElement('div');
           loadedMarker.className = 'dashboard-loaded';
           loadedMarker.style.display = 'none';
           document.body.appendChild(loadedMarker);
           console.log('[Printable Dashboard] Dashboard loaded marker added');
-        }, 1000);
+          console.log('[Printable Dashboard] Ready for PDF capture');
+        }, 2000); // Increased to 2 seconds to ensure full rendering
 
       } catch (err) {
         console.error('[Printable Dashboard] Error fetching data:', err);

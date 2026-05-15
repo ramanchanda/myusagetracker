@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getPuppeteerPDFService } = require('../services/puppeteerPdfService');
+const { generatePDF } = require('../services/puppeteerPdfService');
 const enterpriseUsageService = require('../services/enterpriseUsageService');
 
 /**
@@ -39,29 +39,37 @@ router.post('/export', async (req, res) => {
     console.log(`[PDF Export Puppeteer POST] Printable URL: ${printableUrl}`);
 
     // Generate PDF using Puppeteer
-    const pdfService = getPuppeteerPDFService();
-    const pdfBuffer = await pdfService.generateDashboardPDF(printableUrl, {
-      format: 'A4',
-      landscape: false,
-      printBackground: true,
-      margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
-      },
-      timeout: 90000
-    });
+    const pdfBuffer = await generatePDF(printableUrl);
+
+    console.log('[PDF Export Puppeteer POST] ✓ PDF generated successfully');
+    console.log('[PDF Export Puppeteer POST] Buffer size:', pdfBuffer.length, 'bytes');
+
+    // Validate PDF buffer
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('Generated PDF buffer is empty');
+    }
+
+    // Verify PDF header
+    const pdfHeader = pdfBuffer.slice(0, 10).toString();
+    console.log('[PDF Export Puppeteer POST] PDF header:', pdfHeader);
+
+    if (!pdfHeader.startsWith('%PDF-')) {
+      throw new Error('Generated buffer is not a valid PDF');
+    }
 
     // Set response headers
     const filename = `Heroku_Usage_Report_${enterpriseEmail.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.pdf`;
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    // Send PDF buffer
-    res.send(pdfBuffer);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdfBuffer.length,
+      'Content-Disposition': `attachment; filename="${filename}"`
+    });
 
-    console.log(`[PDF Export Puppeteer POST] PDF report generated successfully: ${filename}`);
+    // Send PDF buffer as binary
+    res.end(pdfBuffer, 'binary');
+
+    console.log(`[PDF Export Puppeteer POST] ✓ SUCCESS: ${filename}`);
   } catch (error) {
     console.error('[PDF Export Puppeteer POST] Error generating PDF report:', error);
     res.status(500).json({
@@ -123,30 +131,39 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
 
     // Generate PDF using Puppeteer
     console.log('[PDF Export Puppeteer] Generating PDF with Puppeteer...');
-    const pdfService = getPuppeteerPDFService();
 
-    const pdfBuffer = await pdfService.generateDashboardPDF(printableUrl, {
-      format: 'A4',
-      landscape: false,
-      printBackground: true,
-      margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
-      },
-      timeout: 90000 // 90 seconds
-    });
+    const pdfBuffer = await generatePDF(printableUrl);
 
     console.log('[PDF Export Puppeteer] ✓ PDF generated successfully');
+    console.log('[PDF Export Puppeteer] Buffer size:', pdfBuffer.length, 'bytes');
+    console.log('[PDF Export Puppeteer] Buffer type:', typeof pdfBuffer);
+    console.log('[PDF Export Puppeteer] Is Buffer:', Buffer.isBuffer(pdfBuffer));
+
+    // Validate PDF buffer
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('Generated PDF buffer is empty');
+    }
+
+    // Verify PDF header
+    const pdfHeader = pdfBuffer.slice(0, 10).toString();
+    console.log('[PDF Export Puppeteer] PDF header:', pdfHeader);
+
+    if (!pdfHeader.startsWith('%PDF-')) {
+      console.error('[PDF Export Puppeteer] Invalid PDF buffer:', pdfBuffer.slice(0, 100).toString());
+      throw new Error('Generated buffer is not a valid PDF');
+    }
 
     // Set response headers
     const filename = `Heroku_Usage_Report_${enterpriseEmail.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.pdf`;
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    // Send PDF buffer
-    res.send(pdfBuffer);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdfBuffer.length,
+      'Content-Disposition': `attachment; filename="${filename}"`
+    });
+
+    // Send PDF buffer as binary
+    res.end(pdfBuffer, 'binary');
 
     console.log(`[PDF Export Puppeteer] ✓ SUCCESS: ${filename}`);
   } catch (error) {

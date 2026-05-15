@@ -1,193 +1,143 @@
 const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 
-class PuppeteerPDFService {
-  constructor() {
-    this.browser = null;
-  }
+async function generatePDF(url) {
+  let browser;
+  let page;
 
-  async launchBrowser() {
-    if (this.browser) {
-      return this.browser;
-    }
+  try {
+    console.log('[PDF] Step 1: Starting Chromium browser...');
 
-    console.log('[Puppeteer PDF] Launching browser...');
+    // Launch browser with Heroku-optimized settings
+    browser = await puppeteer.launch({
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote'
+      ],
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true
+    });
 
+    console.log('[PDF] ✓ Browser launched successfully');
+    console.log('[PDF] Step 2: Creating new page...');
+
+    page = await browser.newPage();
+
+    // Set viewport
+    await page.setViewport({
+      width: 1200,
+      height: 800,
+      deviceScaleFactor: 2
+    });
+
+    console.log('[PDF] Step 3: Loading URL:', url);
+
+    // Navigate to the page
+    await page.goto(url, {
+      waitUntil: 'networkidle0',
+      timeout: 120000
+    });
+
+    console.log('[PDF] ✓ Page loaded');
+    console.log('[PDF] Step 4: Waiting for dashboard to render...');
+
+    // Wait for dashboard-loaded marker
     try {
-      this.browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
+      await page.waitForSelector('.dashboard-loaded', {
+        timeout: 30000
       });
+      console.log('[PDF] ✓ Dashboard loaded marker found');
+    } catch (err) {
+      console.warn('[PDF] ⚠ Dashboard loaded marker not found, taking screenshot...');
 
-      console.log('[Puppeteer PDF] Browser launched successfully');
-      return this.browser;
-    } catch (error) {
-      console.error('[Puppeteer PDF] Failed to launch browser:', error);
-      throw error;
-    }
-  }
-
-  async closeBrowser() {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-      console.log('[Puppeteer PDF] Browser closed');
-    }
-  }
-
-  async generateDashboardPDF(url, options = {}) {
-    const {
-      format = 'A4',
-      landscape = false,
-      printBackground = true,
-      margin = {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
-      },
-      timeout = 60000
-    } = options;
-
-    let page;
-
-    try {
-      console.log('[Puppeteer PDF] Generating PDF for URL:', url);
-
-      const browser = await this.launchBrowser();
-      page = await browser.newPage();
-
-      // Set viewport for consistent rendering
-      await page.setViewport({
-        width: 1200,
-        height: 800,
-        deviceScaleFactor: 2
-      });
-
-      console.log('[Puppeteer PDF] Navigating to URL...');
-
-      // Navigate to the page
-      await page.goto(url, {
-        waitUntil: ['networkidle0', 'domcontentloaded'],
-        timeout: timeout
-      });
-
-      console.log('[Puppeteer PDF] Page loaded, waiting for dashboard to be ready...');
-
-      // Wait for dashboard to be fully loaded
+      // Take debug screenshot
       try {
-        await page.waitForSelector('.dashboard-loaded', { timeout: 30000 });
-        console.log('[Puppeteer PDF] Dashboard loaded marker found');
-      } catch (err) {
-        console.warn('[Puppeteer PDF] Dashboard loaded marker not found, proceeding anyway');
+        const screenshot = await page.screenshot({
+          fullPage: true,
+          type: 'png'
+        });
+        console.log('[PDF] Screenshot captured, size:', screenshot.length, 'bytes');
+      } catch (screenshotErr) {
+        console.error('[PDF] Failed to capture screenshot:', screenshotErr.message);
       }
-
-      // Wait a bit more for charts to fully render
-      await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 2000)));
-
-      console.log('[Puppeteer PDF] Generating PDF...');
-
-      // Generate PDF
-      const pdfBuffer = await page.pdf({
-        format: format,
-        landscape: landscape,
-        printBackground: printBackground,
-        margin: margin,
-        preferCSSPageSize: false
-      });
-
-      console.log('[Puppeteer PDF] PDF generated successfully, size:', pdfBuffer.length, 'bytes');
-
-      await page.close();
-
-      return pdfBuffer;
-
-    } catch (error) {
-      console.error('[Puppeteer PDF] Error generating PDF:', error);
-      if (page) {
-        try {
-          await page.close();
-        } catch (closeErr) {
-          console.error('[Puppeteer PDF] Error closing page:', closeErr);
-        }
-      }
-      throw error;
     }
-  }
 
-  async generatePDFFromHTML(html, options = {}) {
-    const {
-      format = 'A4',
-      landscape = false,
-      printBackground = true,
-      margin = {
+    // Additional wait for charts/dynamic content
+    console.log('[PDF] Step 5: Waiting for dynamic content...');
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 3000)));
+
+    console.log('[PDF] Step 6: Generating PDF...');
+
+    // Generate PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: {
         top: '20px',
         right: '20px',
         bottom: '20px',
         left: '20px'
       }
-    } = options;
+    });
 
-    let page;
+    console.log('[PDF] ✓ PDF generated successfully');
+    console.log('[PDF] PDF buffer size:', pdfBuffer.length, 'bytes');
 
-    try {
-      console.log('[Puppeteer PDF] Generating PDF from HTML...');
-
-      const browser = await this.launchBrowser();
-      page = await browser.newPage();
-
-      await page.setViewport({
-        width: 1200,
-        height: 800,
-        deviceScaleFactor: 2
-      });
-
-      await page.setContent(html, {
-        waitUntil: ['networkidle0', 'domcontentloaded']
-      });
-
-      // Wait for any dynamic content
-      await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 1000)));
-
-      const pdfBuffer = await page.pdf({
-        format: format,
-        landscape: landscape,
-        printBackground: printBackground,
-        margin: margin
-      });
-
-      console.log('[Puppeteer PDF] PDF generated from HTML, size:', pdfBuffer.length, 'bytes');
-
-      await page.close();
-
-      return pdfBuffer;
-
-    } catch (error) {
-      console.error('[Puppeteer PDF] Error generating PDF from HTML:', error);
-      if (page) {
-        try {
-          await page.close();
-        } catch (closeErr) {
-          console.error('[Puppeteer PDF] Error closing page:', closeErr);
-        }
-      }
-      throw error;
+    // Validate PDF buffer
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('Generated PDF buffer is empty');
     }
+
+    // Verify PDF header
+    const pdfHeader = pdfBuffer.slice(0, 5).toString();
+    console.log('[PDF] PDF header:', pdfHeader);
+
+    if (!pdfHeader.startsWith('%PDF-')) {
+      throw new Error('Generated buffer is not a valid PDF (missing PDF header)');
+    }
+
+    console.log('[PDF] ✓ PDF validation passed');
+
+    // Close page and browser
+    console.log('[PDF] Step 7: Cleaning up...');
+    await page.close();
+    await browser.close();
+    console.log('[PDF] ✓ Cleanup complete');
+
+    return pdfBuffer;
+
+  } catch (error) {
+    console.error('[PDF] ✗ Error generating PDF:', error.message);
+    console.error('[PDF] Error stack:', error.stack);
+
+    // Cleanup on error
+    if (page) {
+      try {
+        await page.close();
+      } catch (closeErr) {
+        console.error('[PDF] Error closing page:', closeErr.message);
+      }
+    }
+
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeErr) {
+        console.error('[PDF] Error closing browser:', closeErr.message);
+      }
+    }
+
+    throw error;
   }
 }
 
-// Singleton instance
-let instance = null;
-
 module.exports = {
-  getPuppeteerPDFService: () => {
-    if (!instance) {
-      instance = new PuppeteerPDFService();
-    }
-    return instance;
-  },
-  PuppeteerPDFService
+  generatePDF
 };
