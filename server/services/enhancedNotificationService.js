@@ -3,6 +3,10 @@ const formData = require('form-data');
 const Mailgun = require('mailgun.js');
 const configService = require('./configService');
 
+// Debug: Check if nodemailer loaded correctly
+console.log('[Email Service] nodemailer loaded:', typeof nodemailer);
+console.log('[Email Service] nodemailer.createTransporter:', typeof nodemailer.createTransporter);
+
 let transporter = null;
 let mailgunClient = null;
 
