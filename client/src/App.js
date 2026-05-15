@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import axios from 'axios';
 import EnterpriseView from './components/EnterpriseView';
 import NotificationConfig from './components/NotificationConfig';
+import PrintableDashboard from './components/PrintableDashboard';
 import './App.css';
 
 function AppContent() {
@@ -94,6 +95,7 @@ function AppContent() {
           }
         />
         <Route path="/notifications" element={<NotificationConfig />} />
+        <Route path="/report/print/:accountEmail" element={<PrintableDashboard />} />
       </Routes>
     </div>
   );
