@@ -355,13 +355,14 @@ class SimplifiedPDFExportService {
     doc.moveDown(2);
 
     // Executive Summary Box
-    doc.roundedRect(60, doc.y, doc.page.width - 120, 100, 5)
+    const summaryBoxY = doc.y;
+    doc.roundedRect(60, summaryBoxY, doc.page.width - 120, 100, 5)
       .fillAndStroke(COLORS.bgLight, COLORS.border);
 
     doc.fontSize(12)
       .fillColor(COLORS.text)
       .font('Helvetica-Bold')
-      .text('Executive Summary', 80, doc.y + 20);
+      .text('Executive Summary', 80, summaryBoxY + 20);
 
     doc.fontSize(10)
       .fillColor(COLORS.textLight)
@@ -370,11 +371,12 @@ class SimplifiedPDFExportService {
         'This report provides a comprehensive overview of your Heroku usage across ' +
         'compute resources, database connections, add-ons, and spaces.',
         80,
-        doc.y + 15,
+        summaryBoxY + 45,
         { width: doc.page.width - 160 }
       );
 
-    doc.moveDown(5);
+    doc.y = summaryBoxY + 110;
+    doc.moveDown(1);
 
     // Report Details
     this.addKeyValue('Generated On', new Date().toLocaleString());
@@ -413,28 +415,30 @@ class SimplifiedPDFExportService {
     // Trend Information
     const trendAnalysis = summary12Data.trendAnalysis || {};
 
-    doc.roundedRect(60, doc.y, doc.page.width - 120, 80, 5)
+    const trendBoxY = doc.y;
+    doc.roundedRect(60, trendBoxY, doc.page.width - 120, 80, 5)
       .fill(COLORS.bgLight);
 
     doc.fontSize(11)
       .fillColor(COLORS.text)
       .font('Helvetica-Bold')
-      .text('Trend Analysis', 80, doc.y + 15);
+      .text('Trend Analysis', 80, trendBoxY + 15);
 
     doc.fontSize(10)
       .fillColor(COLORS.textLight)
       .font('Helvetica')
       .text(
         `Dyno Usage: ${trendAnalysis.dynoTrend || 'Stable'} (${trendAnalysis.growthRate || '0%'})`,
-        80, doc.y + 15
+        80, trendBoxY + 35
       );
 
     doc.text(
       `Connect Rows: ${trendAnalysis.connectTrend || 'Stable'}`,
-      80, doc.y + 5
+      80, trendBoxY + 55
     );
 
-    doc.moveDown(5);
+    doc.y = trendBoxY + 85;
+    doc.moveDown(1);
 
     // Chart: Dyno Units Trend
     if (summary12Data.chartData && summary12Data.chartData.length > 0) {
