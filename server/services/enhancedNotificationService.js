@@ -1,11 +1,45 @@
-const nodemailer = require('nodemailer');
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
 const configService = require('./configService');
 
-// Debug: Check if nodemailer loaded correctly
-console.log('[Email Service] nodemailer loaded:', typeof nodemailer);
-console.log('[Email Service] nodemailer.createTransporter:', typeof nodemailer.createTransporter);
+// Load nodemailer - handle potential module loading issues
+let nodemailer = null;
+try {
+  const nodeMailerModule = require('nodemailer');
+
+  // Check if it's an ES module with default export
+  if (nodeMailerModule && nodeMailerModule.default && typeof nodeMailerModule.default.createTransporter === 'function') {
+    nodemailer = nodeMailerModule.default;
+    console.log('[Email Service] nodemailer loaded via .default export');
+  }
+  // Check if it's a direct CommonJS export
+  else if (nodeMailerModule && typeof nodeMailerModule.createTransporter === 'function') {
+    nodemailer = nodeMailerModule;
+    console.log('[Email Service] nodemailer loaded via direct export');
+  }
+  // Last resort: try to find createTransporter anywhere in the module
+  else if (nodeMailerModule) {
+    console.log('[Email Service] nodemailer module structure:', Object.keys(nodeMailerModule));
+    // Try to find createTransport (without 'er')
+    if (typeof nodeMailerModule.createTransport === 'function') {
+      console.log('[Email Service] Found createTransport (without er)');
+      nodemailer = nodeMailerModule;
+    }
+  }
+} catch (error) {
+  console.error('[Email Service] Error loading nodemailer:', error.message);
+  console.error('[Email Service] Stack:', error.stack);
+}
+
+// Final validation
+if (!nodemailer) {
+  console.error('[Email Service] CRITICAL: nodemailer could not be loaded!');
+} else if (typeof nodemailer.createTransporter !== 'function') {
+  console.error('[Email Service] CRITICAL: nodemailer loaded but createTransporter is not available!');
+  console.error('[Email Service] Available methods:', Object.keys(nodemailer).filter(k => typeof nodemailer[k] === 'function'));
+} else {
+  console.log('[Email Service] ✓ nodemailer loaded successfully with createTransporter');
+}
 
 let transporter = null;
 let mailgunClient = null;
@@ -35,6 +69,12 @@ function initMailgunClient() {
 function initTransporter() {
   if (transporter) {
     return transporter;
+  }
+
+  // Check if nodemailer is available
+  if (!nodemailer || typeof nodemailer.createTransporter !== 'function') {
+    console.error('[Email Service] Cannot initialize transporter: nodemailer not properly loaded');
+    throw new Error('nodemailer module not available');
   }
 
   // Check for Mailgun addon (SMTP fallback if API not available)
