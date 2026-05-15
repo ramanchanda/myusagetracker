@@ -114,6 +114,8 @@ class SimplifiedPDFExportService {
   // Section heading
   addSectionHeading(text) {
     const doc = this.doc;
+    this.ensureValidY();
+
     doc.fontSize(14)
       .fillColor(COLORS.primary)
       .font('Helvetica-Bold')
@@ -151,7 +153,7 @@ class SimplifiedPDFExportService {
   // Key-value pair
   addKeyValue(key, value) {
     const doc = this.doc;
-    const y = doc.y;
+    const y = this.ensureValidY();
 
     // Ensure value is a valid string
     const safeValue = (value === null || value === undefined || value === 'NaN') ? 'N/A' : String(value);
@@ -172,7 +174,7 @@ class SimplifiedPDFExportService {
   addSimpleTable(headers, rows) {
     const doc = this.doc;
     const startX = 60;
-    let y = doc.y;
+    let y = this.ensureValidY();
     const tableWidth = doc.page.width - 120;
     const colWidth = tableWidth / headers.length;
 
@@ -238,7 +240,13 @@ class SimplifiedPDFExportService {
       y += 25;
     });
 
-    doc.y = y + 10;
+    // Ensure y is valid before setting
+    if (isNaN(y) || y === null || y === undefined) {
+      console.warn('[PDF] Invalid Y in table, resetting');
+      doc.y = 100;
+    } else {
+      doc.y = y + 10;
+    }
     doc.moveDown(1);
   }
 
@@ -273,10 +281,20 @@ class SimplifiedPDFExportService {
 
     const doc = this.doc;
     const x = (doc.page.width - 500) / 2;
-    const y = doc.y;
+    const y = this.ensureValidY();
 
     doc.image(chartBuffer, x, y, { width: 500, height: 250 });
     doc.moveDown(12);
+  }
+
+  // Ensure Y position is valid
+  ensureValidY() {
+    const doc = this.doc;
+    if (isNaN(doc.y) || doc.y === null || doc.y === undefined) {
+      console.warn('[PDF] Invalid Y position detected, resetting to 100');
+      doc.y = 100;
+    }
+    return doc.y;
   }
 
   // Format large numbers with K/M suffix
@@ -347,17 +365,18 @@ class SimplifiedPDFExportService {
 
     // Key Metrics Cards
     const summaryStats = summary12Data.overallSummary || {};
+    const currentY = this.ensureValidY();
 
     this.addMetricCard(
       'Total Dyno Units',
       this.formatNumber(summaryStats.totalDynoUnits || 0),
-      60, doc.y, 230, 80
+      60, currentY, 230, 80
     );
 
     this.addMetricCard(
       'Total Connect Rows',
       this.formatNumber(summaryStats.totalConnectRows || 0),
-      310, doc.y, 230, 80
+      310, currentY, 230, 80
     );
 
     doc.moveDown(6);
@@ -443,9 +462,10 @@ class SimplifiedPDFExportService {
       const monthlySummary = monthlyData.summary || {};
 
       // Key metrics in a grid
-      this.addMetricCard('Teams', String(monthlySummary.totalTeams || 0), 60, doc.y, 120, 70);
-      this.addMetricCard('Apps', String(monthlySummary.totalApps || 0), 200, doc.y, 120, 70);
-      this.addMetricCard('Dyno Units', this.formatNumber(monthlySummary.totalDynoUnits || 0), 340, doc.y, 120, 70);
+      const monthlyY = this.ensureValidY();
+      this.addMetricCard('Teams', String(monthlySummary.totalTeams || 0), 60, monthlyY, 120, 70);
+      this.addMetricCard('Apps', String(monthlySummary.totalApps || 0), 200, monthlyY, 120, 70);
+      this.addMetricCard('Dyno Units', this.formatNumber(monthlySummary.totalDynoUnits || 0), 340, monthlyY, 120, 70);
 
       doc.moveDown(5);
 
@@ -487,9 +507,10 @@ class SimplifiedPDFExportService {
       const dailySummary = dailyData.summary || {};
 
       // Summary metrics
-      this.addMetricCard('Days', String(dailySummary.totalDays || 0), 60, doc.y, 150, 70);
-      this.addMetricCard('Avg Daily Dyno', this.formatNumber(Math.round(dailySummary.avgDailyDyno || 0)), 230, doc.y, 150, 70);
-      this.addMetricCard('Peak Day', dailySummary.peakDate || 'N/A', 400, doc.y, 140, 70);
+      const dailyY = this.ensureValidY();
+      this.addMetricCard('Days', String(dailySummary.totalDays || 0), 60, dailyY, 150, 70);
+      this.addMetricCard('Avg Daily Dyno', this.formatNumber(Math.round(dailySummary.avgDailyDyno || 0)), 230, dailyY, 150, 70);
+      this.addMetricCard('Peak Day', dailySummary.peakDate || 'N/A', 400, dailyY, 140, 70);
 
       doc.moveDown(5);
 
