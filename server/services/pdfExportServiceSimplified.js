@@ -321,11 +321,18 @@ class SimplifiedPDFExportService {
 
   // ==================== MAIN REPORT GENERATOR ====================
   async generateReport(enterpriseEmail, summary12Data, monthlyData, dailyData) {
-    this.createDocument();
-    const doc = this.doc;
+    try {
+      this.createDocument();
+      const doc = this.doc;
+
+      console.log('[PDF Gen] Starting PDF generation');
+      console.log('[PDF Gen] summary12Data keys:', Object.keys(summary12Data || {}));
+      console.log('[PDF Gen] monthlyData keys:', Object.keys(monthlyData || {}));
+      console.log('[PDF Gen] dailyData keys:', Object.keys(dailyData || {}));
 
     // ========== PAGE 1: COVER PAGE ==========
-    this.addPageHeader('Heroku Usage Report', `Account: ${enterpriseEmail}`);
+      console.log('[PDF Gen] Rendering cover page');
+      this.addPageHeader('Heroku Usage Report', `Account: ${enterpriseEmail}`);
 
     doc.moveDown(2);
 
@@ -358,14 +365,18 @@ class SimplifiedPDFExportService {
 
     this.addPageFooter();
 
-    // ========== PAGE 2: 12-MONTH SUMMARY ==========
-    doc.addPage();
-    this.pageNumber++;
-    this.addPageHeader('Usage Trends', 'Past 12 Months Overview');
+      // ========== PAGE 2: 12-MONTH SUMMARY ==========
+      console.log('[PDF Gen] Rendering 12-month summary');
+      doc.addPage();
+      this.pageNumber++;
+      this.addPageHeader('Usage Trends', 'Past 12 Months Overview');
 
-    // Key Metrics Cards
-    const summaryStats = summary12Data.overallSummary || {};
-    const currentY = this.ensureValidY();
+      // Key Metrics Cards
+      console.log('[PDF Gen] Rendering metric cards');
+      const summaryStats = summary12Data.overallSummary || {};
+      console.log('[PDF Gen] summaryStats:', JSON.stringify(summaryStats));
+      const currentY = this.ensureValidY();
+      console.log('[PDF Gen] currentY:', currentY);
 
     this.addMetricCard(
       'Total Dyno Units',
@@ -607,9 +618,17 @@ class SimplifiedPDFExportService {
         { align: 'center', width: doc.page.width - 120 }
       );
 
-    this.addPageFooter();
+      this.addPageFooter();
 
-    return this.doc;
+      console.log('[PDF Gen] PDF generation complete');
+      return this.doc;
+
+    } catch (error) {
+      console.error('[PDF Gen] Error in generateReport:', error.message);
+      console.error('[PDF Gen] Stack:', error.stack);
+      console.error('[PDF Gen] doc.y at error:', this.doc?.y);
+      throw error;
+    }
   }
 }
 
