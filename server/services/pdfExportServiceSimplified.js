@@ -366,24 +366,26 @@ class SimplifiedPDFExportService {
     doc.roundedRect(60, summaryBoxY, doc.page.width - 120, 100, 5)
       .fillAndStroke(COLORS.bgLight, COLORS.border);
 
+    // Use implicit positioning - set doc.y and let PDFKit position text
+    doc.y = summaryBoxY + 20;
+    doc.x = 80;
     doc.fontSize(12)
       .fillColor(COLORS.text)
       .font('Helvetica-Bold')
-      .text('Executive Summary', 80, summaryBoxY + 20);
+      .text('Executive Summary');
 
+    doc.y = summaryBoxY + 45;
+    doc.x = 80;
     doc.fontSize(10)
       .fillColor(COLORS.textLight)
       .font('Helvetica')
       .text(
         'This report provides a comprehensive overview of your Heroku usage across ' +
         'compute resources, database connections, add-ons, and spaces.',
-        80,
-        summaryBoxY + 45,
         { width: doc.page.width - 160 }
       );
 
     doc.y = summaryBoxY + 110;
-    doc.moveDown(1);
 
     // Report Details
     this.addKeyValue('Generated On', new Date().toLocaleString());
@@ -426,26 +428,26 @@ class SimplifiedPDFExportService {
     doc.roundedRect(60, trendBoxY, doc.page.width - 120, 80, 5)
       .fill(COLORS.bgLight);
 
+    // Use implicit positioning
+    doc.y = trendBoxY + 15;
+    doc.x = 80;
     doc.fontSize(11)
       .fillColor(COLORS.text)
       .font('Helvetica-Bold')
-      .text('Trend Analysis', 80, trendBoxY + 15);
+      .text('Trend Analysis');
 
+    doc.y = trendBoxY + 35;
+    doc.x = 80;
     doc.fontSize(10)
       .fillColor(COLORS.textLight)
       .font('Helvetica')
-      .text(
-        `Dyno Usage: ${trendAnalysis.dynoTrend || 'Stable'} (${trendAnalysis.growthRate || '0%'})`,
-        80, trendBoxY + 35
-      );
+      .text(`Dyno Usage: ${trendAnalysis.dynoTrend || 'Stable'} (${trendAnalysis.growthRate || '0%'})`);
 
-    doc.text(
-      `Connect Rows: ${trendAnalysis.connectTrend || 'Stable'}`,
-      80, trendBoxY + 55
-    );
+    doc.y = trendBoxY + 55;
+    doc.x = 80;
+    doc.text(`Connect Rows: ${trendAnalysis.connectTrend || 'Stable'}`);
 
     doc.y = trendBoxY + 85;
-    doc.moveDown(1);
 
     // Chart: Dyno Units Trend
     if (summary12Data.chartData && summary12Data.chartData.length > 0) {
