@@ -126,6 +126,11 @@ class SimplifiedPDFExportService {
   addMetricCard(label, value, x, y, width = 160, height = 80) {
     const doc = this.doc;
 
+    // Ensure value is safe to render
+    const safeValue = (value === null || value === undefined || value === 'NaN' || String(value) === 'NaN')
+      ? 'N/A'
+      : String(value);
+
     // Card background
     doc.roundedRect(x, y, width, height, 5)
       .fillAndStroke(COLORS.white, COLORS.border);
@@ -134,7 +139,7 @@ class SimplifiedPDFExportService {
     doc.fontSize(24)
       .fillColor(COLORS.primary)
       .font('Helvetica-Bold')
-      .text(value, x + 15, y + 20, { width: width - 30, align: 'left' });
+      .text(safeValue, x + 15, y + 20, { width: width - 30, align: 'left' });
 
     // Label (small)
     doc.fontSize(10)
@@ -148,6 +153,9 @@ class SimplifiedPDFExportService {
     const doc = this.doc;
     const y = doc.y;
 
+    // Ensure value is a valid string
+    const safeValue = (value === null || value === undefined || value === 'NaN') ? 'N/A' : String(value);
+
     doc.fontSize(11)
       .fillColor(COLORS.textLight)
       .font('Helvetica')
@@ -155,7 +163,7 @@ class SimplifiedPDFExportService {
 
     doc.fillColor(COLORS.text)
       .font('Helvetica-Bold')
-      .text(' ' + value);
+      .text(' ' + safeValue);
 
     doc.moveDown(0.3);
   }
@@ -216,7 +224,12 @@ class SimplifiedPDFExportService {
       // Row data
       doc.fillColor(COLORS.text);
       row.forEach((cell, i) => {
-        doc.text(String(cell), startX + (i * colWidth) + 10, y + 8, {
+        // Ensure cell is safe to render
+        const safeCell = (cell === null || cell === undefined || String(cell) === 'NaN')
+          ? 'N/A'
+          : String(cell);
+
+        doc.text(safeCell, startX + (i * colWidth) + 10, y + 8, {
           width: colWidth - 20,
           align: 'left'
         });
@@ -268,12 +281,24 @@ class SimplifiedPDFExportService {
 
   // Format large numbers with K/M suffix
   formatNumber(num) {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+    // Handle NaN, null, undefined
+    if (num === null || num === undefined || isNaN(num)) {
+      return '0';
     }
-    return num.toLocaleString();
+
+    // Convert to number if string
+    const n = Number(num);
+
+    if (isNaN(n)) {
+      return '0';
+    }
+
+    if (n >= 1000000) {
+      return (n / 1000000).toFixed(1) + 'M';
+    } else if (n >= 1000) {
+      return (n / 1000).toFixed(1) + 'K';
+    }
+    return n.toLocaleString();
   }
 
   // ==================== MAIN REPORT GENERATOR ====================
