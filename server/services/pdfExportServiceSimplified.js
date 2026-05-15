@@ -68,26 +68,36 @@ class SimplifiedPDFExportService {
 
   // Add page header
   addPageHeader(title, subtitle = '') {
+    console.log('[PDF] addPageHeader called, title:', title, 'subtitle:', subtitle);
     const doc = this.doc;
+    console.log('[PDF] doc exists:', !!doc);
+    console.log('[PDF] doc.page exists:', !!doc.page);
+    console.log('[PDF] doc.page.width:', doc.page.width);
     const pageWidth = doc.page.width;
+    console.log('[PDF] pageWidth:', pageWidth);
 
     // Top border
+    console.log('[PDF] Drawing top border rect...');
     doc.rect(0, 0, pageWidth, 4).fill(COLORS.primary);
 
     // Title
+    console.log('[PDF] Drawing title at (60, 30)...');
     doc.fontSize(20)
       .fillColor(COLORS.primary)
       .font('Helvetica-Bold')
       .text(title, 60, 30);
 
     if (subtitle) {
+      console.log('[PDF] Drawing subtitle at (60, 55)...');
       doc.fontSize(11)
         .fillColor(COLORS.textLight)
         .font('Helvetica')
         .text(subtitle, 60, 55);
     }
 
+    console.log('[PDF] Moving down 3...');
     doc.moveDown(3);
+    console.log('[PDF] addPageHeader complete, doc.y:', doc.y);
   }
 
   // Add page footer
@@ -322,8 +332,16 @@ class SimplifiedPDFExportService {
   // ==================== MAIN REPORT GENERATOR ====================
   async generateReport(enterpriseEmail, summary12Data, monthlyData, dailyData) {
     try {
+      console.log('[PDF Gen] === START generateReport ===');
+      console.log('[PDF Gen] enterpriseEmail:', enterpriseEmail);
+      console.log('[PDF Gen] summary12Data type:', typeof summary12Data);
+      console.log('[PDF Gen] monthlyData type:', typeof monthlyData);
+      console.log('[PDF Gen] dailyData type:', typeof dailyData);
+
+      console.log('[PDF Gen] Creating document...');
       this.createDocument();
       const doc = this.doc;
+      console.log('[PDF Gen] Document created, doc.y:', doc.y);
 
       console.log('[PDF Gen] Starting PDF generation');
       console.log('[PDF Gen] summary12Data keys:', Object.keys(summary12Data || {}));
@@ -331,7 +349,7 @@ class SimplifiedPDFExportService {
       console.log('[PDF Gen] dailyData keys:', Object.keys(dailyData || {}));
 
     // ========== PAGE 1: COVER PAGE ==========
-      console.log('[PDF Gen] Rendering cover page');
+      console.log('[PDF Gen] Rendering cover page, calling addPageHeader...');
       this.addPageHeader('Heroku Usage Report', `Account: ${enterpriseEmail}`);
 
     doc.moveDown(2);
