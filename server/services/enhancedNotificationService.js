@@ -155,12 +155,19 @@ async function sendEmail(subject, htmlContent, recipients = null) {
       return { sent: true, info: result, recipients: recipientList, method: 'mailgun-api' };
     } catch (error) {
       console.error('Error sending via Mailgun API:', error.message);
+      console.error('Mailgun error details:', error.details || error.response?.body || 'No additional details');
       console.log('Falling back to SMTP...');
     }
   }
 
   // Fallback to SMTP
-  const trans = initTransporter();
+  let trans;
+  try {
+    trans = initTransporter();
+  } catch (error) {
+    console.error('Error initializing SMTP transporter:', error.message);
+    return { sent: false, reason: `SMTP initialization failed: ${error.message}` };
+  }
 
   if (!trans) {
     console.log('Email notifications not configured. Skipping email send.');
