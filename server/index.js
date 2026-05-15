@@ -20,6 +20,7 @@ const configService = require('./services/configService');
 const enhancedNotificationService = require('./services/enhancedNotificationService');
 const thresholdMonitor = require('./services/thresholdMonitor');
 const pdfExportRouter = require('./routes/pdfExport');
+const reportsRouter = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +34,9 @@ app.use(express.json());
 
 // PDF Export Routes
 app.use('/api/pdf', pdfExportRouter);
+
+// Reports API Routes
+app.use('/api/reports', reportsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });

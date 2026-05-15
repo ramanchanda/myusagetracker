@@ -31,15 +31,15 @@ router.post('/export', async (req, res) => {
       return res.status(404).json({ error: 'Enterprise account not found' });
     }
 
-    // Construct the printable dashboard URL
+    // Construct the report template URL
     const protocol = req.protocol;
     const host = req.get('host');
-    const printableUrl = `${protocol}://${host}/report/print/${encodeURIComponent(enterpriseEmail)}`;
+    const reportUrl = `${protocol}://${host}/report/template/monthly/${encodeURIComponent(enterpriseEmail)}`;
 
-    console.log(`[PDF Export Puppeteer POST] Printable URL: ${printableUrl}`);
+    console.log(`[PDF Export Puppeteer POST] Report URL: ${reportUrl}`);
 
     // Generate PDF using Puppeteer
-    const pdfBuffer = await generatePDF(printableUrl);
+    const pdfBuffer = await generatePDF(reportUrl);
 
     console.log('[PDF Export Puppeteer POST] ✓ PDF generated successfully');
     console.log('[PDF Export Puppeteer POST] Buffer size:', pdfBuffer.length, 'bytes');
@@ -116,17 +116,17 @@ router.get('/export/:enterpriseEmail', async (req, res) => {
       });
     }
 
-    // Construct the printable dashboard URL
+    // Construct the report template URL
     const protocol = req.protocol;
     const host = req.get('host');
-    const printableUrl = `${protocol}://${host}/report/print/${encodeURIComponent(enterpriseEmail)}`;
+    const reportUrl = `${protocol}://${host}/report/template/monthly/${encodeURIComponent(enterpriseEmail)}`;
 
-    console.log(`[PDF Export Puppeteer] Printable URL: ${printableUrl}`);
+    console.log(`[PDF Export Puppeteer] Report URL: ${reportUrl}`);
 
     // Generate PDF using Puppeteer
     console.log('[PDF Export Puppeteer] Generating PDF with Puppeteer...');
 
-    const pdfBuffer = await generatePDF(printableUrl);
+    const pdfBuffer = await generatePDF(reportUrl);
 
     console.log('[PDF Export Puppeteer] ✓ PDF generated successfully');
     console.log('[PDF Export Puppeteer] Buffer size:', pdfBuffer.length, 'bytes');
