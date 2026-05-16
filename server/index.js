@@ -21,6 +21,7 @@ const enhancedNotificationService = require('./services/enhancedNotificationServ
 const thresholdMonitor = require('./services/thresholdMonitor');
 const autoThresholdMonitor = require('./services/autoThresholdMonitor');
 const notificationOrchestrator = require('./services/notificationOrchestrator');
+const notificationHistory = require('./services/notificationHistory'); // PHASE 4
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
 
@@ -498,6 +499,70 @@ app.post('/api/notifications/send-summary', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error sending summary:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PHASE 4: Notification History API Endpoints
+
+// Get notification history with filters
+app.get('/api/notifications/history-v2', async (req, res) => {
+  try {
+    const options = {
+      type: req.query.type,
+      status: req.query.status,
+      resourceType: req.query.resourceType,
+      since: req.query.since,
+      until: req.query.until,
+      limit: parseInt(req.query.limit) || 100
+    };
+
+    const history = await notificationHistory.getHistory(options);
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching notification history:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get notification statistics
+app.get('/api/notifications/stats', async (req, res) => {
+  try {
+    const options = {
+      since: req.query.since,
+      until: req.query.until
+    };
+
+    const stats = await notificationHistory.getStatistics(options);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching notification statistics:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single notification event
+app.get('/api/notifications/event/:id', async (req, res) => {
+  try {
+    const event = await notificationHistory.getEvent(req.params.id);
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    res.json(event);
+  } catch (error) {
+    console.error('Error fetching notification event:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear old notification history
+app.post('/api/notifications/history/cleanup', async (req, res) => {
+  try {
+    const daysToKeep = parseInt(req.body.daysToKeep) || 30;
+    const result = await notificationHistory.clearOldHistory(daysToKeep);
+    res.json(result);
+  } catch (error) {
+    console.error('Error clearing old history:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

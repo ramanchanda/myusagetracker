@@ -10,6 +10,7 @@
 const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
 const enhancedNotificationService = require('./enhancedNotificationService');
+const notificationHistory = require('./notificationHistory'); // PHASE 4
 
 // PHASE 3: Enhanced state tracking with anomaly detection
 const alertState = new Map();
@@ -319,12 +320,31 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
   try {
     console.log(`[Orchestrator] Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
 
-    await enhancedNotificationService.sendThresholdAlert(
+    const result = await enhancedNotificationService.sendThresholdAlert(
       resourceType,
       currentValue,
       threshold,
       severity
     );
+
+    // PHASE 4: Log to notification history
+    await notificationHistory.addEvent({
+      type: 'threshold-alert',
+      severity,
+      resourceType,
+      recipients: result.recipients || [],
+      subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`,
+      provider: result.provider,
+      status: result.sent ? 'sent' : 'failed',
+      messageId: result.messageId,
+      error: result.error || null,
+      metadata: {
+        currentValue,
+        limit: threshold.limit,
+        percentUsed: percentUsed.toFixed(1),
+        anomalies: anomalies ? anomalies.map(a => a.type) : []
+      }
+    });
 
     updateAlertState(resourceType, severity, currentValue);
 
@@ -339,6 +359,24 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
     };
   } catch (error) {
     console.error(`[Orchestrator] Failed to send alert for ${resourceType}:`, error.message);
+
+    // PHASE 4: Log failure to history
+    await notificationHistory.addEvent({
+      type: 'threshold-alert',
+      severity,
+      resourceType,
+      recipients: [],
+      subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert`,
+      provider: null,
+      status: 'failed',
+      error: error.message,
+      metadata: {
+        currentValue,
+        limit: threshold.limit,
+        percentUsed: percentUsed.toFixed(1)
+      }
+    });
+
     return {
       resourceType,
       currentValue,
