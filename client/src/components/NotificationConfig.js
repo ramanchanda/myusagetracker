@@ -77,9 +77,7 @@ function NotificationConfig() {
         <h2>📧 Notification Configuration</h2>
         <p>View current notification settings from Heroku Config Vars</p>
         <div className="config-note">
-          <strong>Note:</strong> This page displays read-only configuration from Heroku Config Vars.
-          To update settings, modify Config Vars in Heroku Dashboard or via CLI.
-          See <code>HEROKU_CONFIG_VARS.md</code> for complete reference.
+          <strong>Note:</strong> Configuration is read-only. Update via Heroku Config Vars.
         </div>
       </div>
 

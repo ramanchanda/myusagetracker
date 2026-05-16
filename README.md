@@ -1,150 +1,241 @@
-# Heroku Usage Tracker & Notification System
+# 📊 Heroku Usage Tracker & Notification System
 
-A comprehensive web application that tracks Heroku resource usage (Dynos, Connect, Add-ons) and sends notifications when usage exceeds defined thresholds.
-
-## 🚀 Quick Deploy
+A production-grade web application for tracking Heroku resource usage across Enterprise accounts with intelligent notifications, PDF reports, and comprehensive monitoring.
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-**Click the button above for one-click deployment!** Get up and running in 5 minutes.
+---
+
+## ✨ Features
+
+### 📈 **Usage Tracking**
+- **Enterprise Account Monitoring** - Monthly and daily usage tracking
+- **Multi-Resource Tracking** - Dyno Units, Connect Rows, Data Add-ons, General Add-ons, Private/Shield Spaces
+- **Personal Apps Support** - Track personal Heroku apps separately
+- **Team & App Breakdown** - Detailed usage by team and application
+- **Trend Analysis** - Historical usage comparison and cost tracking
+
+### 🔔 **Intelligent Notifications**
+- **Threshold Alerts** - Automatic warnings at 80%, critical alerts at 95%, limit alerts at 100%
+- **Cooldown System** - Prevents spam (1 alert per hour per resource/severity)
+- **Event-Driven Monitoring** - Triggers on usage changes >5%
+- **Scheduled Summaries** - Daily, weekly, monthly usage reports
+- **Professional Email Templates** - Branded HTML emails with responsive design
+- **Multi-Provider Email** - Mailgun API (primary) + SMTP fallback
+
+### 📄 **PDF Reports**
+- **Printable Dashboards** - Export usage data as professional PDFs
+- **Monthly Reports** - Comprehensive enterprise usage reports
+- **Daily Reports** - Date-wise usage breakdown
+- **Email Delivery** - Send PDF reports as attachments
+
+### 🎨 **Interactive Dashboard**
+- **Real-time Visualization** - Charts and graphs with Recharts
+- **Multiple Report Types** - Monthly summary, daily breakdown, trend analysis
+- **Responsive Design** - Works on desktop, tablet, and mobile
+- **Dark Mode UI** - Modern purple-themed interface
 
 ---
 
-## Features
+## 🏗️ Architecture
 
-- **Real-time Dashboard**: Visual representation of Heroku resource usage
-- **Usage Tracking**: Monitor Dyno hours, Connect hours, and Add-ons
-- **Overage Alerts**: Email notifications when usage exceeds thresholds
-- **Scheduled Monitoring**: Automatic checks every 6 hours
-- **Add-ons Management**: Detailed view of all add-ons with cost tracking
-- **Visual Charts**: Usage graphs with color-coded status indicators
-- **Responsive Design**: Works on desktop and mobile devices
+### **Backend**
+- **Node.js + Express** - RESTful API server
+- **Heroku Platform API** - Enterprise monthly/daily usage endpoints
+- **Puppeteer** - Server-side PDF generation
+- **Node-cron** - Scheduled monitoring tasks
+- **Mailgun + Nodemailer** - Multi-provider email delivery
 
-## Architecture
+### **Frontend**
+- **React** - Component-based UI
+- **React Router** - Client-side routing
+- **Recharts** - Data visualization
+- **Axios** - HTTP client
 
-- **Backend**: Node.js + Express
-- **Frontend**: React
-- **API Integration**: Heroku Platform API
-- **Notifications**: Email via SMTP (Nodemailer)
-- **Scheduling**: Node-cron for automated checks
+### **Services**
+- `herokuService.js` - Heroku API integration
+- `enterpriseUsageService.js` - Enterprise usage data
+- `personalUsageService.js` - Personal apps usage
+- `dailyUsageService.js` - Daily usage tracking
+- `emailService.js` - Centralized email delivery
+- `enhancedNotificationService.js` - High-level notifications
+- `thresholdMonitor.js` - Manual threshold checking
+- `autoThresholdMonitor.js` - Event-driven monitoring
+- `configService.js` - Configuration management
+- `puppeteerPdfService.js` - PDF generation
 
-## Prerequisites
+---
 
+## 🚀 Quick Start
+
+### Prerequisites
 - Node.js 20.x or higher
-- Heroku account with API access
-- SMTP credentials (Gmail, SendGrid, etc.)
+- Heroku Enterprise account
+- Heroku API key
+- Mailgun account (or SMTP credentials)
 
-## Setup Instructions
-
-### 1. Clone and Install
+### Local Development
 
 ```bash
+# Clone repository
+git clone <your-repo-url>
 cd usage-track-notify
+
+# Install dependencies
 npm install
 cd client && npm install && cd ..
+
+# Create .env file
+cp .env.example .env
+# Edit .env with your credentials
+
+# Run development server
+npm run dev
+
+# In another terminal, run React app
+npm run client
+
+# Access dashboard
+open http://localhost:3000
 ```
 
-### 2. Configure Environment Variables
+---
 
-Create a `.env` file in the root directory:
+## ⚙️ Configuration
+
+### Required Environment Variables
 
 ```bash
-cp .env.example .env
-```
-
-Edit `.env` with your credentials:
-
-```env
 # Heroku API Configuration
 HEROKU_API_KEY=your_heroku_api_key_here
-HEROKU_ACCOUNT_EMAIL=your_heroku_email@example.com
+HEROKU_ENTERPRISE_ACCOUNT=your_enterprise_account_id  # Optional
 
-# Notification Configuration
-NOTIFICATION_EMAIL=alerts@example.com
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
+# Email Configuration (Mailgun)
+MAILGUN_API_KEY=key-xxxxxxxxxxxxx
+MAILGUN_DOMAIN=mg.yourdomain.com
+NOTIFICATION_FROM_EMAIL=notifications@yourdomain.com
+NOTIFICATION_FROM_NAME=Heroku Usage Tracker
+NOTIFICATION_RECIPIENTS=admin@company.com,ops@company.com
+NOTIFICATION_EMAIL_ENABLED=true
 
-# Usage Thresholds (percentages)
-DYNO_THRESHOLD=80
-CONNECT_THRESHOLD=80
-ADDON_THRESHOLD=80
+# Optional: SMTP Fallback
+MAILGUN_SMTP_SERVER=smtp.mailgun.org
+MAILGUN_SMTP_PORT=587
+MAILGUN_SMTP_LOGIN=postmaster@mg.yourdomain.com
+MAILGUN_SMTP_PASSWORD=xxxxxxxxxxxxx
+
+# Optional: Branding
+ENTERPRISE_ACCOUNT_NAME=Acme Corporation
+DASHBOARD_URL=https://your-app.herokuapp.com
+
+# Threshold Configuration
+THRESHOLD_DYNO_LIMIT=1000
+THRESHOLD_CONNECT_LIMIT=10000
+THRESHOLD_DATA_ADDONS_LIMIT=500
+THRESHOLD_GENERAL_ADDONS_LIMIT=300
+THRESHOLD_WARNING_PERCENTAGE=80
+THRESHOLD_CRITICAL_PERCENTAGE=95
 
 # App Configuration
 PORT=3001
-NODE_ENV=development
+NODE_ENV=production
 ```
 
-### 3. Get Heroku API Key
+### Threshold Configuration
+
+You can configure thresholds globally or per-resource:
+
+**Global Thresholds:**
+```bash
+heroku config:set THRESHOLD_WARNING_PERCENTAGE=80
+heroku config:set THRESHOLD_CRITICAL_PERCENTAGE=95
+```
+
+**Per-Resource Thresholds:**
+```bash
+heroku config:set THRESHOLD_DYNO_LIMIT=1000
+heroku config:set THRESHOLD_DYNO_WARNING=80
+heroku config:set THRESHOLD_DYNO_CRITICAL=95
+heroku config:set THRESHOLD_DYNO_ENABLED=true
+
+heroku config:set THRESHOLD_CONNECT_LIMIT=10000
+heroku config:set THRESHOLD_DATA_ADDONS_LIMIT=500
+heroku config:set THRESHOLD_GENERAL_ADDONS_LIMIT=300
+```
+
+---
+
+## 📧 Email Notification Setup
+
+### 1. Get Mailgun Account
+
+1. Sign up at https://mailgun.com
+2. Add your domain: https://app.mailgun.com/app/sending/domains
+3. Get API key: https://app.mailgun.com/app/account/security/api_keys
+
+### 2. Configure DNS Records
+
+Add these DNS records to your domain provider:
+
+```
+Type: TXT
+Name: mg.yourdomain.com
+Value: v=spf1 include:mailgun.org ~all
+
+Type: TXT
+Name: k1._domainkey.mg.yourdomain.com
+Value: <provided by Mailgun>
+
+Type: TXT
+Name: _dmarc.mg.yourdomain.com
+Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com
+```
+
+### 3. Set Environment Variables
 
 ```bash
-heroku auth:token
+heroku config:set MAILGUN_API_KEY="key-xxxxxxxxxxxxx"
+heroku config:set MAILGUN_DOMAIN="mg.yourdomain.com"
+heroku config:set NOTIFICATION_FROM_EMAIL="notifications@yourdomain.com"
+heroku config:set NOTIFICATION_RECIPIENTS="admin@company.com"
+heroku config:set NOTIFICATION_EMAIL_ENABLED=true
 ```
 
-Copy the token and set it as `HEROKU_API_KEY` in your `.env` file.
-
-### 4. Configure Email Notifications
-
-#### Gmail Setup:
-1. Enable 2-Factor Authentication on your Google account
-2. Generate an App Password: https://myaccount.google.com/apppasswords
-3. Use the app password as `SMTP_PASS`
-
-#### Other SMTP Providers:
-- SendGrid, Mailgun, AWS SES, etc. can also be used
-- Update `SMTP_HOST`, `SMTP_PORT`, and credentials accordingly
-
-### 5. Run Locally
-
-**Development Mode:**
+### 4. Test Email Configuration
 
 ```bash
-# Terminal 1 - Backend
-npm run dev
-
-# Terminal 2 - Frontend
-npm run client
+curl -X POST https://your-app.herokuapp.com/api/notifications/send-test
 ```
 
-Access the dashboard at: http://localhost:3000
+**See `EMAIL_DELIVERABILITY_GUIDE.md` for complete email setup instructions.**
 
-**Production Mode:**
+---
 
-```bash
-npm start
-```
+## 🌐 Heroku Deployment
 
-Access at: http://localhost:3001
-
-## Deploy to Heroku
-
-### 1. Initialize Git Repository
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-```
-
-### 2. Create Heroku App
+### 1. Create Heroku App
 
 ```bash
 heroku create your-app-name
+```
+
+### 2. Add Buildpacks
+
+```bash
+heroku buildpacks:add --index 1 https://github.com/heroku/heroku-buildpack-apt
+heroku buildpacks:add --index 2 heroku/nodejs
 ```
 
 ### 3. Set Environment Variables
 
 ```bash
 heroku config:set HEROKU_API_KEY=your_api_key
-heroku config:set HEROKU_ACCOUNT_EMAIL=your_email@example.com
-heroku config:set NOTIFICATION_EMAIL=alerts@example.com
-heroku config:set SMTP_HOST=smtp.gmail.com
-heroku config:set SMTP_PORT=587
-heroku config:set SMTP_USER=your_email@gmail.com
-heroku config:set SMTP_PASS=your_app_password
-heroku config:set DYNO_THRESHOLD=80
-heroku config:set CONNECT_THRESHOLD=80
+heroku config:set MAILGUN_API_KEY=key-xxxxxxxxxxxxx
+heroku config:set MAILGUN_DOMAIN=mg.yourdomain.com
+heroku config:set NOTIFICATION_FROM_EMAIL=notifications@yourdomain.com
+heroku config:set NOTIFICATION_RECIPIENTS=admin@company.com
+heroku config:set NOTIFICATION_EMAIL_ENABLED=true
+heroku config:set ENTERPRISE_ACCOUNT_NAME="Your Company"
 heroku config:set NODE_ENV=production
 ```
 
@@ -154,152 +245,360 @@ heroku config:set NODE_ENV=production
 git push heroku main
 ```
 
-### 5. Open Your App
+### 5. Open Dashboard
 
 ```bash
 heroku open
 ```
 
-## API Endpoints
+---
+
+## 📡 API Endpoints
 
 ### Usage Data
 
-- `GET /api/health` - Health check
-- `GET /api/usage/dynos` - Dyno usage statistics
-- `GET /api/usage/addons` - Add-on usage and costs
-- `GET /api/usage/connect` - Connect hours usage
-- `GET /api/usage/summary` - Complete usage summary
-- `GET /api/apps` - List all Heroku apps
-- `POST /api/test-notification` - Send test email notification
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/enterprise/structure` | GET | Enterprise monthly usage |
+| `/api/enterprise/all-accounts` | GET | All enterprise accounts usage |
+| `/api/enterprise/daily-usage` | GET | Daily usage breakdown |
+| `/api/enterprise/trend-summary` | GET | Historical trend analysis |
+| `/api/personal/structure` | GET | Personal apps usage |
+| `/api/enterprise/teams` | GET | List teams |
+| `/api/enterprise/accounts` | GET | List enterprise accounts |
 
-### Example Response
+### Notifications
 
-```json
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/notifications/config` | GET | Get notification configuration |
+| `/api/notifications/send-test` | POST | Send test email |
+| `/api/notifications/check-thresholds` | POST | Manually check thresholds |
+| `/api/notifications/cooldown-status` | GET | Check cooldown status |
+| `/api/notifications/history` | GET | Get alert history |
+| `/api/notifications/send-summary` | POST | Send usage summary |
+
+### PDF Export
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/pdf/export` | POST | Generate PDF report |
+
+---
+
+## 📊 Notification System
+
+### Alert Types
+
+1. **Warning Alerts** (80% threshold)
+   - Yellow-themed email
+   - Sent when usage reaches 80% of limit
+   - Includes usage details and recommendations
+
+2. **Critical Alerts** (95% threshold)
+   - Red-themed email
+   - Urgent action required
+   - Sent when usage reaches 95% of limit
+
+3. **Limit Alerts** (100% threshold)
+   - Critical severity
+   - Immediate attention needed
+   - Sent when usage reaches or exceeds limit
+
+4. **Usage Summaries**
+   - Daily, weekly, or monthly reports
+   - Comprehensive resource breakdown
+   - Total cost calculation
+
+5. **PDF Reports**
+   - Professional report delivery
+   - Attached to email
+   - Includes dashboard link
+
+### Monitoring Modes
+
+**Event-Driven (Automatic)**
+- Triggers when usage changes >5%
+- Monitors during dashboard refresh
+- Cooldown prevents spam (1 hour)
+
+**Scheduled (Cron)**
+- Runs every hour (configurable)
+- Checks all thresholds
+- Sends summaries on schedule
+
+**Manual**
+- Via API: `POST /api/notifications/check-thresholds`
+- Via UI: "Check Thresholds Now" button
+- Useful for testing
+
+---
+
+## 🎨 Email Templates
+
+All emails use professional branded templates:
+
+- **Base Template** - Consistent branding, responsive design
+- **Threshold Alert** - Color-coded by severity (yellow/red)
+- **Usage Summary** - Resource breakdown with charts
+- **Test Notification** - Configuration verification
+- **PDF Report** - Report delivery with attachment
+
+Templates include:
+- Enterprise account name
+- Dashboard links
+- Timestamp
+- Professional footer
+- Mobile-responsive design
+
+---
+
+## 📄 PDF Reports
+
+### Generate PDF
+
+```javascript
+POST /api/pdf/export
+Content-Type: application/json
+
 {
-  "dynos": {
-    "totalApps": 5,
-    "used": 450,
-    "limit": 1000,
-    "usagePercentage": "45.00",
-    "remaining": 550,
-    "dynos": [...]
-  },
-  "addons": {
-    "totalAddons": 8,
-    "totalMonthlyCost": "75.00",
-    "addons": [...]
-  },
-  "connect": {
-    "connectUsed": 200,
-    "connectLimit": 500,
-    "usagePercentage": "40.00",
-    "remaining": 300
-  }
+  "month": "2026-01",
+  "accountId": "enterprise-account-id"  // Optional
 }
 ```
 
-## Monitoring & Notifications
-
-### Scheduled Checks
-
-The app automatically checks usage every 6 hours. Modify in `server/index.js`:
+### Email PDF Report
 
 ```javascript
-// Every 6 hours
-cron.schedule('0 */6 * * *', async () => {
-  await usageMonitor.checkAndNotify();
-});
+const enhancedNotificationService = require('./services/enhancedNotificationService');
 
-// Every day at 9 AM
-cron.schedule('0 9 * * *', async () => {
-  await usageMonitor.checkAndNotify();
+await enhancedNotificationService.sendPDFReport(pdfBuffer, {
+  reportType: 'Monthly Usage Report',
+  reportPeriod: 'January 2026',
+  summary: 'Total usage: $1,234.56'
 });
 ```
 
-### Threshold Configuration
+---
 
-Set thresholds in `.env`:
+## 🔧 Monitoring & Debugging
 
-```env
-DYNO_THRESHOLD=80      # Alert at 80% usage
-CONNECT_THRESHOLD=75   # Alert at 75% usage
-ADDON_THRESHOLD=90     # Alert at 90% usage
+### Check Logs
+
+```bash
+# All logs
+heroku logs --tail
+
+# Email service logs
+heroku logs --tail | grep "\[Email"
+
+# Notification logs
+heroku logs --tail | grep "notification"
+
+# Auto-monitor logs
+heroku logs --tail | grep "Auto Monitor"
 ```
 
-### Email Notifications
+### Test Notifications
 
-Notifications are sent when:
-- Dyno usage exceeds `DYNO_THRESHOLD`
-- Connect usage exceeds `CONNECT_THRESHOLD`
-- Manual test notification is triggered
+```bash
+# Send test email
+curl -X POST https://your-app.herokuapp.com/api/notifications/send-test
 
-## Customization
+# Check thresholds
+curl -X POST https://your-app.herokuapp.com/api/notifications/check-thresholds
 
-### Adjust Monitoring Frequency
+# Get cooldown status
+curl https://your-app.herokuapp.com/api/notifications/cooldown-status
+
+# View alert history
+curl https://your-app.herokuapp.com/api/notifications/history
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+### Email Not Sending
+
+**Check configuration:**
+```bash
+curl https://your-app.herokuapp.com/api/notifications/config
+```
+
+**Common issues:**
+- `MAILGUN_API_KEY` not set or invalid
+- `MAILGUN_DOMAIN` not verified in Mailgun
+- `NOTIFICATION_RECIPIENTS` not configured
+- `NOTIFICATION_EMAIL_ENABLED` is false
+- DNS records not configured (SPF, DKIM, DMARC)
+
+**Solution:** See `EMAIL_DELIVERABILITY_GUIDE.md`
+
+### Threshold Alerts Not Triggering
+
+**Check thresholds:**
+```bash
+curl https://your-app.herokuapp.com/api/notifications/thresholds
+```
+
+**Common issues:**
+- Thresholds set too high
+- Usage below threshold percentage
+- Cooldown active (wait 1 hour)
+- Realtime alerts disabled
+
+**Solution:**
+```bash
+# Lower threshold for testing
+heroku config:set THRESHOLD_DYNO_LIMIT=10
+
+# Check cooldown status
+curl https://your-app.herokuapp.com/api/notifications/cooldown-status
+
+# Reset cooldown
+curl -X POST https://your-app.herokuapp.com/api/notifications/reset-cooldown \
+  -H "Content-Type: application/json" \
+  -d '{"resourceType": "Dyno Units", "severity": "warning"}'
+```
+
+### PDF Generation Failing
+
+**Check logs:**
+```bash
+heroku logs --tail | grep -i "pdf\|puppeteer"
+```
+
+**Common issues:**
+- Chromium not installed (check Aptfile)
+- Memory limit exceeded
+- Timeout during generation
+
+**Solution:**
+- Ensure `heroku-buildpack-apt` is installed
+- Check `Aptfile` includes required libraries
+- Increase dyno size if needed
+
+---
+
+## 📚 Documentation
+
+- `EMAIL_DELIVERABILITY_GUIDE.md` - Complete email setup guide
+- `TESTING_GUIDE.md` - Notification testing instructions
+- `HEROKU_CONFIG_VARS.md` - Environment variables reference
+- `PDF_LAYOUT_FIXES.md` - PDF generation documentation
+
+---
+
+## 🔐 Security
+
+- **Never commit `.env`** - Contains sensitive credentials
+- **Use Config Vars** - Store secrets in Heroku Config Vars
+- **Rotate API keys** - Regularly update Heroku API key
+- **Use HTTPS** - Always use HTTPS in production
+- **Limit permissions** - Use read-only API keys when possible
+- **Validate inputs** - All user inputs are validated
+- **Secure email** - Use authenticated SMTP/API
+
+---
+
+## 🎯 Production Readiness Checklist
+
+### Before Going Live
+
+- [ ] Heroku API key configured
+- [ ] Mailgun domain verified (SPF, DKIM, DMARC)
+- [ ] Custom sender email configured
+- [ ] Recipients list configured
+- [ ] Notifications enabled
+- [ ] Thresholds configured appropriately
+- [ ] Test email sent successfully
+- [ ] Threshold alerts tested
+- [ ] PDF export tested
+- [ ] Enterprise account name set
+- [ ] Dashboard URL set
+- [ ] Logs monitored for 24 hours
+- [ ] Scheduled tasks verified
+- [ ] Email deliverability checked
+
+---
+
+## 🚀 Advanced Usage
+
+### Scheduled Report Delivery
+
+Configure in notification settings:
+
+```javascript
+const configService = require('./services/configService');
+
+await configService.updateTriggerSchedule({
+  dailySummary: {
+    enabled: true,
+    time: "09:00",
+    timezone: "America/New_York"
+  },
+  weeklySummary: {
+    enabled: true,
+    dayOfWeek: "Monday",
+    time: "09:00"
+  },
+  monthlySummary: {
+    enabled: true,
+    dayOfMonth: 1,
+    time: "09:00"
+  }
+});
+```
+
+### Custom Monitoring Frequency
 
 Edit `server/index.js`:
 
 ```javascript
-// Check every hour
-cron.schedule('0 * * * *', async () => {
-  await usageMonitor.checkAndNotify();
-});
-
-// Check every 30 minutes
+// Every 30 minutes
 cron.schedule('*/30 * * * *', async () => {
-  await usageMonitor.checkAndNotify();
+  const config = await configService.getConfig();
+  if (config.triggerSchedule.realtimeAlerts.enabled) {
+    await thresholdMonitor.monitorEnterpriseThresholds();
+  }
 });
 ```
 
-### Add Slack Notifications
+---
 
-Install Slack SDK:
+## 📈 Roadmap
 
-```bash
-npm install @slack/webhook
-```
+- [ ] Slack notifications
+- [ ] Webhook support
+- [ ] Custom alert rules
+- [ ] Budget tracking
+- [ ] Cost forecasting
+- [ ] Multi-account dashboards
+- [ ] Historical data export
+- [ ] API rate limit monitoring
 
-Update `server/services/notificationService.js` to include Slack webhooks.
+---
 
-### Custom Dashboard Themes
+## 🤝 Contributing
 
-Modify color schemes in component CSS files:
-- `client/src/App.css` - Main app styling
-- `client/src/components/*.css` - Component styles
+Contributions welcome! Please open an issue or submit a pull request.
 
-## Troubleshooting
+---
 
-### "Failed to fetch usage data"
-
-- Verify `HEROKU_API_KEY` is correct
-- Check Heroku API key has not expired
-- Ensure your account has access to the apps
-
-### Email Notifications Not Working
-
-- Verify SMTP credentials
-- Check firewall/security settings
-- For Gmail, ensure App Password is used (not regular password)
-- Test with `POST /api/test-notification`
-
-### Dashboard Not Loading
-
-- Check backend is running (`npm start` or `npm run dev`)
-- Verify PORT is not in use
-- Check browser console for errors
-
-## Security Best Practices
-
-1. **Never commit `.env` file** - It contains sensitive credentials
-2. **Use environment variables** for all secrets
-3. **Rotate API keys regularly**
-4. **Use HTTPS in production**
-5. **Limit API key permissions** to read-only if possible
-
-## License
+## 📄 License
 
 MIT
 
-## Support
+---
+
+## 💬 Support
 
 For issues and questions, please open an issue on the GitHub repository.
+
+**Quick Links:**
+- [Email Setup Guide](EMAIL_DELIVERABILITY_GUIDE.md)
+- [Testing Guide](TESTING_GUIDE.md)
+- [Heroku Platform API Docs](https://devcenter.heroku.com/articles/platform-api-reference)
+- [Mailgun Documentation](https://documentation.mailgun.com/)
