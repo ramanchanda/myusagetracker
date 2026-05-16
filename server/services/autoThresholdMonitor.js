@@ -6,7 +6,7 @@
  */
 
 const configService = require('./configService');
-const notificationService = require('./enhancedNotificationService');
+const notificationService = require('./notificationService');
 
 // Track last alert times to prevent spam
 const lastAlertTimes = {};

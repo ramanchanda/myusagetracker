@@ -1,5 +1,5 @@
 const configService = require('./configService');
-const notificationService = require('./enhancedNotificationService');
+const notificationService = require('./notificationService');
 const enterpriseUsageService = require('./enterpriseUsageService');
 
 // Track last alert times to prevent spam

@@ -9,7 +9,7 @@
 
 const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
-const enhancedNotificationService = require('./enhancedNotificationService');
+const notificationService = require('./notificationService');
 const notificationHistory = require('./notificationHistory');
 const config = require('../config/notificationConfig');
 
@@ -323,7 +323,7 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
   try {
     console.log(`${LOG_PREFIX} Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
 
-    const result = await enhancedNotificationService.sendThresholdAlert(
+    const result = await notificationService.sendThresholdAlert(
       resourceType,
       currentValue,
       threshold,
@@ -548,7 +548,7 @@ async function sendScheduledSummary(period = 'daily') {
       totalCost: usageData.totalCost
     };
 
-    const result = await enhancedNotificationService.sendUsageSummary(summaryData, period);
+    const result = await notificationService.sendUsageSummary(summaryData, period);
 
     console.log(`${LOG_PREFIX} ${period} summary sent successfully`);
     return result;
@@ -564,7 +564,7 @@ async function sendScheduledSummary(period = 'daily') {
  */
 async function sendTestNotification() {
   console.log(`${LOG_PREFIX} Sending test notification...`);
-  return await enhancedNotificationService.sendTestNotification();
+  return await notificationService.sendTestNotification();
 }
 
 /**

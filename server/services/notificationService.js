@@ -1,143 +1,265 @@
-const nodemailer = require('nodemailer');
+/**
+ * Notification Service
+ *
+ * High-level notification functions using centralized email service.
+ * Handles email template rendering and delivery coordination.
+ */
 
-let transporter = null;
+const emailService = require('./emailService');
+const configService = require('./configService');
+const emailTemplates = require('../templates/emails');
+const config = require('../config/notificationConfig');
 
-function initTransporter() {
-  if (!transporter && process.env.SMTP_HOST) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-  }
-  return transporter;
+const LOG_PREFIX = config.LOGGING.PREFIXES.NOTIFICATION_SERVICE;
+
+/**
+ * Test email configuration
+ */
+async function testEmailConfiguration() {
+  return await emailService.testEmailConfiguration();
 }
 
-async function sendEmail(subject, htmlContent) {
-  const trans = initTransporter();
+/**
+ * Send test notification
+ */
+async function sendTestNotification() {
+  const emailConfig = await configService.getEmailConfig();
 
-  if (!trans) {
-    console.log('Email notifications not configured. Skipping email send.');
-    return;
+  if (!emailConfig.enabled) {
+    return { sent: false, reason: 'Email notifications disabled' };
   }
 
-  const mailOptions = {
-    from: `"Heroku Usage Monitor" <${process.env.SMTP_USER}>`,
-    to: process.env.NOTIFICATION_EMAIL,
-    subject: subject,
-    html: htmlContent
-  };
+  if (!emailConfig.recipients || emailConfig.recipients.length === 0) {
+    return { sent: false, reason: 'No recipients configured' };
+  }
+
+  const html = emailTemplates.testNotification({
+    testDetails: `Provider: ${emailConfig.provider || 'auto'}\nRecipients: ${emailConfig.recipients.join(', ')}`
+  });
 
   try {
-    await trans.sendMail(mailOptions);
-    console.log(`Email sent: ${subject}`);
+    const result = await emailService.sendEmail({
+      to: emailConfig.recipients,
+      subject: '✅ Heroku Usage Monitor - Test Notification',
+      html
+    });
+
+    return {
+      sent: true,
+      provider: result.provider,
+      messageId: result.messageId,
+      recipients: result.recipients
+    };
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error(`${LOG_PREFIX} Test email failed:', error.message);
+    return {
+      sent: false,
+      reason: error.message
+    };
+  }
+}
+
+/**
+ * Send threshold alert
+ */
+async function sendThresholdAlert(resourceType, currentValue, threshold, severity = 'warning') {
+  const emailConfig = await configService.getEmailConfig();
+
+  if (!emailConfig.enabled) {
+    return { sent: false, reason: 'Email notifications disabled' };
+  }
+
+  if (!emailConfig.recipients || emailConfig.recipients.length === 0) {
+    return { sent: false, reason: 'No recipients configured' };
+  }
+
+  const percentUsed = threshold.limit > 0 ? ((currentValue / threshold.limit) * 100).toFixed(1) : 0;
+  const severityIcon = severity === 'critical' ? '🚨' : '⚠️';
+
+  const html = emailTemplates.thresholdAlert({
+    resourceType,
+    currentValue,
+    limit: threshold.limit,
+    percentUsed,
+    severity,
+    enterpriseAccount: process.env.ENTERPRISE_ACCOUNT_NAME,
+    dashboardUrl: process.env.DASHBOARD_URL
+  });
+
+  const subject = `${severityIcon} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`;
+
+  try {
+    const result = await emailService.sendEmail({
+      to: emailConfig.recipients,
+      subject,
+      html
+    });
+
+    // Log to history
+    await configService.addAlertToHistory({
+      type: 'threshold',
+      resourceType,
+      currentValue,
+      limit: threshold.limit,
+      percentUsed: parseFloat(percentUsed),
+      severity,
+      recipients: result.recipients
+    });
+
+    return {
+      sent: true,
+      provider: result.provider,
+      messageId: result.messageId,
+      recipients: result.recipients
+    };
+  } catch (error) {
+    console.error(`${LOG_PREFIX} Threshold alert failed:', error.message);
     throw error;
   }
 }
 
-async function sendOverageAlert(resourceType, usageData) {
-  const subject = `⚠️ Heroku ${resourceType} Usage Alert`;
+/**
+ * Send usage summary
+ */
+async function sendUsageSummary(summaryData, period = 'daily') {
+  const emailConfig = await configService.getEmailConfig();
 
-  const htmlContent = `
-    <html>
-      <body style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2 style="color: #d9534f;">Heroku Usage Alert</h2>
-        <p>Your <strong>${resourceType}</strong> usage has exceeded the threshold.</p>
+  if (!emailConfig.enabled) {
+    return { sent: false, reason: 'Email notifications disabled' };
+  }
 
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Usage Details:</h3>
-          <ul>
-            <li><strong>Used:</strong> ${usageData.used}</li>
-            <li><strong>Limit:</strong> ${usageData.limit}</li>
-            <li><strong>Usage Percentage:</strong> ${usageData.usagePercentage}%</li>
-            <li><strong>Remaining:</strong> ${usageData.remaining}</li>
-          </ul>
-        </div>
+  if (!emailConfig.recipients || emailConfig.recipients.length === 0) {
+    return { sent: false, reason: 'No recipients configured' };
+  }
 
-        <p style="color: #666;">
-          This is an automated alert from your Heroku Usage Monitoring System.
-        </p>
+  const periodIcons = {
+    daily: '📊',
+    weekly: '📈',
+    monthly: '📉'
+  };
 
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Timestamp: ${new Date().toISOString()}
-        </p>
-      </body>
-    </html>
-  `;
+  const html = emailTemplates.usageSummary({
+    period,
+    resources: summaryData.resources,
+    totalCost: summaryData.totalCost,
+    enterpriseAccount: process.env.ENTERPRISE_ACCOUNT_NAME,
+    dashboardUrl: process.env.DASHBOARD_URL,
+    reportPeriod: summaryData.reportPeriod
+  });
 
-  await sendEmail(subject, htmlContent);
+  const subject = `${periodIcons[period] || '📊'} Heroku ${period.charAt(0).toUpperCase() + period.slice(1)} Usage Summary`;
+
+  try {
+    const result = await emailService.sendEmail({
+      to: emailConfig.recipients,
+      subject,
+      html
+    });
+
+    // Log to history
+    await configService.addAlertToHistory({
+      type: 'summary',
+      period,
+      resourceCount: Object.keys(summaryData.resources || {}).length,
+      totalCost: summaryData.totalCost,
+      recipients: result.recipients
+    });
+
+    return {
+      sent: true,
+      provider: result.provider,
+      messageId: result.messageId,
+      recipients: result.recipients
+    };
+  } catch (error) {
+    console.error(`${LOG_PREFIX} Usage summary failed:', error.message);
+    throw error;
+  }
 }
 
-async function sendTestNotification() {
-  const subject = '✅ Heroku Usage Monitor - Test Notification';
-  const htmlContent = `
-    <html>
-      <body style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2 style="color: #5cb85c;">Test Notification</h2>
-        <p>This is a test notification from your Heroku Usage Monitoring System.</p>
-        <p>If you're receiving this, your notification system is configured correctly!</p>
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Timestamp: ${new Date().toISOString()}
-        </p>
-      </body>
-    </html>
-  `;
+/**
+ * Send PDF report via email
+ */
+async function sendPDFReport(pdfBuffer, reportData) {
+  const emailConfig = await configService.getEmailConfig();
 
-  await sendEmail(subject, htmlContent);
+  if (!emailConfig.enabled) {
+    return { sent: false, reason: 'Email notifications disabled' };
+  }
+
+  if (!emailConfig.recipients || emailConfig.recipients.length === 0) {
+    return { sent: false, reason: 'No recipients configured' };
+  }
+
+  const {
+    reportType = 'Monthly Usage Report',
+    reportPeriod,
+    summary
+  } = reportData;
+
+  const html = emailTemplates.pdfReport({
+    reportType,
+    reportPeriod,
+    enterpriseAccount: process.env.ENTERPRISE_ACCOUNT_NAME,
+    summary,
+    dashboardUrl: process.env.DASHBOARD_URL
+  });
+
+  const subject = `📄 ${reportType} - ${reportPeriod || 'Latest'}`;
+
+  try {
+    const result = await emailService.sendEmail({
+      to: emailConfig.recipients,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Heroku_Usage_Report_${reportPeriod || 'Latest'}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    });
+
+    // Log to history
+    await configService.addAlertToHistory({
+      type: 'pdf-report',
+      reportType,
+      reportPeriod,
+      recipients: result.recipients
+    });
+
+    return {
+      sent: true,
+      provider: result.provider,
+      messageId: result.messageId,
+      recipients: result.recipients
+    };
+  } catch (error) {
+    console.error(`${LOG_PREFIX} PDF report delivery failed:', error.message);
+    throw error;
+  }
 }
 
-async function sendDailySummary(summaryData) {
-  const subject = '📊 Heroku Daily Usage Summary';
+/**
+ * Get notification service status
+ */
+async function getNotificationStatus() {
+  const emailConfig = await configService.getEmailConfig();
+  const serviceStatus = emailService.getServiceStatus();
 
-  const htmlContent = `
-    <html>
-      <body style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2 style="color: #337ab7;">Daily Usage Summary</h2>
-
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Dyno Usage</h3>
-          <ul>
-            <li>Used: ${summaryData.dynos.used} hours</li>
-            <li>Limit: ${summaryData.dynos.limit} hours</li>
-            <li>Usage: ${summaryData.dynos.usagePercentage}%</li>
-          </ul>
-        </div>
-
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Connect Usage</h3>
-          <ul>
-            <li>Used: ${summaryData.connect.connectUsed} hours</li>
-            <li>Limit: ${summaryData.connect.connectLimit} hours</li>
-            <li>Usage: ${summaryData.connect.usagePercentage}%</li>
-          </ul>
-        </div>
-
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Add-ons</h3>
-          <ul>
-            <li>Total Add-ons: ${summaryData.addons.totalAddons}</li>
-            <li>Monthly Cost: $${summaryData.addons.totalMonthlyCost}</li>
-          </ul>
-        </div>
-
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Timestamp: ${new Date().toISOString()}
-        </p>
-      </body>
-    </html>
-  `;
-
-  await sendEmail(subject, htmlContent);
+  return {
+    enabled: emailConfig.enabled,
+    recipients: emailConfig.recipients,
+    emailService: serviceStatus
+  };
 }
 
 module.exports = {
-  sendOverageAlert,
+  testEmailConfiguration,
   sendTestNotification,
-  sendDailySummary
+  sendThresholdAlert,
+  sendUsageSummary,
+  sendPDFReport,
+  getNotificationStatus
 };

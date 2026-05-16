@@ -7,8 +7,6 @@ const path = require('path');
 require('dotenv').config();
 
 const herokuService = require('./services/herokuService');
-const notificationService = require('./services/notificationService');
-const usageMonitor = require('./services/usageMonitor');
 const multiGroupService = require('./services/multiGroupService');
 const enterpriseService = require('./services/enterpriseService');
 const personalService = require('./services/personalService');
@@ -17,7 +15,7 @@ const enterpriseUsageService = require('./services/enterpriseUsageService');
 const personalUsageService = require('./services/personalUsageService');
 const dailyUsageService = require('./services/dailyUsageService');
 const configService = require('./services/configService');
-const enhancedNotificationService = require('./services/enhancedNotificationService');
+const notificationService = require('./services/notificationService');
 const thresholdMonitor = require('./services/thresholdMonitor');
 const autoThresholdMonitor = require('./services/autoThresholdMonitor');
 const notificationOrchestrator = require('./services/notificationOrchestrator');
@@ -107,8 +105,11 @@ app.get('/api/apps', async (req, res) => {
 
 app.post('/api/test-notification', async (req, res) => {
   try {
-    await notificationService.sendTestNotification();
-    res.json({ message: 'Test notification sent successfully' });
+    const result = await notificationOrchestrator.sendTestNotification();
+    res.json({
+      message: 'Test notification sent successfully',
+      ...result
+    });
   } catch (error) {
     console.error('Error sending test notification:', error.message);
     res.status(500).json({ error: error.message });
@@ -349,7 +350,7 @@ app.put('/api/notifications/email-config', async (req, res) => {
 // Test email configuration
 app.post('/api/notifications/test-email', async (req, res) => {
   try {
-    const testResult = await enhancedNotificationService.testEmailConfiguration();
+    const testResult = await notificationService.testEmailConfiguration();
     res.json(testResult);
   } catch (error) {
     console.error('Error testing email:', error.message);
