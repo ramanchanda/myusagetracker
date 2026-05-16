@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
-const cron = require('node-cron');
+// PHASE 2: cron removed - now in clock process (server/workers/scheduler.js)
 require('dotenv').config();
 
 const herokuService = require('./services/herokuService');
@@ -548,23 +548,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// PHASE 1: Scheduled threshold monitoring via orchestrator (every hour)
-cron.schedule('0 * * * *', async () => {
-  console.log('[Scheduler] Running hourly threshold evaluation...');
-  const config = await configService.getConfig();
-  if (config.triggerSchedule.realtimeAlerts.enabled) {
-    await notificationOrchestrator.runThresholdEvaluation();
-  }
-});
-
-// Legacy scheduled check (keep for backward compatibility)
-cron.schedule('0 */6 * * *', async () => {
-  console.log('Running legacy scheduled usage check...');
-  await usageMonitor.checkAndNotify();
-});
+// PHASE 2: Cron jobs removed from web process
+// All scheduled jobs now run in dedicated clock process (server/workers/scheduler.js)
+// Web dyno focuses only on HTTP requests
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log('Scheduled monitoring: Every 6 hours');
+  console.log('PHASE 2: Scheduled jobs run in separate clock process');
+  console.log('To enable clock: heroku ps:scale clock=1');
 });
