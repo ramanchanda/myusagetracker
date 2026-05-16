@@ -11,8 +11,9 @@ const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
 const enhancedNotificationService = require('./enhancedNotificationService');
 
-// Track alert state to implement smart alerting
+// PHASE 3: Enhanced state tracking with anomaly detection
 const alertState = new Map();
+const usageHistory = new Map(); // Track usage over time for anomaly detection
 
 /**
  * Get current alert state for a resource
@@ -21,20 +22,54 @@ function getAlertState(resourceType) {
   return alertState.get(resourceType) || {
     lastSeverity: null,
     lastAlertTime: null,
-    consecutiveAlerts: 0
+    lastValue: null,
+    consecutiveAlerts: 0,
+    lastAnomalyAlert: null
   };
+}
+
+/**
+ * Get usage history for a resource
+ */
+function getUsageHistory(resourceType) {
+  if (!usageHistory.has(resourceType)) {
+    usageHistory.set(resourceType, []);
+  }
+  return usageHistory.get(resourceType);
+}
+
+/**
+ * Add value to usage history (keep last 24 hours)
+ */
+function recordUsageValue(resourceType, value) {
+  const history = getUsageHistory(resourceType);
+  const now = Date.now();
+
+  history.push({
+    value,
+    timestamp: now
+  });
+
+  // Keep only last 24 data points (24 hours of hourly checks)
+  if (history.length > 24) {
+    history.shift();
+  }
+
+  usageHistory.set(resourceType, history);
 }
 
 /**
  * Update alert state after sending notification
  */
-function updateAlertState(resourceType, severity) {
+function updateAlertState(resourceType, severity, currentValue) {
   const current = getAlertState(resourceType);
 
   alertState.set(resourceType, {
     lastSeverity: severity,
     lastAlertTime: Date.now(),
-    consecutiveAlerts: current.lastSeverity === severity ? current.consecutiveAlerts + 1 : 1
+    lastValue: currentValue,
+    consecutiveAlerts: current.lastSeverity === severity ? current.consecutiveAlerts + 1 : 1,
+    lastAnomalyAlert: current.lastAnomalyAlert
   });
 }
 
@@ -46,9 +81,123 @@ function clearAlertState(resourceType) {
 }
 
 /**
- * Determine if alert should be sent based on state and cooldown
+ * PHASE 3: Detect anomalies in usage patterns
  */
-function shouldSendAlert(resourceType, severity, percentUsed, threshold) {
+function detectAnomalies(resourceType, currentValue) {
+  const history = getUsageHistory(resourceType);
+
+  if (history.length < 3) {
+    // Need at least 3 data points
+    return null;
+  }
+
+  const anomalies = [];
+
+  // Calculate statistics from history (excluding current value)
+  const values = history.map(h => h.value);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+
+  // 1. Sudden Spike Detection
+  // Alert if current value is 50% higher than recent average
+  const spikeThreshold = avg * 1.5;
+  if (currentValue > spikeThreshold && currentValue > avg) {
+    const increase = ((currentValue - avg) / avg * 100).toFixed(1);
+    anomalies.push({
+      type: 'sudden_spike',
+      message: `Sudden spike detected: ${currentValue} (${increase}% above recent average of ${avg.toFixed(0)})`,
+      severity: currentValue > avg * 2 ? 'critical' : 'warning'
+    });
+  }
+
+  // 2. Unusual Jump Detection
+  // Alert if increase from last value is > 30%
+  if (history.length >= 2) {
+    const lastValue = history[history.length - 1].value;
+    const percentChange = ((currentValue - lastValue) / lastValue * 100);
+
+    if (percentChange > 30) {
+      anomalies.push({
+        type: 'unusual_jump',
+        message: `Unusual jump: ${lastValue} → ${currentValue} (+${percentChange.toFixed(1)}% in 1 hour)`,
+        severity: percentChange > 50 ? 'critical' : 'warning'
+      });
+    }
+  }
+
+  // 3. Trend Acceleration Detection
+  // Alert if growth rate is accelerating
+  if (history.length >= 4) {
+    const recentGrowth = currentValue - history[history.length - 2].value;
+    const previousGrowth = history[history.length - 2].value - history[history.length - 4].value;
+
+    if (previousGrowth > 0 && recentGrowth > previousGrowth * 2) {
+      anomalies.push({
+        type: 'trend_acceleration',
+        message: `Accelerating growth detected: Previous +${previousGrowth}, Recent +${recentGrowth}`,
+        severity: 'warning'
+      });
+    }
+  }
+
+  // 4. Sustained High Usage
+  // Alert if consistently above 90% of max for 3+ hours
+  if (history.length >= 3) {
+    const recentValues = values.slice(-3);
+    const highThreshold = max * 0.9;
+    const sustainedHigh = recentValues.every(v => v >= highThreshold);
+
+    if (sustainedHigh && currentValue >= highThreshold) {
+      anomalies.push({
+        type: 'sustained_high',
+        message: `Sustained high usage: ${currentValue} maintained near max (${max}) for 3+ hours`,
+        severity: 'warning'
+      });
+    }
+  }
+
+  return anomalies.length > 0 ? anomalies : null;
+}
+
+/**
+ * PHASE 3: Check if anomaly alert should be sent
+ */
+function shouldSendAnomalyAlert(resourceType, anomalies) {
+  if (!anomalies || anomalies.length === 0) {
+    return false;
+  }
+
+  const state = getAlertState(resourceType);
+  const ANOMALY_COOLDOWN_MS = 7200000; // 2 hours (longer than threshold cooldown)
+
+  // Don't spam anomaly alerts
+  if (state.lastAnomalyAlert) {
+    const elapsed = Date.now() - state.lastAnomalyAlert;
+    if (elapsed < ANOMALY_COOLDOWN_MS) {
+      console.log(`[Orchestrator] Anomaly alert suppressed for ${resourceType} (cooldown: ${Math.round((ANOMALY_COOLDOWN_MS - elapsed) / 1000 / 60)}m remaining)`);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * PHASE 3: Update anomaly alert timestamp
+ */
+function recordAnomalyAlert(resourceType) {
+  const current = getAlertState(resourceType);
+  alertState.set(resourceType, {
+    ...current,
+    lastAnomalyAlert: Date.now()
+  });
+}
+
+/**
+ * PHASE 3: Determine if alert should be sent (improved smart alerting)
+ */
+function shouldSendAlert(resourceType, severity, percentUsed, threshold, currentValue) {
   const state = getAlertState(resourceType);
   const COOLDOWN_MS = 3600000; // 1 hour
 
@@ -71,6 +220,15 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold) {
   if (severity === 'critical' && state.lastSeverity === 'warning') {
     console.log(`[Orchestrator] ${resourceType} escalated from warning to critical`);
     return true;
+  }
+
+  // PHASE 3: Usage changed significantly (>20% from last alert)
+  if (state.lastValue) {
+    const changePercent = Math.abs((currentValue - state.lastValue) / state.lastValue * 100);
+    if (changePercent > 20) {
+      console.log(`[Orchestrator] ${resourceType} usage changed significantly: ${state.lastValue} → ${currentValue} (${changePercent.toFixed(1)}%)`);
+      return true;
+    }
   }
 
   // Check cooldown for same severity
@@ -100,15 +258,39 @@ function getSeverity(percentUsed, threshold) {
 }
 
 /**
- * Check single resource threshold
+ * PHASE 3: Check single resource threshold with anomaly detection
  */
 async function checkResourceThreshold(resourceType, currentValue, threshold) {
   if (!threshold.enabled || !threshold.limit) {
     return null;
   }
 
+  // PHASE 3: Record usage value for trend analysis
+  recordUsageValue(resourceType, currentValue);
+
   const percentUsed = (currentValue / threshold.limit) * 100;
   const severity = getSeverity(percentUsed, threshold);
+
+  // PHASE 3: Check for anomalies regardless of threshold
+  const anomalies = detectAnomalies(resourceType, currentValue);
+  if (anomalies && shouldSendAnomalyAlert(resourceType, anomalies)) {
+    console.log(`[Orchestrator] 🚨 Anomalies detected for ${resourceType}:`);
+    anomalies.forEach(a => console.log(`[Orchestrator]   - ${a.type}: ${a.message}`));
+
+    // Send anomaly alert (lower priority, informational)
+    try {
+      // Build anomaly message for email
+      const anomalyMessage = anomalies.map(a => `• ${a.message}`).join('\n');
+
+      // TODO: Create dedicated anomaly alert template in Phase 4
+      // For now, log it prominently
+      console.log(`[Orchestrator] 📧 Anomaly alert would be sent: ${anomalyMessage}`);
+
+      recordAnomalyAlert(resourceType);
+    } catch (error) {
+      console.error(`[Orchestrator] Failed to send anomaly alert:`, error.message);
+    }
+  }
 
   if (!severity) {
     // Below warning threshold, clear any existing alert state
@@ -119,8 +301,8 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
     return null;
   }
 
-  // Check if alert should be sent based on state
-  if (!shouldSendAlert(resourceType, severity, percentUsed, threshold)) {
+  // Check if threshold alert should be sent based on state
+  if (!shouldSendAlert(resourceType, severity, percentUsed, threshold, currentValue)) {
     return {
       resourceType,
       currentValue,
@@ -128,11 +310,12 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
       percentUsed: percentUsed.toFixed(1),
       severity,
       alerted: false,
-      reason: 'Suppressed by smart alerting'
+      reason: 'Suppressed by smart alerting',
+      anomalies: anomalies ? anomalies.map(a => a.type) : []
     };
   }
 
-  // Send alert
+  // Send threshold alert
   try {
     console.log(`[Orchestrator] Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
 
@@ -143,7 +326,7 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
       severity
     );
 
-    updateAlertState(resourceType, severity);
+    updateAlertState(resourceType, severity, currentValue);
 
     return {
       resourceType,
@@ -151,7 +334,8 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
       limit: threshold.limit,
       percentUsed: percentUsed.toFixed(1),
       severity,
-      alerted: true
+      alerted: true,
+      anomalies: anomalies ? anomalies.map(a => a.type) : []
     };
   } catch (error) {
     console.error(`[Orchestrator] Failed to send alert for ${resourceType}:`, error.message);
@@ -343,16 +527,26 @@ async function sendTestNotification() {
 }
 
 /**
- * Get current alert states (for debugging/monitoring)
+ * PHASE 3: Get current alert states with usage history (for debugging/monitoring)
  */
 function getAlertStates() {
   const states = {};
   for (const [resourceType, state] of alertState.entries()) {
+    const history = getUsageHistory(resourceType);
+
     states[resourceType] = {
       ...state,
       cooldownRemaining: state.lastAlertTime
         ? Math.max(0, Math.round((3600000 - (Date.now() - state.lastAlertTime)) / 1000))
-        : 0
+        : 0,
+      anomalyCooldownRemaining: state.lastAnomalyAlert
+        ? Math.max(0, Math.round((7200000 - (Date.now() - state.lastAnomalyAlert)) / 1000))
+        : 0,
+      historySize: history.length,
+      recentValues: history.slice(-5).map(h => ({
+        value: h.value,
+        timestamp: new Date(h.timestamp).toISOString()
+      }))
     };
   }
   return states;
