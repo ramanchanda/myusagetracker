@@ -1,5 +1,5 @@
 /**
- * Heroku Clock Process - Scheduler Worker
+ * Heroku Scheduler Worker (Clock Process)
  *
  * Dedicated process for scheduled notification tasks.
  * Runs independently from web dyno.
@@ -16,6 +16,9 @@
 const cron = require('node-cron');
 const notificationOrchestrator = require('../services/notificationOrchestrator');
 const configService = require('../services/configService');
+const config = require('../config/notificationConfig');
+
+const LOG_PREFIX = config.LOGGING.PREFIXES.SCHEDULER;
 
 // Track last run times for debugging
 const lastRuns = {
@@ -26,9 +29,9 @@ const lastRuns = {
 };
 
 console.log('='.repeat(60));
-console.log('[Clock] Heroku Clock Process Starting...');
-console.log('[Clock] Environment:', process.env.NODE_ENV || 'development');
-console.log('[Clock] Timezone:', process.env.TZ || 'UTC');
+console.log(`${LOG_PREFIX} Heroku Clock Process Starting...`);
+console.log(`${LOG_PREFIX} Environment:`, process.env.NODE_ENV || 'development');
+console.log(`${LOG_PREFIX} Timezone:`, process.env.TZ || config.SCHEDULER.DEFAULT_TIMEZONE);
 console.log('='.repeat(60));
 
 /**
@@ -38,7 +41,7 @@ console.log('='.repeat(60));
 cron.schedule('0 * * * *', async () => {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
-  console.log(`[Clock] Hourly Threshold Evaluation - ${now}`);
+  console.log(`${LOG_PREFIX} Hourly Threshold Evaluation - ${now}`);
   console.log('='.repeat(60));
 
   try {
@@ -46,11 +49,11 @@ cron.schedule('0 * * * *', async () => {
     const config = await configService.getConfig();
 
     if (!config.triggerSchedule.realtimeAlerts.enabled) {
-      console.log('[Clock] ⏸️  Realtime alerts disabled in config - skipping');
+      console.log('${LOG_PREFIX} ⏸️  Realtime alerts disabled in config - skipping');
       return;
     }
 
-    console.log('[Clock] ✓ Realtime alerts enabled - running evaluation');
+    console.log('${LOG_PREFIX} ✓ Realtime alerts enabled - running evaluation');
 
     // Run threshold evaluation via orchestrator
     const result = await notificationOrchestrator.runThresholdEvaluation();
@@ -58,25 +61,25 @@ cron.schedule('0 * * * *', async () => {
     lastRuns.hourly = now;
 
     if (result.checked) {
-      console.log('[Clock] ✓ Threshold evaluation complete:');
-      console.log(`[Clock]   - Duration: ${result.duration}ms`);
-      console.log(`[Clock]   - Checks: ${result.totalChecks}`);
-      console.log(`[Clock]   - Alerts sent: ${result.alertsTriggered}`);
-      console.log(`[Clock]   - Alerts suppressed: ${result.alertsSuppressed}`);
+      console.log('${LOG_PREFIX} ✓ Threshold evaluation complete:');
+      console.log(`${LOG_PREFIX}   - Duration: ${result.duration}ms`);
+      console.log(`${LOG_PREFIX}   - Checks: ${result.totalChecks}`);
+      console.log(`${LOG_PREFIX}   - Alerts sent: ${result.alertsTriggered}`);
+      console.log(`${LOG_PREFIX}   - Alerts suppressed: ${result.alertsSuppressed}`);
 
       if (result.alerts && result.alerts.length > 0) {
         result.alerts.forEach(alert => {
           if (alert.alerted) {
-            console.log(`[Clock]   ✉️  ${alert.resourceType}: ${alert.percentUsed}% (${alert.severity})`);
+            console.log(`${LOG_PREFIX}   ✉️  ${alert.resourceType}: ${alert.percentUsed}% (${alert.severity})`);
           }
         });
       }
     } else {
-      console.log(`[Clock] ⚠️  Evaluation not completed: ${result.reason || result.error}`);
+      console.log(`${LOG_PREFIX} ⚠️  Evaluation not completed: ${result.reason || result.error}`);
     }
   } catch (error) {
-    console.error('[Clock] ❌ Hourly evaluation failed:', error.message);
-    console.error('[Clock] Stack:', error.stack);
+    console.error('${LOG_PREFIX} ❌ Hourly evaluation failed:', error.message);
+    console.error('${LOG_PREFIX} Stack:', error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
@@ -92,7 +95,7 @@ cron.schedule('0 * * * *', async () => {
 cron.schedule('0 9 * * *', async () => {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
-  console.log(`[Clock] Daily Summary - ${now}`);
+  console.log(`${LOG_PREFIX} Daily Summary - ${now}`);
   console.log('='.repeat(60));
 
   try {
@@ -100,11 +103,11 @@ cron.schedule('0 9 * * *', async () => {
     const config = await configService.getConfig();
 
     if (!config.triggerSchedule.dailySummary.enabled) {
-      console.log('[Clock] ⏸️  Daily summaries disabled in config - skipping');
+      console.log('${LOG_PREFIX} ⏸️  Daily summaries disabled in config - skipping');
       return;
     }
 
-    console.log('[Clock] ✓ Daily summaries enabled - sending summary');
+    console.log('${LOG_PREFIX} ✓ Daily summaries enabled - sending summary');
 
     // Send daily summary via orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary('daily');
@@ -112,15 +115,15 @@ cron.schedule('0 9 * * *', async () => {
     lastRuns.daily = now;
 
     if (result.sent) {
-      console.log('[Clock] ✓ Daily summary sent successfully');
-      console.log(`[Clock]   - Recipients: ${result.recipients.join(', ')}`);
-      console.log(`[Clock]   - Provider: ${result.provider}`);
+      console.log('${LOG_PREFIX} ✓ Daily summary sent successfully');
+      console.log(`${LOG_PREFIX}   - Recipients: ${result.recipients.join(', ')}`);
+      console.log(`${LOG_PREFIX}   - Provider: ${result.provider}`);
     } else {
-      console.log(`[Clock] ⚠️  Daily summary not sent: ${result.reason}`);
+      console.log(`${LOG_PREFIX} ⚠️  Daily summary not sent: ${result.reason}`);
     }
   } catch (error) {
-    console.error('[Clock] ❌ Daily summary failed:', error.message);
-    console.error('[Clock] Stack:', error.stack);
+    console.error('${LOG_PREFIX} ❌ Daily summary failed:', error.message);
+    console.error('${LOG_PREFIX} Stack:', error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
@@ -136,7 +139,7 @@ cron.schedule('0 9 * * *', async () => {
 cron.schedule('0 9 * * 1', async () => {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
-  console.log(`[Clock] Weekly Summary - ${now}`);
+  console.log(`${LOG_PREFIX} Weekly Summary - ${now}`);
   console.log('='.repeat(60));
 
   try {
@@ -144,11 +147,11 @@ cron.schedule('0 9 * * 1', async () => {
     const config = await configService.getConfig();
 
     if (!config.triggerSchedule.weeklySummary.enabled) {
-      console.log('[Clock] ⏸️  Weekly summaries disabled in config - skipping');
+      console.log('${LOG_PREFIX} ⏸️  Weekly summaries disabled in config - skipping');
       return;
     }
 
-    console.log('[Clock] ✓ Weekly summaries enabled - sending summary');
+    console.log('${LOG_PREFIX} ✓ Weekly summaries enabled - sending summary');
 
     // Send weekly summary via orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary('weekly');
@@ -156,15 +159,15 @@ cron.schedule('0 9 * * 1', async () => {
     lastRuns.weekly = now;
 
     if (result.sent) {
-      console.log('[Clock] ✓ Weekly summary sent successfully');
-      console.log(`[Clock]   - Recipients: ${result.recipients.join(', ')}`);
-      console.log(`[Clock]   - Provider: ${result.provider}`);
+      console.log('${LOG_PREFIX} ✓ Weekly summary sent successfully');
+      console.log(`${LOG_PREFIX}   - Recipients: ${result.recipients.join(', ')}`);
+      console.log(`${LOG_PREFIX}   - Provider: ${result.provider}`);
     } else {
-      console.log(`[Clock] ⚠️  Weekly summary not sent: ${result.reason}`);
+      console.log(`${LOG_PREFIX} ⚠️  Weekly summary not sent: ${result.reason}`);
     }
   } catch (error) {
-    console.error('[Clock] ❌ Weekly summary failed:', error.message);
-    console.error('[Clock] Stack:', error.stack);
+    console.error('${LOG_PREFIX} ❌ Weekly summary failed:', error.message);
+    console.error('${LOG_PREFIX} Stack:', error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
@@ -180,7 +183,7 @@ cron.schedule('0 9 * * 1', async () => {
 cron.schedule('0 9 1 * *', async () => {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
-  console.log(`[Clock] Monthly Summary - ${now}`);
+  console.log(`${LOG_PREFIX} Monthly Summary - ${now}`);
   console.log('='.repeat(60));
 
   try {
@@ -188,11 +191,11 @@ cron.schedule('0 9 1 * *', async () => {
     const config = await configService.getConfig();
 
     if (!config.triggerSchedule.monthlySummary.enabled) {
-      console.log('[Clock] ⏸️  Monthly summaries disabled in config - skipping');
+      console.log('${LOG_PREFIX} ⏸️  Monthly summaries disabled in config - skipping');
       return;
     }
 
-    console.log('[Clock] ✓ Monthly summaries enabled - sending summary');
+    console.log('${LOG_PREFIX} ✓ Monthly summaries enabled - sending summary');
 
     // Send monthly summary via orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary('monthly');
@@ -200,15 +203,15 @@ cron.schedule('0 9 1 * *', async () => {
     lastRuns.monthly = now;
 
     if (result.sent) {
-      console.log('[Clock] ✓ Monthly summary sent successfully');
-      console.log(`[Clock]   - Recipients: ${result.recipients.join(', ')}`);
-      console.log(`[Clock]   - Provider: ${result.provider}`);
+      console.log('${LOG_PREFIX} ✓ Monthly summary sent successfully');
+      console.log(`${LOG_PREFIX}   - Recipients: ${result.recipients.join(', ')}`);
+      console.log(`${LOG_PREFIX}   - Provider: ${result.provider}`);
     } else {
-      console.log(`[Clock] ⚠️  Monthly summary not sent: ${result.reason}`);
+      console.log(`${LOG_PREFIX} ⚠️  Monthly summary not sent: ${result.reason}`);
     }
   } catch (error) {
-    console.error('[Clock] ❌ Monthly summary failed:', error.message);
-    console.error('[Clock] Stack:', error.stack);
+    console.error('${LOG_PREFIX} ❌ Monthly summary failed:', error.message);
+    console.error('${LOG_PREFIX} Stack:', error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
@@ -222,13 +225,13 @@ cron.schedule('0 9 1 * *', async () => {
  */
 cron.schedule('*/15 * * * *', () => {
   const now = new Date().toISOString();
-  console.log(`[Clock] ❤️  Health Check - ${now}`);
-  console.log('[Clock] Status: Running');
-  console.log('[Clock] Last runs:');
-  console.log(`[Clock]   - Hourly: ${lastRuns.hourly || 'Not yet run'}`);
-  console.log(`[Clock]   - Daily: ${lastRuns.daily || 'Not yet run'}`);
-  console.log(`[Clock]   - Weekly: ${lastRuns.weekly || 'Not yet run'}`);
-  console.log(`[Clock]   - Monthly: ${lastRuns.monthly || 'Not yet run'}`);
+  console.log(`${LOG_PREFIX} ❤️  Health Check - ${now}`);
+  console.log('${LOG_PREFIX} Status: Running');
+  console.log('${LOG_PREFIX} Last runs:');
+  console.log(`${LOG_PREFIX}   - Hourly: ${lastRuns.hourly || 'Not yet run'}`);
+  console.log(`${LOG_PREFIX}   - Daily: ${lastRuns.daily || 'Not yet run'}`);
+  console.log(`${LOG_PREFIX}   - Weekly: ${lastRuns.weekly || 'Not yet run'}`);
+  console.log(`${LOG_PREFIX}   - Monthly: ${lastRuns.monthly || 'Not yet run'}`);
 }, {
   scheduled: true,
   timezone: process.env.TZ || 'UTC'
@@ -236,34 +239,34 @@ cron.schedule('*/15 * * * *', () => {
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('\n[Clock] Received SIGTERM - shutting down gracefully...');
+  console.log('\n${LOG_PREFIX} Received SIGTERM - shutting down gracefully...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('\n[Clock] Received SIGINT - shutting down gracefully...');
+  console.log('\n${LOG_PREFIX} Received SIGINT - shutting down gracefully...');
   process.exit(0);
 });
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
-  console.error('[Clock] ❌ Uncaught Exception:', error);
-  console.error('[Clock] Stack:', error.stack);
+  console.error('${LOG_PREFIX} ❌ Uncaught Exception:', error);
+  console.error('${LOG_PREFIX} Stack:', error.stack);
   // Don't exit - keep clock running
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[Clock] ❌ Unhandled Rejection at:', promise);
-  console.error('[Clock] Reason:', reason);
+  console.error('${LOG_PREFIX} ❌ Unhandled Rejection at:', promise);
+  console.error('${LOG_PREFIX} Reason:', reason);
   // Don't exit - keep clock running
 });
 
-console.log('[Clock] ✓ All scheduled jobs registered');
-console.log('[Clock] ✓ Clock process ready');
-console.log('[Clock] Scheduled jobs:');
-console.log('[Clock]   - Hourly threshold evaluation: 0 * * * *');
-console.log('[Clock]   - Daily summary: 0 9 * * *');
-console.log('[Clock]   - Weekly summary: 0 9 * * 1 (Monday)');
-console.log('[Clock]   - Monthly summary: 0 9 1 * * (1st of month)');
-console.log('[Clock]   - Health check: */15 * * * * (every 15 min)');
+console.log('${LOG_PREFIX} ✓ All scheduled jobs registered');
+console.log('${LOG_PREFIX} ✓ Clock process ready');
+console.log('${LOG_PREFIX} Scheduled jobs:');
+console.log('${LOG_PREFIX}   - Hourly threshold evaluation: 0 * * * *');
+console.log('${LOG_PREFIX}   - Daily summary: 0 9 * * *');
+console.log('${LOG_PREFIX}   - Weekly summary: 0 9 * * 1 (Monday)');
+console.log('${LOG_PREFIX}   - Monthly summary: 0 9 1 * * (1st of month)');
+console.log('${LOG_PREFIX}   - Health check: */15 * * * * (every 15 min)');
 console.log('='.repeat(60) + '\n');

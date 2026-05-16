@@ -1,17 +1,19 @@
 /**
- * PHASE 4: Notification History Persistence
+ * Notification History Persistence
  *
- * Simple JSON-based persistence for notification history.
+ * JSON-based persistence for notification event history.
  * Stores delivery status, provider used, timestamps, and metadata.
  *
- * Future: Migrate to database (PostgreSQL, SQLite) for production
+ * Future: Migrate to database (PostgreSQL, SQLite) for production scale
  */
 
 const fs = require('fs').promises;
 const path = require('path');
+const config = require('../config/notificationConfig');
 
+const LOG_PREFIX = config.LOGGING.PREFIXES.HISTORY;
 const HISTORY_FILE = path.join(__dirname, '../data/notification-history.json');
-const MAX_HISTORY_SIZE = 1000; // Keep last 1000 events
+const MAX_HISTORY_SIZE = config.HISTORY_PERSISTENCE.MAX_EVENTS;
 
 /**
  * Ensure data directory exists
@@ -53,7 +55,7 @@ async function saveHistory(history) {
 
     await fs.writeFile(HISTORY_FILE, JSON.stringify(history, null, 2), 'utf8');
   } catch (error) {
-    console.error('[Notification History] Failed to save:', error.message);
+    console.error(`${LOG_PREFIX} Failed to save:`, error.message);
   }
 }
 
@@ -98,7 +100,7 @@ async function addEvent(event) {
 
     return entry;
   } catch (error) {
-    console.error('[Notification History] Failed to add event:', error.message);
+    console.error(`${LOG_PREFIX} Failed to add event:`, error.message);
     throw error;
   }
 }
@@ -130,7 +132,7 @@ async function updateEventStatus(eventId, status, updates = {}) {
 
     return event;
   } catch (error) {
-    console.error('[Notification History] Failed to update event:', error.message);
+    console.error(`${LOG_PREFIX} Failed to update event:`, error.message);
     throw error;
   }
 }
@@ -178,7 +180,7 @@ async function getHistory(options = {}) {
 
     return history;
   } catch (error) {
-    console.error('[Notification History] Failed to get history:', error.message);
+    console.error(`${LOG_PREFIX} Failed to get history:`, error.message);
     return [];
   }
 }
@@ -191,7 +193,7 @@ async function getEvent(eventId) {
     const history = await loadHistory();
     return history.find(e => e.id === eventId) || null;
   } catch (error) {
-    console.error('[Notification History] Failed to get event:', error.message);
+    console.error(`${LOG_PREFIX} Failed to get event:`, error.message);
     return null;
   }
 }
@@ -241,7 +243,7 @@ async function getStatistics(options = {}) {
 
     return stats;
   } catch (error) {
-    console.error('[Notification History] Failed to get statistics:', error.message);
+    console.error(`${LOG_PREFIX} Failed to get statistics:`, error.message);
     return null;
   }
 }
@@ -260,11 +262,11 @@ async function clearOldHistory(daysToKeep = 30) {
     await saveHistory(filtered);
 
     const removed = history.length - filtered.length;
-    console.log(`[Notification History] Cleared ${removed} old events (kept last ${daysToKeep} days)`);
+    console.log(`${LOG_PREFIX} Cleared ${removed} old events (kept last ${daysToKeep} days)`);
 
     return { removed, remaining: filtered.length };
   } catch (error) {
-    console.error('[Notification History] Failed to clear old history:', error.message);
+    console.error(`${LOG_PREFIX} Failed to clear old history:`, error.message);
     throw error;
   }
 }
@@ -275,10 +277,10 @@ async function clearOldHistory(daysToKeep = 30) {
 async function clearAllHistory() {
   try {
     await saveHistory([]);
-    console.log('[Notification History] All history cleared');
+    console.log(`${LOG_PREFIX} All history cleared`);
     return { success: true };
   } catch (error) {
-    console.error('[Notification History] Failed to clear all history:', error.message);
+    console.error(`${LOG_PREFIX} Failed to clear all history:`, error.message);
     throw error;
   }
 }
