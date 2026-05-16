@@ -20,6 +20,7 @@ const configService = require('./services/configService');
 const enhancedNotificationService = require('./services/enhancedNotificationService');
 const thresholdMonitor = require('./services/thresholdMonitor');
 const autoThresholdMonitor = require('./services/autoThresholdMonitor');
+const notificationOrchestrator = require('./services/notificationOrchestrator');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
 
@@ -180,10 +181,9 @@ app.get('/api/enterprise/structure', async (req, res) => {
     const enterpriseAccountId = req.query.accountId; // Optional: specific account
     const structure = await enterpriseUsageService.getEnterpriseStructure(month, enterpriseAccountId);
 
-    // Automatically check thresholds whenever usage data is fetched
-    autoThresholdMonitor.autoCheckThresholds(structure).catch(err => {
-      console.error('[Auto Monitor] Background threshold check failed:', err.message);
-    });
+    // PHASE 1: Dashboard refresh no longer triggers notifications
+    // Notifications are now handled by scheduled orchestrator
+    // This endpoint only fetches and returns data
 
     res.json(structure);
   } catch (error) {
@@ -198,10 +198,8 @@ app.get('/api/enterprise/all-accounts', async (req, res) => {
     const month = req.query.month;
     const structure = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
 
-    // Automatically check thresholds
-    autoThresholdMonitor.autoCheckThresholds(structure).catch(err => {
-      console.error('[Auto Monitor] Background threshold check failed:', err.message);
-    });
+    // PHASE 1: Dashboard refresh no longer triggers notifications
+    // Notifications are now handled by scheduled orchestrator
 
     res.json(structure);
   } catch (error) {
@@ -361,7 +359,8 @@ app.post('/api/notifications/test-email', async (req, res) => {
 // Send test notification
 app.post('/api/notifications/send-test', async (req, res) => {
   try {
-    const result = await enhancedNotificationService.sendTestNotification();
+    // PHASE 1: Route through orchestrator
+    const result = await notificationOrchestrator.sendTestNotification();
     res.json(result);
   } catch (error) {
     console.error('Error sending test notification:', error.message);
@@ -451,7 +450,8 @@ app.delete('/api/notifications/history', async (req, res) => {
 // Manually trigger threshold monitoring
 app.post('/api/notifications/check-thresholds', async (req, res) => {
   try {
-    const result = await thresholdMonitor.monitorEnterpriseThresholds();
+    // PHASE 1: Route through orchestrator
+    const result = await notificationOrchestrator.runThresholdEvaluation();
     res.json(result);
   } catch (error) {
     console.error('Error checking thresholds:', error.message);
@@ -459,29 +459,32 @@ app.post('/api/notifications/check-thresholds', async (req, res) => {
   }
 });
 
-// Get auto-monitor cooldown status
+// Get orchestrator alert states (replaces cooldown-status)
 app.get('/api/notifications/cooldown-status', async (req, res) => {
   try {
-    const status = autoThresholdMonitor.getCooldownStatus();
+    // PHASE 1: Use orchestrator's smart alert states
+    const status = notificationOrchestrator.getAlertStates();
     res.json(status);
   } catch (error) {
-    console.error('Error fetching cooldown status:', error.message);
+    console.error('Error fetching alert status:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Reset cooldown for testing (useful for development)
+// Reset alert state for testing (useful for development)
 app.post('/api/notifications/reset-cooldown', async (req, res) => {
   try {
-    const { resourceType, severity } = req.body;
-    if (resourceType && severity) {
-      autoThresholdMonitor.resetCooldown(resourceType, severity);
-      res.json({ success: true, message: `Cooldown reset for ${resourceType} (${severity})` });
-    } else {
-      res.status(400).json({ error: 'resourceType and severity required' });
-    }
+    const { resourceType } = req.body;
+    // PHASE 1: Reset via orchestrator (no longer needs severity)
+    notificationOrchestrator.resetAlertState(resourceType || null);
+    res.json({
+      success: true,
+      message: resourceType
+        ? `Alert state reset for ${resourceType}`
+        : 'All alert states reset'
+    });
   } catch (error) {
-    console.error('Error resetting cooldown:', error.message);
+    console.error('Error resetting alert state:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -490,7 +493,8 @@ app.post('/api/notifications/reset-cooldown', async (req, res) => {
 app.post('/api/notifications/send-summary', async (req, res) => {
   try {
     const period = req.body.period || 'daily';
-    const result = await thresholdMonitor.sendScheduledSummary(period);
+    // PHASE 1: Route through orchestrator
+    const result = await notificationOrchestrator.sendScheduledSummary(period);
     res.json(result);
   } catch (error) {
     console.error('Error sending summary:', error.message);
@@ -544,12 +548,12 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Scheduled threshold monitoring (every hour)
+// PHASE 1: Scheduled threshold monitoring via orchestrator (every hour)
 cron.schedule('0 * * * *', async () => {
-  console.log('Running scheduled threshold check...');
+  console.log('[Scheduler] Running hourly threshold evaluation...');
   const config = await configService.getConfig();
   if (config.triggerSchedule.realtimeAlerts.enabled) {
-    await thresholdMonitor.monitorEnterpriseThresholds();
+    await notificationOrchestrator.runThresholdEvaluation();
   }
 });
 
