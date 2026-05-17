@@ -281,6 +281,18 @@ function NotificationManagementCenter() {
         current: account.resources.shieldSpaces,
         limit: config.thresholds.shieldSpaces?.limit,
         enabled: config.thresholds.shieldSpaces?.enabled
+      },
+      {
+        name: 'Data Add-ons',
+        current: account.resources.dataAddons,
+        limit: config.thresholds.dataAddons?.limit,
+        enabled: config.thresholds.dataAddons?.enabled
+      },
+      {
+        name: 'General Add-ons',
+        current: account.resources.generalAddons,
+        limit: config.thresholds.generalAddons?.limit,
+        enabled: config.thresholds.generalAddons?.enabled
       }
     ];
 

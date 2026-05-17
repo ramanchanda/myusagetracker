@@ -1,6 +1,6 @@
 /**
- * License Audit Summary Email Template
- * Consolidated email showing all triggered resource conditions per Enterprise Account
+ * Enterprise License Audit Email Template
+ * Professional notification for license compliance and capacity management
  */
 
 const baseTemplate = require('./baseTemplate');
@@ -20,24 +20,62 @@ function licenseAuditTemplate(data) {
 
   const totalConditions = warnings.length + criticals.length;
   const hasCritical = criticals.length > 0;
+  const hasOverage = resources.some(r => parseFloat(r.utilization) > 100);
 
-  // Format timestamp
-  const timestamp = new Date(generatedAt).toUTCString();
+  // Format timestamp professionally
+  const timestamp = new Date(generatedAt).toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
 
-  // Build resource table rows
+  // Determine severity level
+  const getSeverityLabel = () => {
+    if (hasOverage) return 'License Overage Detected';
+    if (hasCritical) return 'Critical License Threshold Exceeded';
+    if (warnings.length > 0) return 'License Capacity Warning';
+    return 'License Compliance Review';
+  };
+
+  // Build resource table rows with enhanced formatting
   const resourceRows = resources.map(resource => {
-    const statusColor = resource.severity === 'critical' ? '#d9534f' : '#f0ad4e';
-    const statusIcon = resource.severity === 'critical' ? '🚨' : '⚠️';
-    const statusText = resource.severity === 'critical' ? 'Critical' : 'Warning';
+    const utilization = parseFloat(resource.utilization);
+    let statusColor, statusBg, statusIcon, statusText;
+
+    if (utilization > 100) {
+      statusColor = '#7f1d1d';
+      statusBg = '#fef2f2';
+      statusIcon = '🔴';
+      statusText = 'Overage';
+    } else if (utilization >= 95) {
+      statusColor = '#991b1b';
+      statusBg = '#fee2e2';
+      statusIcon = '🚨';
+      statusText = 'Critical';
+    } else if (utilization >= 80) {
+      statusColor = '#92400e';
+      statusBg = '#fef3c7';
+      statusIcon = '⚠️';
+      statusText = 'Warning';
+    } else {
+      statusColor = '#065f46';
+      statusBg = '#d1fae5';
+      statusIcon = '✓';
+      statusText = 'Normal';
+    }
 
     return `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">${resource.resourceType}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${resource.currentUsage.toLocaleString()}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${resource.licensedCapacity.toLocaleString()}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right; font-weight: 600; color: ${statusColor};">${resource.utilization}%</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: center;">
-          <span style="background: ${statusColor}; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+        <td style="padding: 14px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 500; color: #111827;">${resource.resourceType}</td>
+        <td style="padding: 14px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-family: 'Courier New', monospace; color: #374151;">${resource.currentUsage.toLocaleString()}</td>
+        <td style="padding: 14px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-family: 'Courier New', monospace; color: #374151;">${resource.licensedCapacity.toLocaleString()}</td>
+        <td style="padding: 14px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 700; color: ${statusColor}; font-size: 15px;">${resource.utilization}%</td>
+        <td style="padding: 14px 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+          <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1px solid ${statusColor}20;">
             ${statusIcon} ${statusText}
           </span>
         </td>
@@ -46,57 +84,67 @@ function licenseAuditTemplate(data) {
   }).join('');
 
   const content = `
-    <h2 style="color: #333333; margin-top: 0;">Enterprise License Audit Summary</h2>
+    <!-- Executive Summary -->
+    <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 32px;">
+      <h2 style="color: #111827; margin: 0 0 8px 0; font-size: 20px; font-weight: 700;">Enterprise License Audit Report</h2>
+      <p style="font-size: 14px; color: #6b7280; margin: 0 0 20px 0; line-height: 1.5;">
+        <strong style="color: #374151;">Account:</strong> ${accountName}<br>
+        <strong style="color: #374151;">Report Generated:</strong> ${timestamp}
+      </p>
 
-    <p style="font-size: 14px; color: #666666; margin-bottom: 20px;">
-      <strong>Account:</strong> ${accountName}<br>
-      <strong>Generated:</strong> ${timestamp}
-    </p>
+      ${hasOverage || hasCritical ? `
+        <div style="padding: 16px 20px; background: ${hasOverage ? '#7f1d1d' : '#991b1b'}; border-radius: 6px; margin-top: 16px;">
+          <p style="margin: 0; color: #ffffff; font-weight: 700; font-size: 16px; display: flex; align-items: center;">
+            <span style="font-size: 24px; margin-right: 12px;">${hasOverage ? '🔴' : '🚨'}</span>
+            ${hasOverage ? 'License Overage - Immediate Action Required' : `${criticals.length} Critical Threshold${criticals.length > 1 ? 's' : ''} Exceeded`}
+          </p>
+          <p style="margin: 8px 0 0 36px; color: #fecaca; font-size: 13px;">
+            Resources are operating ${hasOverage ? 'beyond licensed capacity' : 'at critical utilization levels'}. Please review and take corrective action.
+          </p>
+        </div>
+      ` : ''}
+    </div>
 
-    ${hasCritical ? `
-      <div style="padding: 16px; background-color: #fee2e2; border-left: 4px solid #d9534f; border-radius: 6px; margin-bottom: 24px;">
-        <p style="margin: 0; color: #991b1b; font-weight: 600; font-size: 15px;">
-          🚨 ${criticals.length} Critical Condition${criticals.length > 1 ? 's' : ''} Detected - Immediate Action Required
-        </p>
-      </div>
-    ` : ''}
-
-    <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-      <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #475569;">Audit Overview</h3>
+    <!-- Audit Metrics -->
+    <div style="background: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 32px;">
+      <h3 style="margin: 0 0 18px 0; font-size: 16px; color: #111827; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px;">Audit Summary</h3>
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Accounts Scanned:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #0f172a;">${accountsScanned || 0}</td>
+          <td style="padding: 10px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Enterprise Accounts Scanned</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #111827; font-size: 16px;">${accountsScanned || 0}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Accounts Monitored:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #0f172a;">${accountsMonitored || 0}</td>
+          <td style="padding: 10px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Accounts with Monitoring Enabled</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #111827; font-size: 16px;">${accountsMonitored || 0}</td>
+        </tr>
+        ${accountsRestricted > 0 ? `
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Accounts with Access Restrictions</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #d97706; font-size: 16px;">${accountsRestricted}</td>
+        </tr>
+        ` : ''}
+        <tr style="border-top: 2px solid #e5e7eb;">
+          <td style="padding: 14px 0 10px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Warning Conditions (80-94%)</td>
+          <td style="padding: 14px 0 10px 0; text-align: right; font-weight: 700; color: #f59e0b; font-size: 16px;">${warnings.length}</td>
         </tr>
         <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Restricted Accounts:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #d97706;">${accountsRestricted || 0}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 14px; border-top: 1px solid #cbd5e1; padding-top: 12px;">Warning Conditions:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #f0ad4e; border-top: 1px solid #cbd5e1; padding-top: 12px;">${warnings.length}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Critical Conditions:</td>
-          <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #d9534f;">${criticals.length}</td>
+          <td style="padding: 10px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Critical Conditions (≥95%)</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #dc2626; font-size: 16px;">${criticals.length}</td>
         </tr>
       </table>
     </div>
 
-    <h3 style="color: #333333; font-size: 18px; margin-bottom: 16px;">Resource Utilization Details</h3>
+    <!-- Resource Utilization Table -->
+    <h3 style="color: #111827; font-size: 18px; font-weight: 700; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px;">License Utilization Analysis</h3>
 
-    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
       <thead>
-        <tr style="background: #f8fafc;">
-          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px;">Resource</th>
-          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px;">Current Usage</th>
-          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px;">Licensed Capacity</th>
-          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px;">Utilization</th>
-          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; font-size: 13px;">Status</th>
+        <tr style="background: linear-gradient(135deg, #111827 0%, #1f2937 100%);">
+          <th style="padding: 14px 12px; text-align: left; border-bottom: 2px solid #374151; font-weight: 700; color: #ffffff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Resource Type</th>
+          <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #374151; font-weight: 700; color: #ffffff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Current Usage</th>
+          <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #374151; font-weight: 700; color: #ffffff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Licensed Capacity</th>
+          <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #374151; font-weight: 700; color: #ffffff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Utilization</th>
+          <th style="padding: 14px 12px; text-align: center; border-bottom: 2px solid #374151; font-weight: 700; color: #ffffff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -104,40 +152,61 @@ function licenseAuditTemplate(data) {
       </tbody>
     </table>
 
-    <div style="padding: 20px; background-color: #e7f3ff; border-radius: 6px; border-left: 4px solid #0066cc; margin-top: 24px;">
-      <h4 style="margin: 0 0 10px 0; color: #0066cc;">
-        <strong>Recommended Actions</strong>
+    <!-- Action Items -->
+    <div style="padding: 24px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 8px; border-left: 4px solid #2563eb; margin-top: 32px; border: 1px solid #93c5fd;">
+      <h4 style="margin: 0 0 14px 0; color: #1e40af; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+        📋 Recommended Actions
       </h4>
-      <ul style="margin: 0; padding-left: 20px; color: #0066cc; font-size: 14px; line-height: 1.6;">
-        ${hasCritical ? '<li><strong>Critical:</strong> Review resources exceeding 95% capacity immediately</li>' : ''}
-        ${warnings.length > 0 ? '<li><strong>Warning:</strong> Monitor resources approaching license limits and plan capacity expansion</li>' : ''}
-        <li>Review license allocations and optimize resource distribution across teams</li>
-        <li>Consider license capacity planning for upcoming growth</li>
+      <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 14px; line-height: 1.8;">
+        ${hasOverage ? '<li><strong>Critical:</strong> Resources exceeding 100% capacity require immediate remediation or license expansion</li>' : ''}
+        ${hasCritical ? '<li><strong>High Priority:</strong> Review resources at or above 95% utilization to prevent service disruptions</li>' : ''}
+        ${warnings.length > 0 ? '<li><strong>Medium Priority:</strong> Monitor resources between 80-94% and plan for capacity scaling</li>' : ''}
+        <li>Conduct quarterly license optimization reviews to right-size allocations across teams</li>
+        <li>Implement capacity forecasting for projected growth over the next 90 days</li>
+        <li>Verify license entitlements align with current organizational structure</li>
       </ul>
     </div>
 
+    <!-- CTA Button -->
     ${dashboardUrl ? `
-      <div style="text-align: center; margin-top: 30px;">
-        <a href="${dashboardUrl}" class="button">
-          View License Dashboard →
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${dashboardUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25); text-transform: uppercase; letter-spacing: 0.5px;">
+          View Full License Dashboard →
         </a>
       </div>
     ` : ''}
 
-    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-      <p style="font-size: 13px; color: #666666; margin: 0;">
-        <strong>License Monitoring Configuration:</strong><br>
-        Warning Threshold: 80% • Critical Threshold: 95%<br>
-        Audit triggered by scheduled check or manual execution
+    <!-- Configuration Footer -->
+    <div style="margin-top: 32px; padding: 20px 24px; border-top: 2px solid #e5e7eb; background: #f9fafb; border-radius: 6px;">
+      <p style="font-size: 12px; color: #6b7280; margin: 0; line-height: 1.6;">
+        <strong style="color: #374151;">Monitoring Configuration:</strong><br>
+        Warning Threshold: 80% • Critical Threshold: 95% • Overage Threshold: >100%<br>
+        Audit Schedule: Automated scheduled checks and manual on-demand execution<br>
+        Notification Delivery: Rate-limited to prevent alert fatigue
       </p>
     </div>
   `;
 
-  const headerColor = hasCritical
-    ? 'linear-gradient(135deg, #d9534f 0%, #c9302c 100%)'
-    : 'linear-gradient(135deg, #f0ad4e 0%, #ec971f 100%)';
-  const headerIcon = hasCritical ? '🚨' : '📋';
-  const title = `${headerIcon} License Audit - ${criticals.length} Critical, ${warnings.length} Warning(s)`;
+  // Dynamic header based on severity
+  let headerColor, headerIcon, title;
+
+  if (hasOverage) {
+    headerColor = 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)';
+    headerIcon = '🔴';
+    title = `License Overage Alert - ${totalConditions} Issue${totalConditions > 1 ? 's' : ''} Detected`;
+  } else if (hasCritical) {
+    headerColor = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+    headerIcon = '🚨';
+    title = `License Audit - ${criticals.length} Critical, ${warnings.length} Warning${warnings.length > 1 ? 's' : ''}`;
+  } else if (warnings.length > 0) {
+    headerColor = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+    headerIcon = '⚠️';
+    title = `License Audit - ${warnings.length} Warning${warnings.length > 1 ? 's' : ''} Detected`;
+  } else {
+    headerColor = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+    headerIcon = '✅';
+    title = 'License Audit - All Resources Within Limits';
+  }
 
   return baseTemplate({
     title,
