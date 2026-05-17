@@ -235,8 +235,11 @@ function parseDailyUsage(dailyUsageData) {
     let privateSpaces = 0;
     let shieldSpaces = 0;
     if (day.teams && Array.isArray(day.teams)) {
-      // Note: Daily usage API doesn't provide per-team space breakdown
-      // We'll need to aggregate this differently
+      // Aggregate space counts from all teams for this day
+      day.teams.forEach(team => {
+        privateSpaces += Number(team.private_space || 0);
+        shieldSpaces += Number(team.shield_space || 0);
+      });
     }
 
     return {
