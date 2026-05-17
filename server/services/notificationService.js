@@ -51,7 +51,7 @@ async function sendTestNotification() {
       recipients: result.recipients
     };
   } catch (error) {
-    console.error(`${LOG_PREFIX} Test email failed:', error.message);
+    console.error(`${LOG_PREFIX} Test email failed:`, error.message);
     return {
       sent: false,
       reason: error.message
@@ -113,7 +113,7 @@ async function sendThresholdAlert(resourceType, currentValue, threshold, severit
       recipients: result.recipients
     };
   } catch (error) {
-    console.error(`${LOG_PREFIX} Threshold alert failed:', error.message);
+    console.error(`${LOG_PREFIX} Threshold alert failed:`, error.message);
     throw error;
   }
 }
@@ -172,7 +172,7 @@ async function sendUsageSummary(summaryData, period = 'daily') {
       recipients: result.recipients
     };
   } catch (error) {
-    console.error(`${LOG_PREFIX} Usage summary failed:', error.message);
+    console.error(`${LOG_PREFIX} Usage summary failed:`, error.message);
     throw error;
   }
 }
@@ -236,7 +236,7 @@ async function sendPDFReport(pdfBuffer, reportData) {
       recipients: result.recipients
     };
   } catch (error) {
-    console.error(`${LOG_PREFIX} PDF report delivery failed:', error.message);
+    console.error(`${LOG_PREFIX} PDF report delivery failed:`, error.message);
     throw error;
   }
 }

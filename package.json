@@ -8,7 +8,10 @@
     "dev": "nodemon server/index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
-    "heroku-postbuild": "cd client && npm install && npm run build"
+    "heroku-postbuild": "cd client && npm install && npm run build",
+    "lint:syntax": "node --check server/index.js && node --check server/services/*.js && node --check server/workers/*.js",
+    "validate": "npm run lint:syntax",
+    "predeploy": "npm run validate"
   },
   "engines": {
     "node": "20.x"
