@@ -858,6 +858,8 @@
   border-radius: 8px;
   padding: 14px;
   transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .nmc-enterprise-card:hover {
@@ -890,6 +892,20 @@
   font-size: 0.7rem;
   color: #64748b;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.nmc-license-overage-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.nmc-license-overage-item {
+  font-size: 0.7rem;
+  color: #991b1b;
+  font-weight: 700;
   white-space: nowrap;
 }
 

@@ -237,7 +237,7 @@ function NotificationManagementCenter() {
 
   const calculateAccountLicenseStatus = (account) => {
     if (!account.resources || !config) {
-      return { status: 'healthy', label: 'LICENSE HEALTHY', highestResource: null, highestPercentage: 0 };
+      return { status: 'healthy', label: 'LICENSE HEALTHY', overageResources: [], highestResource: null, highestPercentage: 0 };
     }
 
     const warningThreshold = (config.thresholds.dynoUnits?.warningPercentage || 80) / 100;
@@ -278,10 +278,20 @@ function NotificationManagementCenter() {
 
     let highestPercentage = 0;
     let highestResource = null;
+    let overageResources = [];
 
     resourceUtilizations.forEach(resource => {
       if (resource.enabled && resource.limit && resource.limit > 0) {
         const percentage = calculateUtilizationPercentage(resource.current, resource.limit);
+
+        // Track all resources over 100%
+        if (percentage > 1.0) {
+          overageResources.push({
+            name: resource.name,
+            percentage: percentage
+          });
+        }
+
         if (percentage > highestPercentage) {
           highestPercentage = percentage;
           highestResource = resource.name;
@@ -307,6 +317,7 @@ function NotificationManagementCenter() {
     return {
       status,
       label,
+      overageResources,
       highestResource,
       highestPercentage: (highestPercentage * 100).toFixed(1)
     };
@@ -543,11 +554,19 @@ function NotificationManagementCenter() {
                                 <span className={`nmc-badge nmc-badge-license-${licenseStatus.status}`}>
                                   {licenseStatus.label}
                                 </span>
-                                {licenseStatus.highestResource && (
+                                {licenseStatus.status === 'overage' && licenseStatus.overageResources.length > 0 ? (
+                                  <div className="nmc-license-overage-list">
+                                    {licenseStatus.overageResources.map((resource, idx) => (
+                                      <div key={idx} className="nmc-license-overage-item">
+                                        {resource.name}: &gt;{(resource.percentage * 100).toFixed(1)}%
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : licenseStatus.highestResource ? (
                                   <div className="nmc-license-highest">
                                     {licenseStatus.highestResource}: {licenseStatus.highestPercentage}%
                                   </div>
-                                )}
+                                ) : null}
                               </div>
                             )}
                           </div>
