@@ -522,6 +522,12 @@ async function runThresholdEvaluation(options = {}) {
     let cooldownActive = false;
     let cooldownRemainingSeconds = 0;
 
+    // Calculate alert counts BEFORE using them
+    const alertedCount = alerts.filter(a => a.alerted).length;
+    const suppressedCount = alerts.filter(a => !a.alerted).length;
+    const warningCount = alerts.filter(a => a.severity === 'warning').length;
+    const criticalCount = alerts.filter(a => a.severity === 'critical').length;
+
     // Calculate maximum cooldown from all suppressed alerts
     const suppressedAlerts = alerts.filter(a => !a.alerted && a.reason === 'Suppressed by smart alerting');
     if (suppressedAlerts.length > 0 && alertedCount === 0) {
@@ -557,8 +563,15 @@ async function runThresholdEvaluation(options = {}) {
         const result = await notificationService.sendLicenseAuditSummary(consolidatedPayload);
         consolidatedEmailSent = result.sent;
 
+        console.log(`${LOG_PREFIX} Consolidated email result:`, {
+          sent: result.sent,
+          provider: result.provider,
+          messageId: result.messageId
+        });
+
         // Log to notification history
-        await notificationHistory.addEvent({
+        console.log(`${LOG_PREFIX} Persisting notification to history...`);
+        const historyRecord = await notificationHistory.addEvent({
           accountName: consolidatedPayload.accountName,
           type: 'license-audit',
           severity: consolidatedPayload.criticals.length > 0 ? 'critical' : 'warning',
@@ -582,14 +595,22 @@ async function runThresholdEvaluation(options = {}) {
           }
         });
 
+        if (historyRecord) {
+          console.log(`${LOG_PREFIX} Notification history persisted (ID: ${historyRecord.id})`);
+        } else {
+          console.warn(`${LOG_PREFIX} Notification history persistence failed (continuing)`);
+        }
+
       } catch (error) {
         console.error(`${LOG_PREFIX} Failed to send consolidated license audit email:`, error.message);
+        console.error(`${LOG_PREFIX} Error stack:`, error.stack);
       }
     } else if (cooldownActive) {
       // Log suppressed audit to history
       console.log(`${LOG_PREFIX} License audit suppressed due to cooldown (${cooldownRemainingSeconds}s remaining)`);
+      console.log(`${LOG_PREFIX} Persisting suppressed audit to history...`);
 
-      await notificationHistory.addEvent({
+      const suppressedRecord = await notificationHistory.addEvent({
         accountName: 'Enterprise Accounts',
         type: 'license-audit',
         severity: 'info',
@@ -615,13 +636,16 @@ async function runThresholdEvaluation(options = {}) {
           cooldownRemainingSeconds
         }
       });
+
+      if (suppressedRecord) {
+        console.log(`${LOG_PREFIX} Suppressed audit persisted to history (ID: ${suppressedRecord.id})`);
+      } else {
+        console.warn(`${LOG_PREFIX} Failed to persist suppressed audit to history`);
+      }
     }
 
     const duration = Date.now() - startTime;
-    const alertedCount = alerts.filter(a => a.alerted).length;
-    const suppressedCount = alerts.filter(a => !a.alerted).length;
-    const warningCount = alerts.filter(a => a.severity === 'warning').length;
-    const criticalCount = alerts.filter(a => a.severity === 'critical').length;
+    // Alert counts already calculated above (moved to fix TDZ error)
 
     const logMessage = consolidatedEmailSent
       ? `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, 1 consolidated email sent`
@@ -648,12 +672,20 @@ async function runThresholdEvaluation(options = {}) {
     };
 
   } catch (error) {
-    console.error(`${LOG_PREFIX} License audit failed:`, error);
+    console.error(`${LOG_PREFIX} License audit failed:`, error.message);
+    console.error(`${LOG_PREFIX} Error stack:`, error.stack);
+
     return {
       checked: false,
-      error: 'Unable to aggregate enterprise usage metrics',
-      detail: error.message,
-      reason: 'Aggregation Failure'
+      success: false,
+      error: 'License audit failed',
+      details: error.message,
+      reason: 'Execution Failure',
+      accountsScanned: 0,
+      accountsMonitored: 0,
+      accountsRestricted: 0,
+      alertsTriggered: 0,
+      alertsSuppressed: 0
     };
   }
 }

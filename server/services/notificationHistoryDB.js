@@ -73,7 +73,7 @@ async function createNotificationRecord(event) {
     const result = await db.query(query, values);
     const record = result.rows[0];
 
-    console.log(`${LOG_PREFIX} Created notification record ID: ${record.id}`);
+    console.log(`${LOG_PREFIX} Created notification record ID: ${record.id} for ${accountName || 'unknown'}`);
 
     return {
       id: record.id,
@@ -82,6 +82,8 @@ async function createNotificationRecord(event) {
 
   } catch (error) {
     console.error(`${LOG_PREFIX} Failed to create notification record:`, error.message);
+    console.error(`${LOG_PREFIX} Query values:`, JSON.stringify(values, null, 2));
+    console.error(`${LOG_PREFIX} Error stack:`, error.stack);
     // Don't throw - allow notification delivery to continue even if DB fails
     return null;
   }
@@ -147,6 +149,14 @@ async function updateNotificationStatus(id, updates) {
  */
 async function addEvent(event) {
   try {
+    console.log(`${LOG_PREFIX} Inserting notification`, {
+      accountName: event.accountName,
+      type: event.type,
+      severity: event.severity,
+      subject: event.subject?.substring(0, 50),
+      status: event.status || 'sent'
+    });
+
     const record = await createNotificationRecord({
       accountId: event.accountId,
       accountName: event.accountName,
@@ -157,10 +167,17 @@ async function addEvent(event) {
       provider: event.provider,
       status: event.status || 'sent',
       resourceSummary: event.resourceSummary || {},
-      criticalCount: event.metadata?.criticalCount || 0,
-      warningCount: event.metadata?.warningCount || 0,
+      criticalCount: event.criticalCount || event.metadata?.criticalCount || 0,
+      warningCount: event.warningCount || event.metadata?.warningCount || 0,
       metadata: event.metadata || {}
     });
+
+    if (!record) {
+      console.error(`${LOG_PREFIX} Insert failed - createNotificationRecord returned null`);
+      return null;
+    }
+
+    console.log(`${LOG_PREFIX} Notification persisted successfully (ID: ${record.id})`);
 
     if (record && event.messageId) {
       await updateNotificationStatus(record.id, {
@@ -174,7 +191,8 @@ async function addEvent(event) {
     return record;
 
   } catch (error) {
-    console.error(`${LOG_PREFIX} Failed to add event:`, error.message);
+    console.error(`${LOG_PREFIX} Insert failed:`, error.message);
+    console.error(`${LOG_PREFIX} Stack trace:`, error.stack);
     return null;
   }
 }

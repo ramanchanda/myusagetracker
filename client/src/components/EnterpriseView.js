@@ -13,6 +13,7 @@ import {
 } from './HerokuIcons';
 import './EnterpriseView.css';
 import './DailyReportStyles.css';
+import { formatNumber, formatUsage } from '../utils/formatters';
 
 function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportViewChange }) {
   const [structure, setStructure] = useState(null);
@@ -255,11 +256,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     }
   };
 
-  const formatUsage = (value) => Number(value || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 3
-  });
-  const formatCount = (value) => Number(value || 0).toLocaleString();
+  // Removed local formatUsage and formatNumber - now using imported formatters
 
   // Get unique dates (always all dates)
   const uniqueDates = [...new Set((dailyReport?.dailyBreakdown || []).map(row => row.date))].sort();
@@ -717,7 +714,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
               <div className="trend-analysis-grid">
                 <div className="trend-analysis-card">
                   <span className="trend-label">Total Days</span>
-                  <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.totalDays)}</span>
+                  <span className="trend-value">{formatNumber(dailyReport.dailyUsage.summary.totalDays)}</span>
                 </div>
                 <div className="trend-analysis-card">
                   <span className="trend-label">Dyno Units (Total)</span>
@@ -733,11 +730,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                 </div>
                 <div className="trend-analysis-card">
                   <span className="trend-label">Private Spaces (Total)</span>
-                  <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</span>
+                  <span className="trend-value">{formatNumber(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</span>
                 </div>
                 <div className="trend-analysis-card">
                   <span className="trend-label">Shield Spaces (Total)</span>
-                  <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.periodTotals?.shieldSpaces || 0)}</span>
+                  <span className="trend-value">{formatNumber(dailyReport.dailyUsage.summary.periodTotals?.shieldSpaces || 0)}</span>
                 </div>
               </div>
 
@@ -758,8 +755,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dynoUnits || 0)}</strong></td>
                       <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dataAddons || 0)}</strong></td>
                       <td><strong>{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.generalAddons || 0)}</strong></td>
-                      <td><strong>{formatCount(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</strong></td>
-                      <td><strong>{formatCount(dailyReport.dailyUsage.summary.periodTotals?.shieldSpaces || 0)}</strong></td>
+                      <td><strong>{formatNumber(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</strong></td>
+                      <td><strong>{formatNumber(dailyReport.dailyUsage.summary.periodTotals?.shieldSpaces || 0)}</strong></td>
                     </tr>
                   </tbody>
                 </table>
@@ -797,15 +794,15 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     </tr>
                     <tr>
                       <td><strong>Private Spaces</strong></td>
-                      <td>{formatCount(dailyReport.dailyUsage.summary.privateSpaces?.avg || 0)}</td>
-                      <td>{formatCount(dailyReport.dailyUsage.summary.privateSpaces?.max || 0)}</td>
-                      <td>{formatCount(dailyReport.dailyUsage.summary.privateSpaces?.min || 0)}</td>
+                      <td>{formatNumber(dailyReport.dailyUsage.summary.privateSpaces?.avg || 0)}</td>
+                      <td>{formatNumber(dailyReport.dailyUsage.summary.privateSpaces?.max || 0)}</td>
+                      <td>{formatNumber(dailyReport.dailyUsage.summary.privateSpaces?.min || 0)}</td>
                     </tr>
                     <tr>
                       <td><strong>Shield Spaces</strong></td>
-                      <td>{formatCount(dailyReport.dailyUsage.summary.shieldSpaces?.avg || 0)}</td>
-                      <td>{formatCount(dailyReport.dailyUsage.summary.shieldSpaces?.max || 0)}</td>
-                      <td>{formatCount(dailyReport.dailyUsage.summary.shieldSpaces?.min || 0)}</td>
+                      <td>{formatNumber(dailyReport.dailyUsage.summary.shieldSpaces?.avg || 0)}</td>
+                      <td>{formatNumber(dailyReport.dailyUsage.summary.shieldSpaces?.max || 0)}</td>
+                      <td>{formatNumber(dailyReport.dailyUsage.summary.shieldSpaces?.min || 0)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -848,8 +845,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                         <td>{formatUsage(day.dynoCost)}</td>
                         <td>{formatUsage(day.dataCost)}</td>
                         <td>{formatUsage(day.otherCost)}</td>
-                        <td>{formatCount(dailyReport.spaceSummary?.privateSpaces)}</td>
-                        <td>{formatCount(dailyReport.spaceSummary?.shieldSpaces)}</td>
+                        <td>{formatNumber(dailyReport.spaceSummary?.privateSpaces)}</td>
+                        <td>{formatNumber(dailyReport.spaceSummary?.shieldSpaces)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1019,14 +1016,14 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
             <div className="summary-card">
               <EnterpriseIcon className="summary-icon-svg" />
               <div className="summary-content">
-                <div className="summary-value">{formatCount(summaryData.totalPrivateSpaces)}</div>
+                <div className="summary-value">{formatNumber(summaryData.totalPrivateSpaces)}</div>
                 <div className="summary-label">Private Spaces</div>
               </div>
             </div>
             <div className="summary-card">
               <EnterpriseIcon className="summary-icon-svg" />
               <div className="summary-content">
-                <div className="summary-value">{formatCount(summaryData.totalShieldSpaces)}</div>
+                <div className="summary-value">{formatNumber(summaryData.totalShieldSpaces)}</div>
                 <div className="summary-label">Shield Spaces</div>
               </div>
             </div>
@@ -1132,11 +1129,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       </div>
                     <div className="stat-row">
                       <span className="stat-label"><EnterpriseIcon className="inline-stat-icon" /> Private Spaces</span>
-                      <span className="stat-value">{formatCount(resources.privateSpaces)}</span>
+                      <span className="stat-value">{formatNumber(resources.privateSpaces)}</span>
                     </div>
                     <div className="stat-row">
                       <span className="stat-label"><EnterpriseIcon className="inline-stat-icon" /> Shield Spaces</span>
-                      <span className="stat-value">{formatCount(resources.shieldSpaces)}</span>
+                      <span className="stat-value">{formatNumber(resources.shieldSpaces)}</span>
                     </div>
                       <div className="stat-row last">
                         <span className="stat-label"><AddonsIcon className="inline-stat-icon" /> General Add-ons Usage</span>
@@ -1170,11 +1167,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                           </div>
                           <div className="team-detail-item">
                             <span className="detail-label">Private Spaces</span>
-                            <span className="detail-value">{formatCount(resources.privateSpaces)}</span>
+                            <span className="detail-value">{formatNumber(resources.privateSpaces)}</span>
                           </div>
                           <div className="team-detail-item">
                             <span className="detail-label">Shield Spaces</span>
-                            <span className="detail-value">{formatCount(resources.shieldSpaces)}</span>
+                            <span className="detail-value">{formatNumber(resources.shieldSpaces)}</span>
                           </div>
                         </div>
 

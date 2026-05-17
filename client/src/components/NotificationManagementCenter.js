@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './NotificationManagementCenter.css';
+import './NotificationManagementCenter-v2.css';
+import { formatNumber, formatUsage } from '../utils/formatters';
 
 function NotificationManagementCenter() {
   const [config, setConfig] = useState(null);
@@ -372,25 +373,25 @@ function NotificationManagementCenter() {
                             <div className="nmc-metric">
                               <span className="nmc-metric-label">Dyno Units</span>
                               <span className="nmc-metric-value">
-                                {(account.resources.dynoUnits || 0).toLocaleString()}
+                                {formatUsage(account.resources.dynoUnits)}
                               </span>
                             </div>
                             <div className="nmc-metric">
                               <span className="nmc-metric-label">Connect Rows</span>
                               <span className="nmc-metric-value">
-                                {(account.resources.connectRows || 0).toLocaleString()}
+                                {formatUsage(account.resources.connectRows)}
                               </span>
                             </div>
                             <div className="nmc-metric">
                               <span className="nmc-metric-label">Data Add-ons</span>
                               <span className="nmc-metric-value">
-                                {account.resources.dataAddons || 0}
+                                {formatNumber(account.resources.dataAddons)}
                               </span>
                             </div>
                             <div className="nmc-metric">
                               <span className="nmc-metric-label">General Add-ons</span>
                               <span className="nmc-metric-value">
-                                {account.resources.generalAddons || 0}
+                                {formatNumber(account.resources.generalAddons)}
                               </span>
                             </div>
                           </div>
@@ -441,7 +442,7 @@ function NotificationManagementCenter() {
                           {threshold.enabled ? 'Monitored' : 'Off'}
                         </span>
                       </div>
-                      <div className="nmc-resource-limit">{threshold.limit.toLocaleString()}</div>
+                      <div className="nmc-resource-limit">{formatUsage(threshold.limit)}</div>
                       <div className="nmc-resource-meta">
                         Alert: {threshold.warningPercentage}% / {threshold.criticalPercentage}%
                       </div>
