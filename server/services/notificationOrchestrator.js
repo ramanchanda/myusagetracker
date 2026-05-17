@@ -537,6 +537,7 @@ async function runThresholdEvaluation(options = {}) {
 
         // Log to notification history
         await notificationHistory.addEvent({
+          accountName: consolidatedPayload.accountName,
           type: 'license-audit',
           severity: consolidatedPayload.criticals.length > 0 ? 'critical' : 'warning',
           resourceType: 'consolidated',
@@ -546,9 +547,15 @@ async function runThresholdEvaluation(options = {}) {
           status: result.sent ? 'sent' : 'failed',
           messageId: result.messageId,
           error: result.error || null,
+          resourceSummary: {
+            resources: resourceConditions
+          },
+          criticalCount: consolidatedPayload.criticals.length,
+          warningCount: consolidatedPayload.warnings.length,
           metadata: {
             accountsScanned: totalAccounts,
             accountsMonitored: monitoredAccounts,
+            accountsRestricted: restrictedAccounts,
             resourcesAlerted: resourceConditions.length
           }
         });
