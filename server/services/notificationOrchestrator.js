@@ -517,6 +517,27 @@ async function runThresholdEvaluation(options = {}) {
       }
     }
 
+    // Determine cooldown status for UI feedback
+    let consolidatedEmailSent = false;
+    let cooldownActive = false;
+    let cooldownRemainingSeconds = 0;
+
+    // Calculate maximum cooldown from all suppressed alerts
+    const suppressedAlerts = alerts.filter(a => !a.alerted && a.reason === 'Suppressed by smart alerting');
+    if (suppressedAlerts.length > 0 && alertedCount === 0) {
+      cooldownActive = true;
+      // Get cooldown info from alert states
+      const thresholdCooldown = config.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+      suppressedAlerts.forEach(alert => {
+        const state = getAlertState(alert.resourceType);
+        if (state.lastAlertTime) {
+          const elapsed = Date.now() - state.lastAlertTime;
+          const remaining = Math.max(0, Math.round((thresholdCooldown - elapsed) / 1000));
+          cooldownRemainingSeconds = Math.max(cooldownRemainingSeconds, remaining);
+        }
+      });
+    }
+
     // Send one consolidated license audit email if there are any triggered conditions
     if (resourceConditions.length > 0) {
       try {
@@ -534,6 +555,7 @@ async function runThresholdEvaluation(options = {}) {
         };
 
         const result = await notificationService.sendLicenseAuditSummary(consolidatedPayload);
+        consolidatedEmailSent = result.sent;
 
         // Log to notification history
         await notificationHistory.addEvent({
@@ -563,6 +585,36 @@ async function runThresholdEvaluation(options = {}) {
       } catch (error) {
         console.error(`${LOG_PREFIX} Failed to send consolidated license audit email:`, error.message);
       }
+    } else if (cooldownActive) {
+      // Log suppressed audit to history
+      console.log(`${LOG_PREFIX} License audit suppressed due to cooldown (${cooldownRemainingSeconds}s remaining)`);
+
+      await notificationHistory.addEvent({
+        accountName: 'Enterprise Accounts',
+        type: 'license-audit',
+        severity: 'info',
+        resourceType: 'consolidated',
+        recipients: [],
+        subject: '[License Audit] Suppressed (Cooldown Active)',
+        provider: null,
+        status: 'suppressed',
+        messageId: null,
+        error: null,
+        resourceSummary: {
+          suppressedAlerts: suppressedAlerts.map(a => ({
+            resourceType: a.resourceType,
+            reason: a.reason
+          }))
+        },
+        criticalCount: 0,
+        warningCount: 0,
+        metadata: {
+          accountsScanned: totalAccounts,
+          accountsMonitored: monitoredAccounts,
+          accountsRestricted: restrictedAccounts,
+          cooldownRemainingSeconds
+        }
+      });
     }
 
     const duration = Date.now() - startTime;
@@ -571,7 +623,11 @@ async function runThresholdEvaluation(options = {}) {
     const warningCount = alerts.filter(a => a.severity === 'warning').length;
     const criticalCount = alerts.filter(a => a.severity === 'critical').length;
 
-    console.log(`${LOG_PREFIX} License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, 1 consolidated email sent`);
+    const logMessage = consolidatedEmailSent
+      ? `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, 1 consolidated email sent`
+      : `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, no email sent (cooldown active)`;
+
+    console.log(`${LOG_PREFIX} ${logMessage}`);
 
     return {
       checked: true,
@@ -584,6 +640,10 @@ async function runThresholdEvaluation(options = {}) {
       accountsMonitored: monitoredAccounts,
       warningConditions: warningCount,
       criticalConditions: criticalCount,
+      consolidatedEmailSent,
+      cooldownActive,
+      cooldownRemainingMinutes: Math.ceil(cooldownRemainingSeconds / 60),
+      cooldownRemainingSeconds,
       alerts
     };
 

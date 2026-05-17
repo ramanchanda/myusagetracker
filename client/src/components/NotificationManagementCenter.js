@@ -104,13 +104,27 @@ function NotificationManagementCenter() {
       const result = await axios.post('/api/notifications/check-thresholds');
 
       if (result.data.checked) {
-        // Success - show detailed summary
-        const summary = [
-          `${result.data.accountsScanned || 0} account(s) scanned`,
-          `${result.data.warningConditions || 0} warning(s)`,
-          `${result.data.criticalConditions || 0} critical condition(s)`
-        ].join(' • ');
-        showMessage('success', `License audit complete • ${summary}`);
+        // Check if cooldown is active
+        if (result.data.cooldownActive && !result.data.consolidatedEmailSent) {
+          // Cooldown suppression
+          const cooldownMin = result.data.cooldownRemainingMinutes || 0;
+          const summary = [
+            `${result.data.accountsScanned || 0} account(s) scanned`,
+            `${result.data.alertsSuppressed || 0} alert(s) suppressed (cooldown)`,
+            `Next alert window in ${cooldownMin} minute(s)`
+          ].join(' • ');
+          showMessage('warning', `License audit completed (cooldown active) • ${summary}`);
+        } else {
+          // Success - show detailed summary
+          const emailStatus = result.data.consolidatedEmailSent ? 'Email sent' : 'No alerts triggered';
+          const summary = [
+            `${result.data.accountsScanned || 0} account(s) scanned`,
+            `${result.data.warningConditions || 0} warning(s)`,
+            `${result.data.criticalConditions || 0} critical condition(s)`,
+            emailStatus
+          ].join(' • ');
+          showMessage('success', `License audit complete • ${summary}`);
+        }
         fetchData(); // Refresh activity
       } else {
         // Failed audit - show contextual message
