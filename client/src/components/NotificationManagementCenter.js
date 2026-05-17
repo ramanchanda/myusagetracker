@@ -15,14 +15,37 @@ function NotificationManagementCenter() {
   const [enterpriseLoading, setEnterpriseLoading] = useState(false);
   const [cooldownState, setCooldownState] = useState({
     active: false,
-    remainingMinutes: 0
+    remainingMinutes: 0,
+    remainingSeconds: 0
   });
+  const [lastAuditTime, setLastAuditTime] = useState(null);
 
   useEffect(() => {
     fetchData();
     fetchEnterpriseUsage();
+    fetchCooldownStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Live countdown timer
+  useEffect(() => {
+    if (!cooldownState.active || cooldownState.remainingSeconds <= 0) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCooldownState(prev => {
+        const newRemaining = Math.max(0, prev.remainingSeconds - 1);
+        return {
+          active: newRemaining > 0,
+          remainingMinutes: Math.ceil(newRemaining / 60),
+          remainingSeconds: newRemaining
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldownState.active, cooldownState.remainingSeconds]);
 
   const fetchData = async () => {
     try {
@@ -81,6 +104,34 @@ function NotificationManagementCenter() {
     }
   };
 
+  const fetchCooldownStatus = async () => {
+    try {
+      const response = await axios.get('/api/notifications/cooldown-status');
+
+      // Check if any resource has active cooldown
+      let maxCooldown = 0;
+      let hasCooldown = false;
+
+      Object.values(response.data).forEach(state => {
+        if (state.cooldownRemaining > 0) {
+          hasCooldown = true;
+          maxCooldown = Math.max(maxCooldown, state.cooldownRemaining);
+        }
+      });
+
+      if (hasCooldown) {
+        setCooldownState({
+          active: true,
+          remainingMinutes: Math.ceil(maxCooldown / 60),
+          remainingSeconds: maxCooldown
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching cooldown status:', error);
+      // Fail silently - assume no cooldown if can't fetch
+    }
+  };
+
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
@@ -104,15 +155,25 @@ function NotificationManagementCenter() {
   };
 
   const checkThresholds = async () => {
+    // Don't allow audit if cooldown is active
+    if (cooldownState.active) {
+      showMessage('warning', `Cooldown active. Next audit available in ${formatCooldownTime(cooldownState.remainingSeconds)}`);
+      return;
+    }
+
     try {
-      setTesting(true); // Reuse testing state for audit button
+      setTesting(true);
+      setLastAuditTime(new Date());
+
       const result = await axios.post('/api/notifications/check-thresholds');
 
       if (result.data.checked) {
-        // Update cooldown state
+        // Update cooldown state with seconds
+        const cooldownSeconds = result.data.cooldownRemainingSeconds || 0;
         setCooldownState({
           active: result.data.cooldownActive || false,
-          remainingMinutes: result.data.cooldownRemainingMinutes || 0
+          remainingMinutes: Math.ceil(cooldownSeconds / 60),
+          remainingSeconds: cooldownSeconds
         });
 
         // Check if cooldown is active
@@ -155,6 +216,15 @@ function NotificationManagementCenter() {
     }
   };
 
+  const formatCooldownTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) {
+      return `${mins}m ${secs}s`;
+    }
+    return `${secs}s`;
+  };
+
   if (loading) {
     return (
       <div className="nmc-container">
@@ -190,6 +260,11 @@ function NotificationManagementCenter() {
           <p className="nmc-subtitle">Enterprise alert configuration and monitoring</p>
         </div>
         <div className="nmc-header-actions">
+          {lastAuditTime && (
+            <div className="nmc-last-audit">
+              Last audit: {lastAuditTime.toLocaleTimeString()}
+            </div>
+          )}
           <button
             onClick={testEmail}
             disabled={testing || !config.emailConfig.enabled}
@@ -200,17 +275,32 @@ function NotificationManagementCenter() {
           <button
             onClick={checkThresholds}
             disabled={testing || cooldownState.active}
-            className="nmc-btn nmc-btn-primary nmc-btn-sm"
+            className={`nmc-btn nmc-btn-primary nmc-btn-sm ${cooldownState.active ? 'nmc-btn-cooldown' : ''}`}
             title={
               cooldownState.active
-                ? `License audit cooldown active. Next audit available in ${cooldownState.remainingMinutes} minute(s).`
+                ? `License audit cooldown active. Next audit available in ${formatCooldownTime(cooldownState.remainingSeconds)}.`
                 : 'Run license audit across all enterprise accounts'
             }
           >
-            {testing ? 'Running Audit...' : cooldownState.active ? 'Cooldown Active' : 'Run License Audit'}
+            {testing
+              ? 'Running Audit...'
+              : cooldownState.active
+                ? `Cooldown (${formatCooldownTime(cooldownState.remainingSeconds)})`
+                : 'Run License Audit'}
           </button>
         </div>
       </div>
+
+      {/* Cooldown Info Banner */}
+      {cooldownState.active && (
+        <div className="nmc-cooldown-info">
+          <span className="nmc-cooldown-icon">⏱</span>
+          <span>
+            License audits are rate-limited to prevent duplicate alerts.
+            Next audit available in <strong>{formatCooldownTime(cooldownState.remainingSeconds)}</strong>.
+          </span>
+        </div>
+      )}
 
       {/* Message Banner */}
       {message && (

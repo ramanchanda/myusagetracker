@@ -36,7 +36,15 @@
 
 .nmc-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  align-items: center;
+}
+
+.nmc-last-audit {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* ========================================================================
@@ -94,6 +102,44 @@
   background: #cbd5e1;
   border-color: #cbd5e1;
   color: #64748b;
+}
+
+.nmc-btn-cooldown {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  cursor: not-allowed;
+  animation: cooldownPulse 2s ease-in-out infinite;
+}
+
+@keyframes cooldownPulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ========================================================================
+   Cooldown Info Banner
+   ======================================================================== */
+
+.nmc-cooldown-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #475569;
+  border-left: 3px solid #64748b;
+}
+
+.nmc-cooldown-icon {
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 /* ========================================================================
