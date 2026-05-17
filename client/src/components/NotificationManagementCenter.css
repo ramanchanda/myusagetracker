@@ -1,0 +1,833 @@
+/* ========================================================================
+   Notification Management Center - Enterprise Grade
+   ======================================================================== */
+
+.nmc-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+}
+
+/* ========================================================================
+   Header
+   ======================================================================== */
+
+.nmc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.nmc-header-content h1 {
+  margin: 0 0 4px 0;
+  color: #0f172a;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.nmc-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.nmc-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ========================================================================
+   Buttons
+   ======================================================================== */
+
+.nmc-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nmc-btn-sm {
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+}
+
+.nmc-btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.nmc-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.nmc-btn-secondary {
+  background: white;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
+}
+
+.nmc-btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.nmc-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ========================================================================
+   Message Banner
+   ======================================================================== */
+
+.nmc-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nmc-message-success {
+  background: #d1fae5;
+  color: #065f46;
+  border-left: 3px solid #10b981;
+}
+
+.nmc-message-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 3px solid #ef4444;
+}
+
+.nmc-message-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 3px solid #f59e0b;
+}
+
+.nmc-message-icon {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* ========================================================================
+   KPI Cards (Overview)
+   ======================================================================== */
+
+.nmc-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.nmc-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: box-shadow 0.2s;
+}
+
+.nmc-kpi-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.nmc-kpi-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.nmc-kpi-icon-email {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.nmc-kpi-icon-threshold {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.nmc-kpi-icon-schedule {
+  background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+}
+
+.nmc-kpi-icon-stats {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.nmc-kpi-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nmc-kpi-label {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.nmc-kpi-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nmc-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.nmc-status-dot.active {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.nmc-status-dot.inactive {
+  background: #94a3b8;
+}
+
+/* ========================================================================
+   Tabs
+   ======================================================================== */
+
+.nmc-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 10;
+  padding: 8px 0;
+}
+
+.nmc-tab {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+  border-radius: 6px 6px 0 0;
+}
+
+.nmc-tab:hover {
+  color: #4f46e5;
+  background: #f1f5f9;
+}
+
+.nmc-tab.active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+  background: white;
+}
+
+/* ========================================================================
+   Content Sections
+   ======================================================================== */
+
+.nmc-content {
+  min-height: 400px;
+}
+
+.nmc-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.nmc-section-title {
+  margin: 0 0 6px 0;
+  color: #0f172a;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.nmc-section-desc {
+  margin: 0 0 16px 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* ========================================================================
+   Threshold Summary Banners (Compact)
+   ======================================================================== */
+
+.nmc-threshold-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.nmc-threshold-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid;
+}
+
+.nmc-threshold-banner.warning {
+  background: #fffbeb;
+  border-color: #fbbf24;
+}
+
+.nmc-threshold-banner.critical {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.nmc-threshold-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.nmc-threshold-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.nmc-threshold-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+/* ========================================================================
+   Resource Grid (Compact)
+   ======================================================================== */
+
+.nmc-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.nmc-resource-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
+}
+
+.nmc-resource-card:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.nmc-resource-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 6px;
+}
+
+.nmc-resource-name {
+  font-size: 0.8125rem;
+  color: #475569;
+  font-weight: 600;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.nmc-resource-limit {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.nmc-resource-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   Badges
+   ======================================================================== */
+
+.nmc-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.nmc-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-badge.inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ========================================================================
+   Recent Activity
+   ======================================================================== */
+
+.nmc-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nmc-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.nmc-activity-item:hover {
+  background: white;
+}
+
+.nmc-activity-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nmc-activity-icon.sent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-activity-icon.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.nmc-activity-icon.queued {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nmc-activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nmc-activity-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nmc-activity-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.nmc-activity-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.nmc-activity-status.sent {
+  color: #059669;
+}
+
+.nmc-activity-status.failed {
+  color: #dc2626;
+}
+
+.nmc-activity-status.queued {
+  color: #d97706;
+}
+
+/* ========================================================================
+   Form Fields
+   ======================================================================== */
+
+.nmc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.nmc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nmc-field-full {
+  grid-column: 1 / -1;
+}
+
+.nmc-field label {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.nmc-field-value {
+  font-size: 0.9375rem;
+  color: #0f172a;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.nmc-field-empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.nmc-recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nmc-recipient-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #dbeafe;
+  color: #075985;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   Info Banner
+   ======================================================================== */
+
+.nmc-info-banner {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 0.8125rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.nmc-info-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.nmc-info-banner code {
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #334155;
+}
+
+/* ========================================================================
+   Threshold Cards
+   ======================================================================== */
+
+.nmc-threshold-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.nmc-threshold-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  transition: all 0.2s;
+}
+
+.nmc-threshold-card:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.nmc-threshold-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.nmc-threshold-card-header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.nmc-threshold-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nmc-threshold-limit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nmc-threshold-limit-label {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.nmc-threshold-limit-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.nmc-threshold-percentages {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   Schedule Cards
+   ======================================================================== */
+
+.nmc-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.nmc-schedule-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  transition: all 0.2s;
+}
+
+.nmc-schedule-card:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.nmc-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nmc-schedule-header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.nmc-schedule-detail {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   Loading & Error States
+   ======================================================================== */
+
+.nmc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+}
+
+.nmc-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.nmc-loading p {
+  color: #64748b;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.nmc-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 12px;
+}
+
+.nmc-error-icon {
+  font-size: 3rem;
+}
+
+.nmc-error h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.nmc-error p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9375rem;
+}
+
+/* ========================================================================
+   Responsive
+   ======================================================================== */
+
+@media (max-width: 768px) {
+  .nmc-container {
+    padding: 12px 16px 32px;
+  }
+
+  .nmc-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nmc-header-actions {
+    width: 100%;
+  }
+
+  .nmc-header-actions .nmc-btn {
+    flex: 1;
+  }
+
+  .nmc-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nmc-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nmc-threshold-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .nmc-resource-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nmc-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nmc-threshold-cards,
+  .nmc-schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .nmc-resource-grid {
+    grid-template-columns: 1fr;
+  }
+}

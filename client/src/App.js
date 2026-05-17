@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import EnterpriseView from './components/EnterpriseView';
-import NotificationConfig from './components/NotificationConfig';
+import NotificationManagementCenter from './components/NotificationManagementCenter';
 import PrintableDashboard from './components/PrintableDashboard';
 import EnterpriseReport from './components/reports/EnterpriseReport';
 import './App.css';
@@ -94,7 +94,7 @@ function AppContent() {
             />
           }
         />
-        <Route path="/notifications" element={<NotificationConfig />} />
+        <Route path="/notifications" element={<NotificationManagementCenter />} />
         <Route path="/report/print/:accountEmail" element={<PrintableDashboard />} />
         <Route path="/report/template/monthly/:accountEmail" element={<EnterpriseReport />} />
       </Routes>
