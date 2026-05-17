@@ -724,8 +724,12 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dynoUnits || 0)}</span>
                 </div>
                 <div className="trend-analysis-card">
-                  <span className="trend-label">Connect Rows (Total)</span>
-                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.connectRows || 0)}</span>
+                  <span className="trend-label">Data Add-ons (Total)</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dataAddons || 0)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">General Add-ons (Total)</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.generalAddons || 0)}</span>
                 </div>
                 <div className="trend-analysis-card">
                   <span className="trend-label">Private Spaces (Total)</span>
