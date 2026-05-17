@@ -45,17 +45,27 @@ function NotificationManagementCenter() {
       const currentMonth = new Date().toISOString().slice(0, 7);
       const response = await axios.get(`/api/enterprise/all-accounts?month=${currentMonth}`);
 
-      if (response.data && Array.isArray(response.data.accounts)) {
-        setEnterpriseAccounts(response.data.accounts);
-      } else if (response.data && response.data.resources) {
-        // Single account response format
-        setEnterpriseAccounts([{
-          accountEmail: response.data.accountEmail || 'Primary Account',
-          accountName: response.data.accountName || 'Primary Account',
-          billingAccess: true,
-          resources: response.data.resources,
-          totalCost: response.data.totalCost
-        }]);
+      if (response.data && Array.isArray(response.data.enterpriseAccounts)) {
+        // Transform the API response to the format expected by UI
+        const transformedAccounts = response.data.enterpriseAccounts.map(account => ({
+          accountEmail: account.enterpriseAccount?.name || 'Unknown Account',
+          accountName: account.enterpriseAccount?.name || 'Unknown Account',
+          accountId: account.enterpriseAccount?.id,
+          billingAccess: account.enterpriseAccount?.has_billing_access !== false,
+          billingStatus: account.enterpriseAccount?.billing_status,
+          billingError: account.enterpriseAccount?.billing_error,
+          resources: {
+            enterpriseTeams: account.summary?.totalActiveTeams || 0,
+            privateSpaces: account.summary?.totalPrivateSpaces || 0,
+            shieldSpaces: account.summary?.totalShieldSpaces || 0,
+            dynoUnits: account.summary?.totalDynos || 0,
+            connectRows: account.summary?.totalConnect || 0,
+            dataAddons: account.summary?.totalDataAddons || 0,
+            generalAddons: account.summary?.totalOtherAddons || 0
+          },
+          totalCost: account.summary?.totalMonthlyCost || 0
+        }));
+        setEnterpriseAccounts(transformedAccounts);
       }
     } catch (error) {
       console.error('Error fetching enterprise usage:', error);
