@@ -102,13 +102,13 @@ function NotificationManagementCenter() {
     try {
       const result = await axios.post('/api/notifications/check-thresholds');
       if (result.data.checked) {
-        showMessage('success', `Threshold check complete • ${result.data.alertsTriggered} alert(s) triggered`);
+        showMessage('success', `License audit complete • ${result.data.alertsTriggered} alert(s) triggered`);
         fetchData(); // Refresh activity
       } else {
         showMessage('warning', result.data.reason || result.data.error);
       }
     } catch (error) {
-      showMessage('error', 'Threshold check failed');
+      showMessage('error', 'License audit failed');
     }
   };
 
@@ -158,7 +158,7 @@ function NotificationManagementCenter() {
             onClick={checkThresholds}
             className="nmc-btn nmc-btn-primary nmc-btn-sm"
           >
-            Run Threshold Check
+            Run License Audit
           </button>
         </div>
       </div>
@@ -190,9 +190,9 @@ function NotificationManagementCenter() {
           </div>
 
           <div className="nmc-kpi-card">
-            <div className="nmc-kpi-icon nmc-kpi-icon-threshold">⚠️</div>
+            <div className="nmc-kpi-icon nmc-kpi-icon-threshold">📋</div>
             <div className="nmc-kpi-content">
-              <div className="nmc-kpi-label">Active Thresholds</div>
+              <div className="nmc-kpi-label">Monitored Licenses</div>
               <div className="nmc-kpi-value">{enabledCount} / {Object.keys(config.thresholds).length}</div>
             </div>
           </div>
@@ -232,10 +232,10 @@ function NotificationManagementCenter() {
           Email Setup
         </button>
         <button
-          className={`nmc-tab ${activeTab === 'thresholds' ? 'active' : ''}`}
-          onClick={() => setActiveTab('thresholds')}
+          className={`nmc-tab ${activeTab === 'licenses' ? 'active' : ''}`}
+          onClick={() => setActiveTab('licenses')}
         >
-          Thresholds
+          Licenses
         </button>
         <button
           className={`nmc-tab ${activeTab === 'schedule' ? 'active' : ''}`}
@@ -378,30 +378,30 @@ function NotificationManagementCenter() {
               )}
             </div>
 
-            {/* Alert Thresholds Summary */}
+            {/* License Utilization Summary */}
             <div className="nmc-section">
-              <h2 className="nmc-section-title">Alert Thresholds</h2>
+              <h2 className="nmc-section-title">License Utilization</h2>
               <div className="nmc-threshold-summary">
                 <div className="nmc-threshold-banner warning">
                   <span className="nmc-threshold-icon">⚠️</span>
                   <div>
-                    <div className="nmc-threshold-label">Warning Level</div>
+                    <div className="nmc-threshold-label">Warning Utilization</div>
                     <div className="nmc-threshold-value">{config.thresholds.dynoUnits?.warningPercentage || 80}%</div>
                   </div>
                 </div>
                 <div className="nmc-threshold-banner critical">
                   <span className="nmc-threshold-icon">🚨</span>
                   <div>
-                    <div className="nmc-threshold-label">Critical Level</div>
+                    <div className="nmc-threshold-label">Critical Utilization</div>
                     <div className="nmc-threshold-value">{config.thresholds.dynoUnits?.criticalPercentage || 95}%</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Resource Grid */}
+            {/* License Capacity Grid */}
             <div className="nmc-section">
-              <h2 className="nmc-section-title">Resource Limits</h2>
+              <h2 className="nmc-section-title">Licensed Resources</h2>
               <div className="nmc-resource-grid">
                 {Object.entries(config.thresholds).map(([key, threshold]) => {
                   const resourceLabel = key.replace(/([A-Z])/g, ' $1').trim();
@@ -410,12 +410,12 @@ function NotificationManagementCenter() {
                       <div className="nmc-resource-header">
                         <span className="nmc-resource-name">{resourceLabel}</span>
                         <span className={`nmc-badge ${threshold.enabled ? 'active' : 'inactive'}`}>
-                          {threshold.enabled ? 'On' : 'Off'}
+                          {threshold.enabled ? 'Monitored' : 'Off'}
                         </span>
                       </div>
                       <div className="nmc-resource-limit">{threshold.limit.toLocaleString()}</div>
                       <div className="nmc-resource-meta">
-                        {threshold.warningPercentage}% / {threshold.criticalPercentage}%
+                        Alert: {threshold.warningPercentage}% / {threshold.criticalPercentage}%
                       </div>
                     </div>
                   );
@@ -506,10 +506,10 @@ function NotificationManagementCenter() {
           </div>
         )}
 
-        {activeTab === 'thresholds' && (
+        {activeTab === 'licenses' && (
           <div className="nmc-section">
-            <h2 className="nmc-section-title">Resource Thresholds</h2>
-            <p className="nmc-section-desc">Alert levels apply to all monitored resources</p>
+            <h2 className="nmc-section-title">Enterprise Licenses</h2>
+            <p className="nmc-section-desc">Current enterprise license allocations and monitored usage limits</p>
 
             <div className="nmc-threshold-cards">
               {Object.entries(config.thresholds).map(([key, threshold]) => {
@@ -519,17 +519,17 @@ function NotificationManagementCenter() {
                     <div className="nmc-threshold-card-header">
                       <h3>{resourceLabel}</h3>
                       <span className={`nmc-badge ${threshold.enabled ? 'active' : 'inactive'}`}>
-                        {threshold.enabled ? 'Enabled' : 'Disabled'}
+                        {threshold.enabled ? 'Monitored' : 'Disabled'}
                       </span>
                     </div>
                     <div className="nmc-threshold-card-body">
                       <div className="nmc-threshold-limit">
-                        <span className="nmc-threshold-limit-label">Usage Limit</span>
+                        <span className="nmc-threshold-limit-label">Licensed Capacity</span>
                         <span className="nmc-threshold-limit-value">{threshold.limit.toLocaleString()}</span>
                       </div>
                       <div className="nmc-threshold-percentages">
-                        <span>⚠️ {threshold.warningPercentage}%</span>
-                        <span>🚨 {threshold.criticalPercentage}%</span>
+                        <span>⚠️ Warning: {threshold.warningPercentage}%</span>
+                        <span>🚨 Critical: {threshold.criticalPercentage}%</span>
                       </div>
                     </div>
                   </div>

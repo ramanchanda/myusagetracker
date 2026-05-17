@@ -3,6 +3,13 @@ const path = require('path');
 
 const CONFIG_FILE = path.join(__dirname, '../config/notificationConfig.json');
 
+/**
+ * Helper to get env var with LICENSE_* prefix, falling back to THRESHOLD_* for backward compatibility
+ */
+function getEnvWithFallback(newKey, oldKey) {
+  return process.env[newKey] || process.env[oldKey];
+}
+
 // Get default configuration
 function getDefaultConfig() {
   return {
@@ -96,12 +103,13 @@ function getConfigFromEnv() {
     config.emailConfig.fromEmail = process.env.NOTIFICATION_FROM_EMAIL;
   }
 
-  // Global Threshold Percentages (apply to all resources)
-  const globalWarning = process.env.THRESHOLD_WARNING_PERCENTAGE
-    ? parseInt(process.env.THRESHOLD_WARNING_PERCENTAGE)
+  // Global License Utilization Percentages (apply to all resources)
+  // Support both LICENSE_* (new) and THRESHOLD_* (legacy) prefixes
+  const globalWarning = getEnvWithFallback('LICENSE_WARNING_PERCENTAGE', 'THRESHOLD_WARNING_PERCENTAGE')
+    ? parseInt(getEnvWithFallback('LICENSE_WARNING_PERCENTAGE', 'THRESHOLD_WARNING_PERCENTAGE'))
     : 80;
-  const globalCritical = process.env.THRESHOLD_CRITICAL_PERCENTAGE
-    ? parseInt(process.env.THRESHOLD_CRITICAL_PERCENTAGE)
+  const globalCritical = getEnvWithFallback('LICENSE_CRITICAL_PERCENTAGE', 'THRESHOLD_CRITICAL_PERCENTAGE')
+    ? parseInt(getEnvWithFallback('LICENSE_CRITICAL_PERCENTAGE', 'THRESHOLD_CRITICAL_PERCENTAGE'))
     : 95;
 
   // Apply global percentages to all resources
@@ -110,52 +118,64 @@ function getConfigFromEnv() {
     config.thresholds[resource].criticalPercentage = globalCritical;
   });
 
-  // Thresholds - Dyno Units
-  if (process.env.THRESHOLD_DYNO_ENABLED) {
-    config.thresholds.dynoUnits.enabled = process.env.THRESHOLD_DYNO_ENABLED === 'true';
+  // License Limits - Dyno Units (with backward compatibility)
+  const dynoEnabled = getEnvWithFallback('LICENSE_DYNO_UNITS_ENABLED', 'THRESHOLD_DYNO_ENABLED');
+  if (dynoEnabled) {
+    config.thresholds.dynoUnits.enabled = dynoEnabled === 'true';
   }
-  if (process.env.THRESHOLD_DYNO_LIMIT) {
-    config.thresholds.dynoUnits.limit = parseInt(process.env.THRESHOLD_DYNO_LIMIT);
-  }
-
-  // Thresholds - Connect Rows
-  if (process.env.THRESHOLD_CONNECT_ENABLED) {
-    config.thresholds.connectRows.enabled = process.env.THRESHOLD_CONNECT_ENABLED === 'true';
-  }
-  if (process.env.THRESHOLD_CONNECT_LIMIT) {
-    config.thresholds.connectRows.limit = parseInt(process.env.THRESHOLD_CONNECT_LIMIT);
+  const dynoLimit = getEnvWithFallback('LICENSE_DYNO_UNITS_LIMIT', 'THRESHOLD_DYNO_LIMIT');
+  if (dynoLimit) {
+    config.thresholds.dynoUnits.limit = parseInt(dynoLimit);
   }
 
-  // Thresholds - Data Addons
-  if (process.env.THRESHOLD_DATA_ADDONS_ENABLED) {
-    config.thresholds.dataAddons.enabled = process.env.THRESHOLD_DATA_ADDONS_ENABLED === 'true';
+  // License Limits - Connect Rows
+  const connectEnabled = getEnvWithFallback('LICENSE_CONNECT_ROWS_ENABLED', 'THRESHOLD_CONNECT_ENABLED');
+  if (connectEnabled) {
+    config.thresholds.connectRows.enabled = connectEnabled === 'true';
   }
-  if (process.env.THRESHOLD_DATA_ADDONS_LIMIT) {
-    config.thresholds.dataAddons.limit = parseInt(process.env.THRESHOLD_DATA_ADDONS_LIMIT);
-  }
-
-  // Thresholds - General Addons
-  if (process.env.THRESHOLD_GENERAL_ADDONS_ENABLED) {
-    config.thresholds.generalAddons.enabled = process.env.THRESHOLD_GENERAL_ADDONS_ENABLED === 'true';
-  }
-  if (process.env.THRESHOLD_GENERAL_ADDONS_LIMIT) {
-    config.thresholds.generalAddons.limit = parseInt(process.env.THRESHOLD_GENERAL_ADDONS_LIMIT);
+  const connectLimit = getEnvWithFallback('LICENSE_CONNECT_ROWS_LIMIT', 'THRESHOLD_CONNECT_LIMIT');
+  if (connectLimit) {
+    config.thresholds.connectRows.limit = parseInt(connectLimit);
   }
 
-  // Thresholds - Private Spaces
-  if (process.env.THRESHOLD_PRIVATE_SPACES_ENABLED) {
-    config.thresholds.privateSpaces.enabled = process.env.THRESHOLD_PRIVATE_SPACES_ENABLED === 'true';
+  // License Limits - Data Addons
+  const dataAddonsEnabled = getEnvWithFallback('LICENSE_DATA_ADDONS_ENABLED', 'THRESHOLD_DATA_ADDONS_ENABLED');
+  if (dataAddonsEnabled) {
+    config.thresholds.dataAddons.enabled = dataAddonsEnabled === 'true';
   }
-  if (process.env.THRESHOLD_PRIVATE_SPACES_LIMIT) {
-    config.thresholds.privateSpaces.limit = parseInt(process.env.THRESHOLD_PRIVATE_SPACES_LIMIT);
+  const dataAddonsLimit = getEnvWithFallback('LICENSE_DATA_ADDONS_LIMIT', 'THRESHOLD_DATA_ADDONS_LIMIT');
+  if (dataAddonsLimit) {
+    config.thresholds.dataAddons.limit = parseInt(dataAddonsLimit);
   }
 
-  // Thresholds - Shield Spaces
-  if (process.env.THRESHOLD_SHIELD_SPACES_ENABLED) {
-    config.thresholds.shieldSpaces.enabled = process.env.THRESHOLD_SHIELD_SPACES_ENABLED === 'true';
+  // License Limits - General Addons
+  const generalAddonsEnabled = getEnvWithFallback('LICENSE_GENERAL_ADDONS_ENABLED', 'THRESHOLD_GENERAL_ADDONS_ENABLED');
+  if (generalAddonsEnabled) {
+    config.thresholds.generalAddons.enabled = generalAddonsEnabled === 'true';
   }
-  if (process.env.THRESHOLD_SHIELD_SPACES_LIMIT) {
-    config.thresholds.shieldSpaces.limit = parseInt(process.env.THRESHOLD_SHIELD_SPACES_LIMIT);
+  const generalAddonsLimit = getEnvWithFallback('LICENSE_GENERAL_ADDONS_LIMIT', 'THRESHOLD_GENERAL_ADDONS_LIMIT');
+  if (generalAddonsLimit) {
+    config.thresholds.generalAddons.limit = parseInt(generalAddonsLimit);
+  }
+
+  // License Limits - Private Spaces
+  const privateSpacesEnabled = getEnvWithFallback('LICENSE_PRIVATE_SPACES_ENABLED', 'THRESHOLD_PRIVATE_SPACES_ENABLED');
+  if (privateSpacesEnabled) {
+    config.thresholds.privateSpaces.enabled = privateSpacesEnabled === 'true';
+  }
+  const privateSpacesLimit = getEnvWithFallback('LICENSE_PRIVATE_SPACES_LIMIT', 'THRESHOLD_PRIVATE_SPACES_LIMIT');
+  if (privateSpacesLimit) {
+    config.thresholds.privateSpaces.limit = parseInt(privateSpacesLimit);
+  }
+
+  // License Limits - Shield Spaces
+  const shieldSpacesEnabled = getEnvWithFallback('LICENSE_SHIELD_SPACES_ENABLED', 'THRESHOLD_SHIELD_SPACES_ENABLED');
+  if (shieldSpacesEnabled) {
+    config.thresholds.shieldSpaces.enabled = shieldSpacesEnabled === 'true';
+  }
+  const shieldSpacesLimit = getEnvWithFallback('LICENSE_SHIELD_SPACES_LIMIT', 'THRESHOLD_SHIELD_SPACES_LIMIT');
+  if (shieldSpacesLimit) {
+    config.thresholds.shieldSpaces.limit = parseInt(shieldSpacesLimit);
   }
 
   // Trigger Schedule - Realtime Alerts
