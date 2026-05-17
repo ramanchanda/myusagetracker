@@ -265,7 +265,7 @@ function getSeverity(percentUsed, threshold) {
 /**
  * PHASE 3: Check single resource threshold with anomaly detection
  */
-async function checkResourceThreshold(resourceType, currentValue, threshold) {
+async function checkResourceThreshold(resourceType, currentValue, threshold, skipIndividualEmail = false) {
   if (!threshold.enabled || !threshold.limit) {
     return null;
   }
@@ -319,77 +319,66 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
     };
   }
 
-  // Send threshold alert
-  try {
-    console.log(`${LOG_PREFIX} Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
+  // Send individual threshold alert only if not skipping (for consolidated emails)
+  if (!skipIndividualEmail) {
+    try {
+      console.log(`${LOG_PREFIX} Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
 
-    const result = await notificationService.sendThresholdAlert(
-      resourceType,
-      currentValue,
-      threshold,
-      severity
-    );
+      const result = await notificationService.sendThresholdAlert(
+        resourceType,
+        currentValue,
+        threshold,
+        severity
+      );
 
-    // PHASE 4: Log to notification history
-    await notificationHistory.addEvent({
-      type: 'threshold-alert',
-      severity,
-      resourceType,
-      recipients: result.recipients || [],
-      subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`,
-      provider: result.provider,
-      status: result.sent ? 'sent' : 'failed',
-      messageId: result.messageId,
-      error: result.error || null,
-      metadata: {
+      // PHASE 4: Log to notification history
+      await notificationHistory.addEvent({
+        type: 'threshold-alert',
+        severity,
+        resourceType,
+        recipients: result.recipients || [],
+        subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`,
+        provider: result.provider,
+        status: result.sent ? 'sent' : 'failed',
+        messageId: result.messageId,
+        error: result.error || null,
+        metadata: {
+          currentValue,
+          limit: threshold.limit,
+          percentUsed: percentUsed.toFixed(1),
+          anomalies: anomalies ? anomalies.map(a => a.type) : []
+        }
+      });
+
+      updateAlertState(resourceType, severity, currentValue);
+    } catch (error) {
+      console.error(`${LOG_PREFIX} Failed to send alert for ${resourceType}:`, error.message);
+      return {
+        resourceType,
         currentValue,
         limit: threshold.limit,
         percentUsed: percentUsed.toFixed(1),
-        anomalies: anomalies ? anomalies.map(a => a.type) : []
-      }
-    });
-
+        severity,
+        alerted: false,
+        reason: 'Email send failed',
+        error: error.message
+      };
+    }
+  } else {
+    // For consolidated emails, just update state without sending individual email
     updateAlertState(resourceType, severity, currentValue);
-
-    return {
-      resourceType,
-      currentValue,
-      limit: threshold.limit,
-      percentUsed: percentUsed.toFixed(1),
-      severity,
-      alerted: true,
-      anomalies: anomalies ? anomalies.map(a => a.type) : []
-    };
-  } catch (error) {
-    console.error(`${LOG_PREFIX} Failed to send alert for ${resourceType}:`, error.message);
-
-    // PHASE 4: Log failure to history
-    await notificationHistory.addEvent({
-      type: 'threshold-alert',
-      severity,
-      resourceType,
-      recipients: [],
-      subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert`,
-      provider: null,
-      status: 'failed',
-      error: error.message,
-      metadata: {
-        currentValue,
-        limit: threshold.limit,
-        percentUsed: percentUsed.toFixed(1)
-      }
-    });
-
-    return {
-      resourceType,
-      currentValue,
-      limit: threshold.limit,
-      percentUsed: percentUsed.toFixed(1),
-      severity,
-      alerted: false,
-      error: error.message
-    };
   }
+
+  // Return alert object for consolidated reporting
+  return {
+    resourceType,
+    currentValue,
+    limit: threshold.limit,
+    percentUsed: percentUsed.toFixed(1),
+    severity,
+    alerted: true,
+    anomalies: anomalies ? anomalies.map(a => a.type) : []
+  };
 }
 
 /**
@@ -500,16 +489,72 @@ async function runThresholdEvaluation(options = {}) {
       }
     ];
 
+    // Collect all resource conditions for consolidated email
+    const resourceConditions = [];
+
     for (const check of checks) {
       if (thresholds[check.key].enabled) {
         const alert = await checkResourceThreshold(
           check.type,
           check.currentValue,
-          thresholds[check.key]
+          thresholds[check.key],
+          true // Skip individual email sending
         );
         if (alert) {
           alerts.push(alert);
+          // Collect conditions that need to be reported
+          if (alert.alerted && alert.severity) {
+            resourceConditions.push({
+              resourceType: check.type,
+              currentUsage: check.currentValue,
+              licensedCapacity: thresholds[check.key].limit,
+              utilization: alert.percentUsed,
+              severity: alert.severity,
+              thresholdType: alert.severity === 'critical' ? 'Critical' : 'Warning'
+            });
+          }
         }
+      }
+    }
+
+    // Send one consolidated license audit email if there are any triggered conditions
+    if (resourceConditions.length > 0) {
+      try {
+        console.log(`${LOG_PREFIX} Sending consolidated license audit email with ${resourceConditions.length} condition(s)`);
+
+        const consolidatedPayload = {
+          accountName: 'Enterprise Accounts',
+          generatedAt: new Date().toISOString(),
+          warnings: resourceConditions.filter(r => r.severity === 'warning'),
+          criticals: resourceConditions.filter(r => r.severity === 'critical'),
+          resources: resourceConditions,
+          accountsScanned: totalAccounts,
+          accountsMonitored: monitoredAccounts,
+          accountsRestricted: restrictedAccounts
+        };
+
+        const result = await notificationService.sendLicenseAuditSummary(consolidatedPayload);
+
+        // Log to notification history
+        await notificationHistory.addEvent({
+          type: 'license-audit',
+          severity: consolidatedPayload.criticals.length > 0 ? 'critical' : 'warning',
+          resourceType: 'consolidated',
+          recipients: result.recipients || [],
+          subject: `[License Audit] ${consolidatedPayload.criticals.length} Critical, ${consolidatedPayload.warnings.length} Warning(s)`,
+          provider: result.provider,
+          status: result.sent ? 'sent' : 'failed',
+          messageId: result.messageId,
+          error: result.error || null,
+          metadata: {
+            accountsScanned: totalAccounts,
+            accountsMonitored: monitoredAccounts,
+            resourcesAlerted: resourceConditions.length
+          }
+        });
+
+      } catch (error) {
+        console.error(`${LOG_PREFIX} Failed to send consolidated license audit email:`, error.message);
       }
     }
 
@@ -519,7 +564,7 @@ async function runThresholdEvaluation(options = {}) {
     const warningCount = alerts.filter(a => a.severity === 'warning').length;
     const criticalCount = alerts.filter(a => a.severity === 'critical').length;
 
-    console.log(`${LOG_PREFIX} License audit complete in ${duration}ms: ${alertedCount} alert(s) sent, ${suppressedCount} suppressed`);
+    console.log(`${LOG_PREFIX} License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, 1 consolidated email sent`);
 
     return {
       checked: true,
