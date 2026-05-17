@@ -398,71 +398,113 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
  */
 async function runThresholdEvaluation(options = {}) {
   const startTime = Date.now();
-  console.log(`${LOG_PREFIX} Starting threshold evaluation...`);
+  console.log(`${LOG_PREFIX} Starting license audit evaluation...`);
 
   try {
     // Get configuration
     const config = await configService.getConfig();
     const thresholds = config.thresholds;
 
-    // Fetch latest usage data
+    // Fetch all enterprise accounts usage data
     const month = options.month || new Date().toISOString().slice(0, 7);
-    const usageData = await enterpriseUsageService.getEnterpriseStructure(month);
+    const allAccountsData = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
 
-    if (!usageData || !usageData.resources) {
-      console.log(`${LOG_PREFIX} No usage data available`);
-      return { checked: false, reason: 'No usage data available' };
+    // Diagnostic logging
+    console.log(`${LOG_PREFIX} Audit diagnostics:`, {
+      accountsFound: allAccountsData.enterpriseAccounts?.length || 0,
+      hasSummary: !!allAccountsData.summary,
+      month
+    });
+
+    // Handle case: no enterprise accounts
+    if (!allAccountsData.enterpriseAccounts || allAccountsData.enterpriseAccounts.length === 0) {
+      console.log(`${LOG_PREFIX} No enterprise accounts configured`);
+      return {
+        checked: false,
+        reason: 'No Enterprise Accounts Configured',
+        detail: 'Add and monitor Enterprise Accounts to begin license auditing.',
+        accountsScanned: 0,
+        accountsRestricted: 0
+      };
     }
 
-    const resources = usageData.resources;
+    const totalAccounts = allAccountsData.enterpriseAccounts.length;
+    const restrictedAccounts = allAccountsData.enterpriseAccounts.filter(
+      acc => !acc.enterpriseAccount?.has_billing_access
+    ).length;
+    const monitoredAccounts = totalAccounts - restrictedAccounts;
+
+    // Handle case: all accounts restricted
+    if (monitoredAccounts === 0) {
+      console.log(`${LOG_PREFIX} All enterprise accounts have restricted billing access`);
+      return {
+        checked: false,
+        reason: 'Billing Access Restricted',
+        detail: 'Usage-based license metrics are unavailable for all Enterprise Accounts.',
+        accountsScanned: totalAccounts,
+        accountsRestricted: restrictedAccounts,
+        accountsMonitored: 0
+      };
+    }
+
+    // Aggregate usage across all accounts using the summary
+    const aggregatedUsage = allAccountsData.summary || {};
+
+    // Handle case: no usage data in summary
+    if (!aggregatedUsage.totalDynos && !aggregatedUsage.totalConnect &&
+        !aggregatedUsage.totalDataAddons && !aggregatedUsage.totalOtherAddons) {
+      console.log(`${LOG_PREFIX} No usage data in aggregated summary`);
+      return {
+        checked: false,
+        reason: 'Usage data is still being collected',
+        detail: 'Please retry the license audit shortly.',
+        accountsScanned: totalAccounts,
+        accountsRestricted: restrictedAccounts,
+        accountsMonitored: monitoredAccounts
+      };
+    }
+
     const alerts = [];
 
-    // Check each resource type
+    // Check each resource type using aggregated summary
     const checks = [
       {
         type: 'Dyno Units',
         key: 'dynoUnits',
-        data: resources.dynos,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalDynos || 0
       },
       {
         type: 'Connect Rows',
         key: 'connectRows',
-        data: resources.connect,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalConnect || 0
       },
       {
         type: 'Data Add-ons',
         key: 'dataAddons',
-        data: resources.dataAddons,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalDataAddons || 0
       },
       {
         type: 'General Add-ons',
         key: 'generalAddons',
-        data: resources.otherAddons,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalOtherAddons || 0
       },
       {
         type: 'Private Spaces',
         key: 'privateSpaces',
-        data: resources.privateSpaces,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalPrivateSpaces || 0
       },
       {
         type: 'Shield Spaces',
         key: 'shieldSpaces',
-        data: resources.shieldSpaces,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalShieldSpaces || 0
       }
     ];
 
     for (const check of checks) {
-      if (thresholds[check.key].enabled && check.data) {
-        const currentValue = check.data[check.valueKey] || 0;
+      if (thresholds[check.key].enabled) {
         const alert = await checkResourceThreshold(
           check.type,
-          currentValue,
+          check.currentValue,
           thresholds[check.key]
         );
         if (alert) {
@@ -474,8 +516,10 @@ async function runThresholdEvaluation(options = {}) {
     const duration = Date.now() - startTime;
     const alertedCount = alerts.filter(a => a.alerted).length;
     const suppressedCount = alerts.filter(a => !a.alerted).length;
+    const warningCount = alerts.filter(a => a.severity === 'warning').length;
+    const criticalCount = alerts.filter(a => a.severity === 'critical').length;
 
-    console.log(`${LOG_PREFIX} Evaluation complete in ${duration}ms: ${alertedCount} alert(s) sent, ${suppressedCount} suppressed`);
+    console.log(`${LOG_PREFIX} License audit complete in ${duration}ms: ${alertedCount} alert(s) sent, ${suppressedCount} suppressed`);
 
     return {
       checked: true,
@@ -483,14 +527,21 @@ async function runThresholdEvaluation(options = {}) {
       totalChecks: checks.length,
       alertsTriggered: alertedCount,
       alertsSuppressed: suppressedCount,
+      accountsScanned: totalAccounts,
+      accountsRestricted: restrictedAccounts,
+      accountsMonitored: monitoredAccounts,
+      warningConditions: warningCount,
+      criticalConditions: criticalCount,
       alerts
     };
 
   } catch (error) {
-    console.error(`${LOG_PREFIX} Threshold evaluation failed:`, error);
+    console.error(`${LOG_PREFIX} License audit failed:`, error);
     return {
       checked: false,
-      error: error.message
+      error: 'Unable to aggregate enterprise usage metrics',
+      detail: error.message,
+      reason: 'Aggregation Failure'
     };
   }
 }

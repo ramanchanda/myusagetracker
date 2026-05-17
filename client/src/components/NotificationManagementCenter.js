@@ -100,15 +100,33 @@ function NotificationManagementCenter() {
 
   const checkThresholds = async () => {
     try {
+      setTesting(true); // Reuse testing state for audit button
       const result = await axios.post('/api/notifications/check-thresholds');
+
       if (result.data.checked) {
-        showMessage('success', `License audit complete • ${result.data.alertsTriggered} alert(s) triggered`);
+        // Success - show detailed summary
+        const summary = [
+          `${result.data.accountsScanned || 0} account(s) scanned`,
+          `${result.data.warningConditions || 0} warning(s)`,
+          `${result.data.criticalConditions || 0} critical condition(s)`
+        ].join(' • ');
+        showMessage('success', `License audit complete • ${summary}`);
         fetchData(); // Refresh activity
       } else {
-        showMessage('warning', result.data.reason || result.data.error);
+        // Failed audit - show contextual message
+        const reason = result.data.reason || 'Unknown error';
+        const detail = result.data.detail;
+        const message = detail ? `${reason}: ${detail}` : reason;
+
+        // Use warning for operational issues, error for failures
+        const messageType = result.data.error ? 'error' : 'warning';
+        showMessage(messageType, message);
       }
     } catch (error) {
-      showMessage('error', 'License audit failed');
+      const errorMsg = error.response?.data?.error || error.response?.data?.detail || 'License audit failed';
+      showMessage('error', errorMsg);
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -156,9 +174,10 @@ function NotificationManagementCenter() {
           </button>
           <button
             onClick={checkThresholds}
+            disabled={testing}
             className="nmc-btn nmc-btn-primary nmc-btn-sm"
           >
-            Run License Audit
+            {testing ? 'Running Audit...' : 'Run License Audit'}
           </button>
         </div>
       </div>
@@ -257,12 +276,15 @@ function NotificationManagementCenter() {
               {enterpriseLoading ? (
                 <div className="nmc-enterprise-loading">
                   <div className="nmc-spinner-sm"></div>
-                  <span>Loading enterprise data...</span>
+                  <span>Loading enterprise usage data...</span>
                 </div>
               ) : enterpriseAccounts.length === 0 ? (
                 <div className="nmc-enterprise-empty">
-                  <span className="nmc-empty-icon">📊</span>
-                  <p>No enterprise accounts configured</p>
+                  <span className="nmc-empty-icon">🏢</span>
+                  <div className="nmc-empty-content">
+                    <h3>No Enterprise Accounts Configured</h3>
+                    <p>Add and monitor Enterprise Accounts to begin license auditing.</p>
+                  </div>
                 </div>
               ) : (
                 <>
