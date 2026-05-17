@@ -719,6 +719,22 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   <span className="trend-label">Total Days</span>
                   <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.totalDays)}</span>
                 </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Dyno Units (Total)</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.dynoUnits || 0)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Connect Rows (Total)</span>
+                  <span className="trend-value">{formatUsage(dailyReport.dailyUsage.summary.periodTotals?.connectRows || 0)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Private Spaces (Total)</span>
+                  <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.periodTotals?.privateSpaces || 0)}</span>
+                </div>
+                <div className="trend-analysis-card">
+                  <span className="trend-label">Shield Spaces (Total)</span>
+                  <span className="trend-value">{formatCount(dailyReport.dailyUsage.summary.periodTotals?.shieldSpaces || 0)}</span>
+                </div>
               </div>
 
               <h4 className="chart-section-title" style={{ marginTop: '32px', marginBottom: '16px' }}>Total Usage (Period)</h4>

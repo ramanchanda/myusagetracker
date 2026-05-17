@@ -379,14 +379,6 @@ function NotificationManagementCenter() {
                                 {account.resources.generalAddons || 0}
                               </span>
                             </div>
-                            {account.totalCost && (
-                              <div className="nmc-metric nmc-metric-cost">
-                                <span className="nmc-metric-label">Est. Cost</span>
-                                <span className="nmc-metric-value">
-                                  ${account.totalCost.toLocaleString()}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         ) : (
                           <div className="nmc-enterprise-restricted">

@@ -833,18 +833,6 @@
   color: #0f172a;
 }
 
-.nmc-metric-cost {
-  grid-column: 1 / -1;
-  padding-top: 6px;
-  margin-top: 6px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.nmc-metric-cost .nmc-metric-value {
-  color: #6366f1;
-  font-size: 1.125rem;
-}
-
 .nmc-enterprise-restricted {
   display: flex;
   align-items: center;
