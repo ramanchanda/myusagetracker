@@ -19,7 +19,7 @@ function baseTemplate({ title, headerColor, headerIcon, content, footer }) {
       background-color: #f5f5f5;
     }
     .email-container {
-      max-width: 600px;
+      max-width: 1000px;
       margin: 20px auto;
       background-color: #ffffff;
       border-radius: 8px;

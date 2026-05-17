@@ -235,8 +235,11 @@ function parseDailyUsage(dailyUsageData) {
     let privateSpaces = 0;
     let shieldSpaces = 0;
     if (day.teams && Array.isArray(day.teams)) {
-      // Note: Daily usage API doesn't provide per-team space breakdown
-      // We'll need to aggregate this differently
+      // Aggregate space counts from all teams for this day
+      day.teams.forEach(team => {
+        privateSpaces += Number(team.private_space || 0);
+        shieldSpaces += Number(team.shield_space || 0);
+      });
     }
 
     return {
@@ -281,20 +284,13 @@ function parseDailyUsage(dailyUsageData) {
   };
 
   // Calculate Total Usage (Period) per resource type
-  // Different calculation methods for different resources:
-  // - Dyno Units: Total (sum of all days)
-  // - Connect Rows: Max (peak usage across date range)
-  // - Data Add-ons: Total (sum of all days)
-  // - General Add-ons: Total (sum of all days)
-  // - Private Spaces: Total/Max (count)
-  // - Shield Spaces: Total/Max (count)
+  // All metrics use cumulative sum across all returned dates for accurate total utilization
   const periodTotals = {
-    dynoUnits: days.reduce((sum, day) => sum + day.dynoCost, 0),
-    connectRows: days.length > 0 ? Math.max(...days.map(d => d.connectCost)) : 0,
-    dataAddons: days.reduce((sum, day) => sum + day.dataCost, 0),
-    generalAddons: days.reduce((sum, day) => sum + day.otherCost, 0),
-    privateSpaces: days.length > 0 ? Math.max(...days.map(d => d.privateSpaces)) : 0,
-    shieldSpaces: days.length > 0 ? Math.max(...days.map(d => d.shieldSpaces)) : 0
+    dynoUnits: days.reduce((sum, day) => sum + Number(day.dynoCost || 0), 0),
+    dataAddons: days.reduce((sum, day) => sum + Number(day.dataCost || 0), 0),
+    generalAddons: days.reduce((sum, day) => sum + Number(day.otherCost || 0), 0),
+    privateSpaces: days.reduce((sum, day) => sum + Number(day.privateSpaces || 0), 0),
+    shieldSpaces: days.reduce((sum, day) => sum + Number(day.shieldSpaces || 0), 0)
   };
 
   return {
@@ -305,10 +301,9 @@ function parseDailyUsage(dailyUsageData) {
       totalDays: days.length,
       maxDailyCost: Math.max(...days.map(d => d.totalCost), 0),
       minDailyCost: days.length > 0 ? Math.min(...days.map(d => d.totalCost)) : 0,
-      // Period totals (different calculation per resource)
+      // Period totals (cumulative sum across all returned dates)
       periodTotals: {
         dynoUnits: parseFloat(periodTotals.dynoUnits.toFixed(2)),
-        connectRows: parseFloat(periodTotals.connectRows.toFixed(2)),
         dataAddons: parseFloat(periodTotals.dataAddons.toFixed(2)),
         generalAddons: parseFloat(periodTotals.generalAddons.toFixed(2)),
         privateSpaces: periodTotals.privateSpaces,

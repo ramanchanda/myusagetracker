@@ -255,11 +255,65 @@ async function getNotificationStatus() {
   };
 }
 
+/**
+ * Send consolidated license audit summary email
+ * Groups all resource conditions into one email per Enterprise Account
+ */
+async function sendLicenseAuditSummary(auditData) {
+  const emailConfig = await configService.getEmailConfig();
+
+  if (!emailConfig.enabled) {
+    return { sent: false, reason: 'Email notifications disabled' };
+  }
+
+  if (!emailConfig.recipients || emailConfig.recipients.length === 0) {
+    return { sent: false, reason: 'No recipients configured' };
+  }
+
+  const { accountName, warnings, criticals, resources } = auditData;
+  const hasCritical = criticals.length > 0;
+  const severityIcon = hasCritical ? '🚨' : '📋';
+
+  const html = emailTemplates.licenseAudit({
+    ...auditData,
+    dashboardUrl: process.env.DASHBOARD_URL
+  });
+
+  const subject = `[License Audit] ${accountName} - ${criticals.length} Critical, ${warnings.length} Warning(s)`;
+
+  try {
+    const result = await emailService.sendEmail({
+      to: emailConfig.recipients,
+      subject,
+      html
+    });
+
+    return {
+      sent: true,
+      provider: result.provider,
+      messageId: result.messageId,
+      recipients: emailConfig.recipients,
+      resourceCount: resources.length,
+      warningCount: warnings.length,
+      criticalCount: criticals.length
+    };
+
+  } catch (error) {
+    console.error('[Notification Service] Failed to send license audit email:', error);
+    return {
+      sent: false,
+      error: error.message,
+      recipients: emailConfig.recipients
+    };
+  }
+}
+
 module.exports = {
   testEmailConfiguration,
   sendTestNotification,
   sendThresholdAlert,
   sendUsageSummary,
   sendPDFReport,
+  sendLicenseAuditSummary,
   getNotificationStatus
 };

@@ -19,7 +19,11 @@ const notificationService = require('./services/notificationService');
 const thresholdMonitor = require('./services/thresholdMonitor');
 const autoThresholdMonitor = require('./services/autoThresholdMonitor');
 const notificationOrchestrator = require('./services/notificationOrchestrator');
-const notificationHistory = require('./services/notificationHistory'); // PHASE 4
+// PHASE 4: PostgreSQL-backed notification history
+const notificationHistory = process.env.DATABASE_URL
+  ? require('./services/notificationHistoryDB')
+  : require('./services/notificationHistory');
+const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
 
@@ -526,6 +530,36 @@ app.get('/api/notifications/history-v2', async (req, res) => {
   }
 });
 
+// Get last audit time
+app.get('/api/notifications/last-audit', async (req, res) => {
+  try {
+    // Query directly to order by triggered_at (most recent audit execution time)
+    const query = `
+      SELECT triggered_at, id
+      FROM notification_history
+      WHERE notification_type = 'license-audit'
+        AND triggered_at IS NOT NULL
+      ORDER BY triggered_at DESC
+      LIMIT 1
+    `;
+
+    const db = require('./services/databaseService');
+    const result = await db.query(query);
+
+    if (result.rows.length > 0) {
+      res.json({
+        lastAuditTime: result.rows[0].triggered_at,
+        lastAuditId: result.rows[0].id
+      });
+    } else {
+      res.json({ lastAuditTime: null, lastAuditId: null });
+    }
+  } catch (error) {
+    console.error('Error fetching last audit time:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get notification statistics
 app.get('/api/notifications/stats', async (req, res) => {
   try {
@@ -618,9 +652,36 @@ if (process.env.NODE_ENV === 'production') {
 // All scheduled jobs now run in dedicated clock process (server/workers/scheduler.js)
 // Web dyno focuses only on HTTP requests
 
-app.listen(PORT, () => {
+// Initialize database on startup
+async function initializeDatabase() {
+  if (process.env.DATABASE_URL) {
+    try {
+      console.log('[Database] Initializing PostgreSQL schema...');
+      await db.initializeSchema();
+      console.log('[Database] Schema initialized successfully');
+
+      // Health check
+      const health = await db.healthCheck();
+      if (health.healthy) {
+        console.log('[Database] Connection healthy');
+      } else {
+        console.error('[Database] Health check failed:', health.error);
+      }
+    } catch (error) {
+      console.error('[Database] Initialization failed:', error.message);
+      console.error('[Database] Falling back to JSON-based history');
+    }
+  } else {
+    console.log('[Database] DATABASE_URL not configured, using JSON-based history');
+  }
+}
+
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log('PHASE 2: Scheduled jobs run in separate clock process');
   console.log('To enable clock: heroku ps:scale clock=1');
+
+  // Initialize database schema
+  await initializeDatabase();
 });

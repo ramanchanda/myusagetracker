@@ -10,11 +10,14 @@
 const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
 const notificationService = require('./notificationService');
-const notificationHistory = require('./notificationHistory');
-const config = require('../config/notificationConfig');
+// Use PostgreSQL-backed history if DATABASE_URL is configured
+const notificationHistory = process.env.DATABASE_URL
+  ? require('./notificationHistoryDB')
+  : require('./notificationHistory');
+const notificationConfig = require('../config/notificationConfig');
 
 // Service name for structured logging
-const LOG_PREFIX = config.LOGGING.PREFIXES.ORCHESTRATOR;
+const LOG_PREFIX = notificationConfig.LOGGING.PREFIXES.ORCHESTRATOR;
 
 // Enhanced state tracking with anomaly detection
 const alertState = new Map();
@@ -56,7 +59,7 @@ function recordUsageValue(resourceType, value) {
   });
 
   // Keep only configured max data points
-  if (history.length > config.USAGE_HISTORY.MAX_DATA_POINTS) {
+  if (history.length > notificationConfig.USAGE_HISTORY.MAX_DATA_POINTS) {
     history.shift();
   }
 
@@ -91,7 +94,7 @@ function clearAlertState(resourceType) {
 function detectAnomalies(resourceType, currentValue) {
   const history = getUsageHistory(resourceType);
 
-  if (history.length < config.ANOMALY_THRESHOLDS.MIN_DATA_POINTS) {
+  if (history.length < notificationConfig.ANOMALY_THRESHOLDS.MIN_DATA_POINTS) {
     return null;
   }
 
@@ -103,14 +106,14 @@ function detectAnomalies(resourceType, currentValue) {
   const max = Math.max(...values);
 
   // 1. Sudden Spike Detection
-  const spikeThreshold = avg * config.ANOMALY_THRESHOLDS.SPIKE_MULTIPLIER;
+  const spikeThreshold = avg * notificationConfig.ANOMALY_THRESHOLDS.SPIKE_MULTIPLIER;
   if (currentValue > spikeThreshold && currentValue > avg) {
     const increase = ((currentValue - avg) / avg * 100).toFixed(1);
-    const isCritical = currentValue > avg * config.ANOMALY_THRESHOLDS.CRITICAL_SPIKE_MULTIPLIER;
+    const isCritical = currentValue > avg * notificationConfig.ANOMALY_THRESHOLDS.CRITICAL_SPIKE_MULTIPLIER;
     anomalies.push({
       type: 'sudden_spike',
       message: `Sudden spike detected: ${currentValue} (${increase}% above recent average of ${avg.toFixed(0)})`,
-      severity: isCritical ? config.SEVERITY_LEVELS.CRITICAL : config.SEVERITY_LEVELS.WARNING
+      severity: isCritical ? notificationConfig.SEVERITY_LEVELS.CRITICAL : notificationConfig.SEVERITY_LEVELS.WARNING
     });
   }
 
@@ -119,12 +122,12 @@ function detectAnomalies(resourceType, currentValue) {
     const lastValue = history[history.length - 1].value;
     const percentChange = ((currentValue - lastValue) / lastValue * 100);
 
-    if (percentChange > config.ANOMALY_THRESHOLDS.JUMP_PERCENTAGE) {
-      const isCritical = percentChange > config.ANOMALY_THRESHOLDS.CRITICAL_JUMP_PERCENTAGE;
+    if (percentChange > notificationConfig.ANOMALY_THRESHOLDS.JUMP_PERCENTAGE) {
+      const isCritical = percentChange > notificationConfig.ANOMALY_THRESHOLDS.CRITICAL_JUMP_PERCENTAGE;
       anomalies.push({
         type: 'unusual_jump',
         message: `Unusual jump: ${lastValue} → ${currentValue} (+${percentChange.toFixed(1)}% in 1 hour)`,
-        severity: isCritical ? config.SEVERITY_LEVELS.CRITICAL : config.SEVERITY_LEVELS.WARNING
+        severity: isCritical ? notificationConfig.SEVERITY_LEVELS.CRITICAL : notificationConfig.SEVERITY_LEVELS.WARNING
       });
     }
   }
@@ -134,26 +137,26 @@ function detectAnomalies(resourceType, currentValue) {
     const recentGrowth = currentValue - history[history.length - 2].value;
     const previousGrowth = history[history.length - 2].value - history[history.length - 4].value;
 
-    if (previousGrowth > 0 && recentGrowth > previousGrowth * config.ANOMALY_THRESHOLDS.ACCELERATION_MULTIPLIER) {
+    if (previousGrowth > 0 && recentGrowth > previousGrowth * notificationConfig.ANOMALY_THRESHOLDS.ACCELERATION_MULTIPLIER) {
       anomalies.push({
         type: 'trend_acceleration',
         message: `Accelerating growth detected: Previous +${previousGrowth}, Recent +${recentGrowth}`,
-        severity: config.SEVERITY_LEVELS.WARNING
+        severity: notificationConfig.SEVERITY_LEVELS.WARNING
       });
     }
   }
 
   // 4. Sustained High Usage
-  if (history.length >= config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS) {
-    const recentValues = values.slice(-config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS);
-    const highThreshold = max * (config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_PERCENTAGE / 100);
+  if (history.length >= notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS) {
+    const recentValues = values.slice(-notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS);
+    const highThreshold = max * (notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_PERCENTAGE / 100);
     const sustainedHigh = recentValues.every(v => v >= highThreshold);
 
     if (sustainedHigh && currentValue >= highThreshold) {
       anomalies.push({
         type: 'sustained_high',
-        message: `Sustained high usage: ${currentValue} maintained near max (${max}) for ${config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS}+ hours`,
-        severity: config.SEVERITY_LEVELS.WARNING
+        message: `Sustained high usage: ${currentValue} maintained near max (${max}) for ${notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS}+ hours`,
+        severity: notificationConfig.SEVERITY_LEVELS.WARNING
       });
     }
   }
@@ -170,13 +173,13 @@ function shouldSendAnomalyAlert(resourceType, anomalies) {
   }
 
   const state = getAlertState(resourceType);
-  const cooldownMs = config.getCooldownPeriod(config.EVENT_TYPES.ANOMALY_ALERT);
+  const cooldownMs = notificationConfig.getCooldownPeriod(notificationConfig.EVENT_TYPES.ANOMALY_ALERT);
 
   // Don't spam anomaly alerts
   if (state.lastAnomalyAlert) {
     const elapsed = Date.now() - state.lastAnomalyAlert;
     if (elapsed < cooldownMs) {
-      const remaining = config.formatDuration(cooldownMs - elapsed);
+      const remaining = notificationConfig.formatDuration(cooldownMs - elapsed);
       console.log(`${LOG_PREFIX} Anomaly alert suppressed for ${resourceType} (cooldown: ${remaining} remaining)`);
       return false;
     }
@@ -201,10 +204,10 @@ function recordAnomalyAlert(resourceType) {
  */
 function shouldSendAlert(resourceType, severity, percentUsed, threshold, currentValue) {
   const state = getAlertState(resourceType);
-  const cooldownMs = config.getCooldownPeriod(config.EVENT_TYPES.THRESHOLD_ALERT);
+  const cooldownMs = notificationConfig.getCooldownPeriod(notificationConfig.EVENT_TYPES.THRESHOLD_ALERT);
 
   // If below warning threshold, clear state
-  if (percentUsed < config.SMART_ALERTING.CLEAR_STATE_PERCENTAGE) {
+  if (percentUsed < notificationConfig.SMART_ALERTING.CLEAR_STATE_PERCENTAGE) {
     if (state.lastSeverity) {
       console.log(`${LOG_PREFIX} ${resourceType} returned to normal (${percentUsed.toFixed(1)}%)`);
       clearAlertState(resourceType);
@@ -213,15 +216,15 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold, current
   }
 
   // First time crossing threshold
-  if (!state.lastSeverity && config.SMART_ALERTING.ALERT_ON_FIRST_CROSSING) {
+  if (!state.lastSeverity && notificationConfig.SMART_ALERTING.ALERT_ON_FIRST_CROSSING) {
     console.log(`${LOG_PREFIX} ${resourceType} crossed ${severity} threshold for first time`);
     return true;
   }
 
   // Severity escalated (warning → critical)
-  if (config.SMART_ALERTING.ALERT_ON_ESCALATION &&
-      severity === config.SEVERITY_LEVELS.CRITICAL &&
-      state.lastSeverity === config.SEVERITY_LEVELS.WARNING) {
+  if (notificationConfig.SMART_ALERTING.ALERT_ON_ESCALATION &&
+      severity === notificationConfig.SEVERITY_LEVELS.CRITICAL &&
+      state.lastSeverity === notificationConfig.SEVERITY_LEVELS.WARNING) {
     console.log(`${LOG_PREFIX} ${resourceType} escalated from warning to critical`);
     return true;
   }
@@ -229,7 +232,7 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold, current
   // Usage changed significantly
   if (state.lastValue) {
     const changePercent = Math.abs((currentValue - state.lastValue) / state.lastValue * 100);
-    if (changePercent > config.SMART_ALERTING.SIGNIFICANT_CHANGE_PERCENTAGE) {
+    if (changePercent > notificationConfig.SMART_ALERTING.SIGNIFICANT_CHANGE_PERCENTAGE) {
       console.log(`${LOG_PREFIX} ${resourceType} usage changed significantly: ${state.lastValue} → ${currentValue} (${changePercent.toFixed(1)}%)`);
       return true;
     }
@@ -238,7 +241,7 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold, current
   // Check cooldown for same severity
   const elapsed = Date.now() - state.lastAlertTime;
   if (elapsed < cooldownMs) {
-    const remaining = config.formatDuration(cooldownMs - elapsed);
+    const remaining = notificationConfig.formatDuration(cooldownMs - elapsed);
     console.log(`${LOG_PREFIX} ${resourceType} ${severity} alert suppressed (cooldown: ${remaining} remaining)`);
     return false;
   }
@@ -265,7 +268,7 @@ function getSeverity(percentUsed, threshold) {
 /**
  * PHASE 3: Check single resource threshold with anomaly detection
  */
-async function checkResourceThreshold(resourceType, currentValue, threshold) {
+async function checkResourceThreshold(resourceType, currentValue, threshold, skipIndividualEmail = false) {
   if (!threshold.enabled || !threshold.limit) {
     return null;
   }
@@ -319,76 +322,122 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
     };
   }
 
-  // Send threshold alert
-  try {
-    console.log(`${LOG_PREFIX} Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
+  // Send individual threshold alert only if not skipping (for consolidated emails)
+  if (!skipIndividualEmail) {
+    try {
+      console.log(`${LOG_PREFIX} Sending ${severity} alert for ${resourceType}: ${percentUsed.toFixed(1)}%`);
 
-    const result = await notificationService.sendThresholdAlert(
-      resourceType,
-      currentValue,
-      threshold,
-      severity
-    );
+      const result = await notificationService.sendThresholdAlert(
+        resourceType,
+        currentValue,
+        threshold,
+        severity
+      );
 
-    // PHASE 4: Log to notification history
-    await notificationHistory.addEvent({
-      type: 'threshold-alert',
-      severity,
-      resourceType,
-      recipients: result.recipients || [],
-      subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`,
-      provider: result.provider,
-      status: result.sent ? 'sent' : 'failed',
-      messageId: result.messageId,
-      error: result.error || null,
-      metadata: {
+      // PHASE 4: Log to notification history
+      await notificationHistory.addEvent({
+        type: 'threshold-alert',
+        severity,
+        resourceType,
+        recipients: result.recipients || [],
+        subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`,
+        provider: result.provider,
+        status: result.sent ? 'sent' : 'failed',
+        messageId: result.messageId,
+        error: result.error || null,
+        metadata: {
+          currentValue,
+          limit: threshold.limit,
+          percentUsed: percentUsed.toFixed(1),
+          anomalies: anomalies ? anomalies.map(a => a.type) : []
+        }
+      });
+
+      updateAlertState(resourceType, severity, currentValue);
+    } catch (error) {
+      console.error(`${LOG_PREFIX} Failed to send alert for ${resourceType}:`, error.message);
+      return {
+        resourceType,
         currentValue,
         limit: threshold.limit,
         percentUsed: percentUsed.toFixed(1),
-        anomalies: anomalies ? anomalies.map(a => a.type) : []
-      }
-    });
-
+        severity,
+        alerted: false,
+        reason: 'Email send failed',
+        error: error.message
+      };
+    }
+  } else {
+    // For consolidated emails, just update state without sending individual email
     updateAlertState(resourceType, severity, currentValue);
+  }
 
-    return {
-      resourceType,
-      currentValue,
-      limit: threshold.limit,
-      percentUsed: percentUsed.toFixed(1),
-      severity,
-      alerted: true,
-      anomalies: anomalies ? anomalies.map(a => a.type) : []
-    };
-  } catch (error) {
-    console.error(`${LOG_PREFIX} Failed to send alert for ${resourceType}:`, error.message);
+  // Return alert object for consolidated reporting
+  return {
+    resourceType,
+    currentValue,
+    limit: threshold.limit,
+    percentUsed: percentUsed.toFixed(1),
+    severity,
+    alerted: true,
+    anomalies: anomalies ? anomalies.map(a => a.type) : []
+  };
+}
 
-    // PHASE 4: Log failure to history
-    await notificationHistory.addEvent({
-      type: 'threshold-alert',
-      severity,
-      resourceType,
+/**
+ * Persist audit execution to history
+ * Helper function to ensure ALL audits are recorded
+ */
+async function persistAuditHistory(auditData) {
+  const {
+    status,
+    subject,
+    reason,
+    totalAccounts,
+    restrictedAccounts,
+    monitoredAccounts,
+    resourceConditions = [],
+    criticalCount = 0,
+    warningCount = 0,
+    cooldownRemainingSeconds = 0
+  } = auditData;
+
+  console.log(`${LOG_PREFIX} Persisting audit to history:`, { status, subject: subject?.substring(0, 50) });
+
+  try {
+    const historyRecord = await notificationHistory.addEvent({
+      accountName: 'Enterprise Accounts',
+      type: 'license-audit',
+      severity: status === 'failed' ? 'error' : (criticalCount > 0 ? 'critical' : (warningCount > 0 ? 'warning' : 'info')),
+      resourceType: 'consolidated',
       recipients: [],
-      subject: `${severity === 'critical' ? '🚨' : '⚠️'} Heroku ${resourceType} Usage Alert`,
+      subject: subject,
       provider: null,
-      status: 'failed',
-      error: error.message,
+      status: status,
+      messageId: null,
+      error: reason || null,
+      resourceSummary: resourceConditions.length > 0 ? { resources: resourceConditions } : { reason: reason || 'Audit completed' },
+      criticalCount: criticalCount,
+      warningCount: warningCount,
       metadata: {
-        currentValue,
-        limit: threshold.limit,
-        percentUsed: percentUsed.toFixed(1)
+        accountsScanned: totalAccounts,
+        accountsRestricted: restrictedAccounts,
+        accountsMonitored: monitoredAccounts,
+        cooldownRemainingSeconds: cooldownRemainingSeconds || 0
       }
     });
 
-    return {
-      resourceType,
-      currentValue,
-      limit: threshold.limit,
-      percentUsed: percentUsed.toFixed(1),
-      severity,
-      alerted: false,
-      error: error.message
-    };
+    if (historyRecord) {
+      console.log(`${LOG_PREFIX} Audit persisted to history successfully (ID: ${historyRecord.id})`);
+    } else {
+      console.error(`${LOG_PREFIX} CRITICAL: Failed to persist audit - addEvent returned null`);
+    }
+
+    return historyRecord;
+  } catch (error) {
+    console.error(`${LOG_PREFIX} CRITICAL: Failed to persist audit to history:`, error.message);
+    console.error(`${LOG_PREFIX} Error stack:`, error.stack);
+    return null;
   }
 }
 
@@ -398,84 +447,284 @@ async function checkResourceThreshold(resourceType, currentValue, threshold) {
  */
 async function runThresholdEvaluation(options = {}) {
   const startTime = Date.now();
-  console.log(`${LOG_PREFIX} Starting threshold evaluation...`);
+  console.log(`${LOG_PREFIX} Starting license audit evaluation...`);
 
   try {
     // Get configuration
     const config = await configService.getConfig();
     const thresholds = config.thresholds;
 
-    // Fetch latest usage data
+    // Fetch all enterprise accounts usage data
     const month = options.month || new Date().toISOString().slice(0, 7);
-    const usageData = await enterpriseUsageService.getEnterpriseStructure(month);
+    const allAccountsData = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
 
-    if (!usageData || !usageData.resources) {
-      console.log(`${LOG_PREFIX} No usage data available`);
-      return { checked: false, reason: 'No usage data available' };
+    // Diagnostic logging
+    console.log(`${LOG_PREFIX} Audit diagnostics:`, {
+      accountsFound: allAccountsData.enterpriseAccounts?.length || 0,
+      hasSummary: !!allAccountsData.summary,
+      month
+    });
+
+    const totalAccounts = allAccountsData.enterpriseAccounts?.length || 0;
+    const restrictedAccounts = allAccountsData.enterpriseAccounts?.filter(
+      acc => !acc.enterpriseAccount?.has_billing_access
+    ).length || 0;
+    const monitoredAccounts = totalAccounts - restrictedAccounts;
+
+    // Handle case: no enterprise accounts
+    if (!allAccountsData.enterpriseAccounts || allAccountsData.enterpriseAccounts.length === 0) {
+      console.log(`${LOG_PREFIX} No enterprise accounts configured`);
+
+      // Persist failed audit to history
+      await persistAuditHistory({
+        status: 'failed',
+        subject: '[License Audit] Failed - No Accounts',
+        reason: 'No enterprise accounts configured',
+        totalAccounts: 0,
+        restrictedAccounts: 0,
+        monitoredAccounts: 0
+      });
+
+      return {
+        checked: false,
+        reason: 'No Enterprise Accounts Configured',
+        detail: 'Add and monitor Enterprise Accounts to begin license auditing.',
+        accountsScanned: 0,
+        accountsRestricted: 0
+      };
     }
 
-    const resources = usageData.resources;
+    // Handle case: all accounts restricted
+    if (monitoredAccounts === 0) {
+      console.log(`${LOG_PREFIX} All enterprise accounts have restricted billing access`);
+
+      // Persist failed audit to history
+      await persistAuditHistory({
+        status: 'failed',
+        subject: '[License Audit] Failed - Billing Access Restricted',
+        reason: 'All enterprise accounts have restricted billing access',
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts: 0
+      });
+
+      return {
+        checked: false,
+        reason: 'Billing Access Restricted',
+        detail: 'Usage-based license metrics are unavailable for all Enterprise Accounts.',
+        accountsScanned: totalAccounts,
+        accountsRestricted: restrictedAccounts,
+        accountsMonitored: 0
+      };
+    }
+
+    // Aggregate usage across all accounts using the summary
+    const aggregatedUsage = allAccountsData.summary || {};
+
+    // Handle case: no usage data in summary
+    if (!aggregatedUsage.totalDynos && !aggregatedUsage.totalConnect &&
+        !aggregatedUsage.totalDataAddons && !aggregatedUsage.totalOtherAddons) {
+      console.log(`${LOG_PREFIX} No usage data in aggregated summary`);
+
+      // Persist failed audit to history
+      await persistAuditHistory({
+        status: 'failed',
+        subject: '[License Audit] Failed - No Usage Data',
+        reason: 'Usage data is still being collected',
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts
+      });
+
+      return {
+        checked: false,
+        reason: 'Usage data is still being collected',
+        detail: 'Please retry the license audit shortly.',
+        accountsScanned: totalAccounts,
+        accountsRestricted: restrictedAccounts,
+        accountsMonitored: monitoredAccounts
+      };
+    }
+
     const alerts = [];
 
-    // Check each resource type
+    // Check each resource type using aggregated summary
     const checks = [
       {
         type: 'Dyno Units',
         key: 'dynoUnits',
-        data: resources.dynos,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalDynos || 0
       },
       {
         type: 'Connect Rows',
         key: 'connectRows',
-        data: resources.connect,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalConnect || 0
       },
       {
         type: 'Data Add-ons',
         key: 'dataAddons',
-        data: resources.dataAddons,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalDataAddons || 0
       },
       {
         type: 'General Add-ons',
         key: 'generalAddons',
-        data: resources.otherAddons,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalOtherAddons || 0
       },
       {
         type: 'Private Spaces',
         key: 'privateSpaces',
-        data: resources.privateSpaces,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalPrivateSpaces || 0
       },
       {
         type: 'Shield Spaces',
         key: 'shieldSpaces',
-        data: resources.shieldSpaces,
-        valueKey: 'count'
+        currentValue: aggregatedUsage.totalShieldSpaces || 0
       }
     ];
 
+    // Collect all resource conditions for consolidated email
+    const resourceConditions = [];
+
     for (const check of checks) {
-      if (thresholds[check.key].enabled && check.data) {
-        const currentValue = check.data[check.valueKey] || 0;
+      if (thresholds[check.key].enabled) {
         const alert = await checkResourceThreshold(
           check.type,
-          currentValue,
-          thresholds[check.key]
+          check.currentValue,
+          thresholds[check.key],
+          true // Skip individual email sending
         );
         if (alert) {
           alerts.push(alert);
+          // Collect conditions that need to be reported
+          if (alert.alerted && alert.severity) {
+            resourceConditions.push({
+              resourceType: check.type,
+              currentUsage: check.currentValue,
+              licensedCapacity: thresholds[check.key].limit,
+              utilization: alert.percentUsed,
+              severity: alert.severity,
+              thresholdType: alert.severity === 'critical' ? 'Critical' : 'Warning'
+            });
+          }
         }
       }
     }
 
-    const duration = Date.now() - startTime;
+    // Determine cooldown status for UI feedback
+    let consolidatedEmailSent = false;
+    let cooldownActive = false;
+    let cooldownRemainingSeconds = 0;
+
+    // Calculate alert counts BEFORE using them
     const alertedCount = alerts.filter(a => a.alerted).length;
     const suppressedCount = alerts.filter(a => !a.alerted).length;
+    const warningCount = alerts.filter(a => a.severity === 'warning').length;
+    const criticalCount = alerts.filter(a => a.severity === 'critical').length;
 
-    console.log(`${LOG_PREFIX} Evaluation complete in ${duration}ms: ${alertedCount} alert(s) sent, ${suppressedCount} suppressed`);
+    // Calculate maximum cooldown from all suppressed alerts
+    const suppressedAlerts = alerts.filter(a => !a.alerted && a.reason === 'Suppressed by smart alerting');
+    if (suppressedAlerts.length > 0 && alertedCount === 0) {
+      cooldownActive = true;
+      // Get cooldown info from alert states
+      const thresholdCooldown = notificationConfig.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+      suppressedAlerts.forEach(alert => {
+        const state = getAlertState(alert.resourceType);
+        if (state.lastAlertTime) {
+          const elapsed = Date.now() - state.lastAlertTime;
+          const remaining = Math.max(0, Math.round((thresholdCooldown - elapsed) / 1000));
+          cooldownRemainingSeconds = Math.max(cooldownRemainingSeconds, remaining);
+        }
+      });
+    }
+
+    // Case 1: Alerts triggered - send email and persist
+    if (resourceConditions.length > 0) {
+      console.log(`${LOG_PREFIX} Sending consolidated license audit email with ${resourceConditions.length} condition(s)`);
+
+      const consolidatedPayload = {
+        accountName: 'Enterprise Accounts',
+        generatedAt: new Date().toISOString(),
+        warnings: resourceConditions.filter(r => r.severity === 'warning'),
+        criticals: resourceConditions.filter(r => r.severity === 'critical'),
+        resources: resourceConditions,
+        accountsScanned: totalAccounts,
+        accountsMonitored: monitoredAccounts,
+        accountsRestricted: restrictedAccounts
+      };
+
+      const result = await notificationService.sendLicenseAuditSummary(consolidatedPayload);
+      consolidatedEmailSent = result.sent;
+
+      console.log(`${LOG_PREFIX} Consolidated email result:`, {
+        sent: result.sent,
+        provider: result.provider,
+        messageId: result.messageId
+      });
+
+      // Persist using helper
+      await persistAuditHistory({
+        status: result.sent ? 'sent' : 'failed',
+        subject: `[License Audit] ${consolidatedPayload.criticals.length} Critical, ${consolidatedPayload.warnings.length} Warning(s)`,
+        reason: result.error || null,
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts,
+        resourceConditions,
+        criticalCount: consolidatedPayload.criticals.length,
+        warningCount: consolidatedPayload.warnings.length
+      });
+
+    // Case 2: Cooldown active - persist suppressed audit
+    } else if (cooldownActive) {
+      console.log(`${LOG_PREFIX} License audit suppressed due to cooldown (${cooldownRemainingSeconds}s remaining)`);
+
+      await persistAuditHistory({
+        status: 'suppressed',
+        subject: '[License Audit] Suppressed (Cooldown Active)',
+        reason: `Cooldown active - ${Math.ceil(cooldownRemainingSeconds / 60)} minute(s) remaining`,
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts,
+        resourceConditions: [],
+        criticalCount: 0,
+        warningCount: 0,
+        cooldownRemainingSeconds
+      });
+
+    // Case 3: No alerts triggered (healthy state) - persist audit completion
+    } else {
+      console.log(`${LOG_PREFIX} License audit completed - all resources within normal thresholds`);
+
+      await persistAuditHistory({
+        status: 'completed',
+        subject: '[License Audit] Completed - All Resources Normal',
+        reason: 'All licensed resources within normal thresholds',
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts,
+        resourceConditions: [],
+        criticalCount: 0,
+        warningCount: 0
+      });
+    }
+
+    const duration = Date.now() - startTime;
+    // Alert counts already calculated above (moved to fix TDZ error)
+
+    // IMPORTANT: If email was sent, cooldown just started
+    // We need to return the full cooldown period to the frontend
+    if (consolidatedEmailSent) {
+      const thresholdCooldown = notificationConfig.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+      cooldownActive = true;
+      cooldownRemainingSeconds = Math.round(thresholdCooldown / 1000);
+      console.log(`${LOG_PREFIX} Email sent - cooldown activated for ${cooldownRemainingSeconds} seconds`);
+    }
+
+    const logMessage = consolidatedEmailSent
+      ? `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, 1 consolidated email sent`
+      : `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, no email sent (cooldown active)`;
+
+    console.log(`${LOG_PREFIX} ${logMessage}`);
 
     return {
       checked: true,
@@ -483,14 +732,43 @@ async function runThresholdEvaluation(options = {}) {
       totalChecks: checks.length,
       alertsTriggered: alertedCount,
       alertsSuppressed: suppressedCount,
+      accountsScanned: totalAccounts,
+      accountsRestricted: restrictedAccounts,
+      accountsMonitored: monitoredAccounts,
+      warningConditions: warningCount,
+      criticalConditions: criticalCount,
+      consolidatedEmailSent,
+      cooldownActive,
+      cooldownRemainingMinutes: Math.ceil(cooldownRemainingSeconds / 60),
+      cooldownRemainingSeconds,
       alerts
     };
 
   } catch (error) {
-    console.error(`${LOG_PREFIX} Threshold evaluation failed:`, error);
+    console.error(`${LOG_PREFIX} License audit failed:`, error.message);
+    console.error(`${LOG_PREFIX} Error stack:`, error.stack);
+
+    // Persist failed audit to history
+    await persistAuditHistory({
+      status: 'failed',
+      subject: '[License Audit] Failed - Execution Error',
+      reason: error.message,
+      totalAccounts: 0,
+      restrictedAccounts: 0,
+      monitoredAccounts: 0
+    });
+
     return {
       checked: false,
-      error: error.message
+      success: false,
+      error: 'License audit failed',
+      details: error.message,
+      reason: 'Execution Failure',
+      accountsScanned: 0,
+      accountsMonitored: 0,
+      accountsRestricted: 0,
+      alertsTriggered: 0,
+      alertsSuppressed: 0
     };
   }
 }
@@ -572,8 +850,8 @@ async function sendTestNotification() {
  */
 function getAlertStates() {
   const states = {};
-  const thresholdCooldown = config.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
-  const anomalyCooldown = config.COOLDOWN_PERIODS.ANOMALY_ALERT_MS;
+  const thresholdCooldown = notificationConfig.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+  const anomalyCooldown = notificationConfig.COOLDOWN_PERIODS.ANOMALY_ALERT_MS;
 
   for (const [resourceType, state] of alertState.entries()) {
     const history = getUsageHistory(resourceType);
