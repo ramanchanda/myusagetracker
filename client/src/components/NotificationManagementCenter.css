@@ -491,6 +491,11 @@
   color: #64748b;
 }
 
+.nmc-activity-icon.completed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .nmc-activity-content {
   flex: 1;
   min-width: 0;
@@ -531,6 +536,10 @@
 
 .nmc-activity-status.suppressed {
   color: #64748b;
+}
+
+.nmc-activity-status.completed {
+  color: #2563eb;
 }
 
 .nmc-activity-loading {

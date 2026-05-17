@@ -481,6 +481,7 @@ function NotificationManagementCenter() {
                         {event.status === 'failed' && '✗'}
                         {event.status === 'queued' && '⏱'}
                         {event.status === 'suppressed' && '⚠'}
+                        {event.status === 'completed' && '✓'}
                       </span>
                       <div className="nmc-activity-content">
                         <div className="nmc-activity-title">

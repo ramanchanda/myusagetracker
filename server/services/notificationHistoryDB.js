@@ -34,6 +34,14 @@ async function createNotificationRecord(event) {
       metadata = {}
     } = event;
 
+    console.log(`${LOG_PREFIX} INSERT started:`, {
+      accountName,
+      type,
+      severity,
+      status,
+      subject: subject?.substring(0, 50)
+    });
+
     const recipient = Array.isArray(recipients) ? recipients.join(', ') : recipients;
 
     const query = `
@@ -70,10 +78,18 @@ async function createNotificationRecord(event) {
       JSON.stringify(metadata)
     ];
 
+    console.log(`${LOG_PREFIX} Executing INSERT with values:`, {
+      accountId: values[0] || 'null',
+      accountName: values[1],
+      type: values[2],
+      severity: values[3],
+      status: values[7]
+    });
+
     const result = await db.query(query, values);
     const record = result.rows[0];
 
-    console.log(`${LOG_PREFIX} Created notification record ID: ${record.id} for ${accountName || 'unknown'}`);
+    console.log(`${LOG_PREFIX} INSERT successful - Record ID: ${record.id} for ${accountName || 'unknown'}`);
 
     return {
       id: record.id,
@@ -81,8 +97,9 @@ async function createNotificationRecord(event) {
     };
 
   } catch (error) {
-    console.error(`${LOG_PREFIX} Failed to create notification record:`, error.message);
-    console.error(`${LOG_PREFIX} Query values:`, JSON.stringify(values, null, 2));
+    console.error(`${LOG_PREFIX} INSERT failed:`, error.message);
+    console.error(`${LOG_PREFIX} Error code:`, error.code);
+    console.error(`${LOG_PREFIX} Error detail:`, error.detail);
     console.error(`${LOG_PREFIX} Error stack:`, error.stack);
     // Don't throw - allow notification delivery to continue even if DB fails
     return null;

@@ -86,13 +86,20 @@ async function initializeSchema() {
 async function query(text, params) {
   const start = Date.now();
   try {
+    // Log query execution (truncate long queries)
+    const queryPreview = text.trim().replace(/\s+/g, ' ').substring(0, 100);
+    console.log(`${LOG_PREFIX} Executing query: ${queryPreview}...`);
+
     const result = await pool.query(text, params);
     const duration = Date.now() - start;
-    console.log(`${LOG_PREFIX} Query executed in ${duration}ms`);
+
+    console.log(`${LOG_PREFIX} Query executed in ${duration}ms - ${result.rowCount} row(s) affected`);
+
     return result;
   } catch (error) {
     console.error(`${LOG_PREFIX} Query error:`, error.message);
-    console.error(`${LOG_PREFIX} Query:`, text);
+    console.error(`${LOG_PREFIX} Error code:`, error.code);
+    console.error(`${LOG_PREFIX} Query preview:`, text.trim().substring(0, 200));
     throw error;
   }
 }
