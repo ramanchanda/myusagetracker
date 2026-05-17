@@ -10,9 +10,12 @@ function NotificationManagementCenter() {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [enterpriseAccounts, setEnterpriseAccounts] = useState([]);
+  const [enterpriseLoading, setEnterpriseLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchEnterpriseUsage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -33,6 +36,33 @@ function NotificationManagementCenter() {
       showMessage('error', 'Failed to load notification configuration');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEnterpriseUsage = async () => {
+    try {
+      setEnterpriseLoading(true);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const response = await axios.get(`/api/enterprise/all-accounts?month=${currentMonth}`);
+
+      if (response.data && Array.isArray(response.data.accounts)) {
+        setEnterpriseAccounts(response.data.accounts);
+      } else if (response.data && response.data.resources) {
+        // Single account response format
+        setEnterpriseAccounts([{
+          accountEmail: response.data.accountEmail || 'Primary Account',
+          accountName: response.data.accountName || 'Primary Account',
+          billingAccess: true,
+          resources: response.data.resources,
+          totalCost: response.data.totalCost
+        }]);
+      }
+    } catch (error) {
+      console.error('Error fetching enterprise usage:', error);
+      // Don't show error to user - just fail silently with empty state
+      setEnterpriseAccounts([]);
+    } finally {
+      setEnterpriseLoading(false);
     }
   };
 
@@ -209,6 +239,135 @@ function NotificationManagementCenter() {
       <div className="nmc-content">
         {activeTab === 'overview' && (
           <>
+            {/* Enterprise Accounts Usage Summary */}
+            <div className="nmc-section">
+              <h2 className="nmc-section-title">Enterprise Accounts - Current Month Usage</h2>
+              <p className="nmc-section-desc">Real-time usage metrics for monitored enterprise accounts</p>
+
+              {enterpriseLoading ? (
+                <div className="nmc-enterprise-loading">
+                  <div className="nmc-spinner-sm"></div>
+                  <span>Loading enterprise data...</span>
+                </div>
+              ) : enterpriseAccounts.length === 0 ? (
+                <div className="nmc-enterprise-empty">
+                  <span className="nmc-empty-icon">📊</span>
+                  <p>No enterprise accounts configured</p>
+                </div>
+              ) : (
+                <>
+                  {/* Operational Summary Row */}
+                  <div className="nmc-ops-summary">
+                    <div className="nmc-ops-stat">
+                      <span className="nmc-ops-label">Total Accounts</span>
+                      <span className="nmc-ops-value">{enterpriseAccounts.length}</span>
+                    </div>
+                    <div className="nmc-ops-stat">
+                      <span className="nmc-ops-label">Billing Enabled</span>
+                      <span className="nmc-ops-value">
+                        {enterpriseAccounts.filter(acc => acc.billingAccess).length}
+                      </span>
+                    </div>
+                    <div className="nmc-ops-stat">
+                      <span className="nmc-ops-label">Restricted</span>
+                      <span className="nmc-ops-value nmc-ops-warning">
+                        {enterpriseAccounts.filter(acc => !acc.billingAccess).length}
+                      </span>
+                    </div>
+                    <div className="nmc-ops-stat">
+                      <span className="nmc-ops-label">Notifications</span>
+                      <span className="nmc-ops-value">
+                        {config.emailConfig.enabled ? 'Active' : 'Disabled'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Enterprise Account Cards */}
+                  <div className="nmc-enterprise-grid">
+                    {enterpriseAccounts.map((account, idx) => (
+                      <div
+                        key={idx}
+                        className={`nmc-enterprise-card ${!account.billingAccess ? 'restricted' : ''}`}
+                      >
+                        <div className="nmc-enterprise-header">
+                          <div className="nmc-enterprise-name">
+                            {account.accountName || account.accountEmail}
+                          </div>
+                          <span className={`nmc-badge ${account.billingAccess ? 'active' : 'warning'}`}>
+                            {account.billingAccess ? 'Billing OK' : 'Restricted'}
+                          </span>
+                        </div>
+
+                        {!account.billingAccess ? (
+                          <div className="nmc-enterprise-restricted">
+                            <span className="nmc-restricted-icon">🔒</span>
+                            <span>Billing Access Restricted</span>
+                          </div>
+                        ) : account.resources ? (
+                          <div className="nmc-enterprise-metrics">
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">Teams</span>
+                              <span className="nmc-metric-value">
+                                {account.resources.enterpriseTeams || 0}
+                              </span>
+                            </div>
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">Private Spaces</span>
+                              <span className="nmc-metric-value">
+                                {account.resources.privateSpaces || 0}
+                              </span>
+                            </div>
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">Shield Spaces</span>
+                              <span className="nmc-metric-value">
+                                {account.resources.shieldSpaces || 0}
+                              </span>
+                            </div>
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">Dyno Units</span>
+                              <span className="nmc-metric-value">
+                                {(account.resources.dynoUnits || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">Connect Rows</span>
+                              <span className="nmc-metric-value">
+                                {(account.resources.connectRows || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">Data Add-ons</span>
+                              <span className="nmc-metric-value">
+                                {account.resources.dataAddons || 0}
+                              </span>
+                            </div>
+                            <div className="nmc-metric">
+                              <span className="nmc-metric-label">General Add-ons</span>
+                              <span className="nmc-metric-value">
+                                {account.resources.generalAddons || 0}
+                              </span>
+                            </div>
+                            {account.totalCost && (
+                              <div className="nmc-metric nmc-metric-cost">
+                                <span className="nmc-metric-label">Est. Cost</span>
+                                <span className="nmc-metric-value">
+                                  ${account.totalCost.toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="nmc-enterprise-restricted">
+                            <span>No usage data available</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Alert Thresholds Summary */}
             <div className="nmc-section">
               <h2 className="nmc-section-title">Alert Thresholds</h2>
