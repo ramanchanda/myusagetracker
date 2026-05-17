@@ -11,10 +11,10 @@ const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
 const notificationService = require('./notificationService');
 const notificationHistory = require('./notificationHistory');
-const config = require('../config/notificationConfig');
+const notificationConfig = require('../config/notificationConfig');
 
 // Service name for structured logging
-const LOG_PREFIX = config.LOGGING.PREFIXES.ORCHESTRATOR;
+const LOG_PREFIX = notificationConfig.LOGGING.PREFIXES.ORCHESTRATOR;
 
 // Enhanced state tracking with anomaly detection
 const alertState = new Map();
@@ -56,7 +56,7 @@ function recordUsageValue(resourceType, value) {
   });
 
   // Keep only configured max data points
-  if (history.length > config.USAGE_HISTORY.MAX_DATA_POINTS) {
+  if (history.length > notificationConfig.USAGE_HISTORY.MAX_DATA_POINTS) {
     history.shift();
   }
 
@@ -91,7 +91,7 @@ function clearAlertState(resourceType) {
 function detectAnomalies(resourceType, currentValue) {
   const history = getUsageHistory(resourceType);
 
-  if (history.length < config.ANOMALY_THRESHOLDS.MIN_DATA_POINTS) {
+  if (history.length < notificationConfig.ANOMALY_THRESHOLDS.MIN_DATA_POINTS) {
     return null;
   }
 
@@ -103,14 +103,14 @@ function detectAnomalies(resourceType, currentValue) {
   const max = Math.max(...values);
 
   // 1. Sudden Spike Detection
-  const spikeThreshold = avg * config.ANOMALY_THRESHOLDS.SPIKE_MULTIPLIER;
+  const spikeThreshold = avg * notificationConfig.ANOMALY_THRESHOLDS.SPIKE_MULTIPLIER;
   if (currentValue > spikeThreshold && currentValue > avg) {
     const increase = ((currentValue - avg) / avg * 100).toFixed(1);
-    const isCritical = currentValue > avg * config.ANOMALY_THRESHOLDS.CRITICAL_SPIKE_MULTIPLIER;
+    const isCritical = currentValue > avg * notificationConfig.ANOMALY_THRESHOLDS.CRITICAL_SPIKE_MULTIPLIER;
     anomalies.push({
       type: 'sudden_spike',
       message: `Sudden spike detected: ${currentValue} (${increase}% above recent average of ${avg.toFixed(0)})`,
-      severity: isCritical ? config.SEVERITY_LEVELS.CRITICAL : config.SEVERITY_LEVELS.WARNING
+      severity: isCritical ? notificationConfig.SEVERITY_LEVELS.CRITICAL : notificationConfig.SEVERITY_LEVELS.WARNING
     });
   }
 
@@ -119,12 +119,12 @@ function detectAnomalies(resourceType, currentValue) {
     const lastValue = history[history.length - 1].value;
     const percentChange = ((currentValue - lastValue) / lastValue * 100);
 
-    if (percentChange > config.ANOMALY_THRESHOLDS.JUMP_PERCENTAGE) {
-      const isCritical = percentChange > config.ANOMALY_THRESHOLDS.CRITICAL_JUMP_PERCENTAGE;
+    if (percentChange > notificationConfig.ANOMALY_THRESHOLDS.JUMP_PERCENTAGE) {
+      const isCritical = percentChange > notificationConfig.ANOMALY_THRESHOLDS.CRITICAL_JUMP_PERCENTAGE;
       anomalies.push({
         type: 'unusual_jump',
         message: `Unusual jump: ${lastValue} → ${currentValue} (+${percentChange.toFixed(1)}% in 1 hour)`,
-        severity: isCritical ? config.SEVERITY_LEVELS.CRITICAL : config.SEVERITY_LEVELS.WARNING
+        severity: isCritical ? notificationConfig.SEVERITY_LEVELS.CRITICAL : notificationConfig.SEVERITY_LEVELS.WARNING
       });
     }
   }
@@ -134,26 +134,26 @@ function detectAnomalies(resourceType, currentValue) {
     const recentGrowth = currentValue - history[history.length - 2].value;
     const previousGrowth = history[history.length - 2].value - history[history.length - 4].value;
 
-    if (previousGrowth > 0 && recentGrowth > previousGrowth * config.ANOMALY_THRESHOLDS.ACCELERATION_MULTIPLIER) {
+    if (previousGrowth > 0 && recentGrowth > previousGrowth * notificationConfig.ANOMALY_THRESHOLDS.ACCELERATION_MULTIPLIER) {
       anomalies.push({
         type: 'trend_acceleration',
         message: `Accelerating growth detected: Previous +${previousGrowth}, Recent +${recentGrowth}`,
-        severity: config.SEVERITY_LEVELS.WARNING
+        severity: notificationConfig.SEVERITY_LEVELS.WARNING
       });
     }
   }
 
   // 4. Sustained High Usage
-  if (history.length >= config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS) {
-    const recentValues = values.slice(-config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS);
-    const highThreshold = max * (config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_PERCENTAGE / 100);
+  if (history.length >= notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS) {
+    const recentValues = values.slice(-notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS);
+    const highThreshold = max * (notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_PERCENTAGE / 100);
     const sustainedHigh = recentValues.every(v => v >= highThreshold);
 
     if (sustainedHigh && currentValue >= highThreshold) {
       anomalies.push({
         type: 'sustained_high',
-        message: `Sustained high usage: ${currentValue} maintained near max (${max}) for ${config.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS}+ hours`,
-        severity: config.SEVERITY_LEVELS.WARNING
+        message: `Sustained high usage: ${currentValue} maintained near max (${max}) for ${notificationConfig.ANOMALY_THRESHOLDS.SUSTAINED_HIGH_HOURS}+ hours`,
+        severity: notificationConfig.SEVERITY_LEVELS.WARNING
       });
     }
   }
@@ -170,13 +170,13 @@ function shouldSendAnomalyAlert(resourceType, anomalies) {
   }
 
   const state = getAlertState(resourceType);
-  const cooldownMs = config.getCooldownPeriod(config.EVENT_TYPES.ANOMALY_ALERT);
+  const cooldownMs = notificationConfig.getCooldownPeriod(notificationConfig.EVENT_TYPES.ANOMALY_ALERT);
 
   // Don't spam anomaly alerts
   if (state.lastAnomalyAlert) {
     const elapsed = Date.now() - state.lastAnomalyAlert;
     if (elapsed < cooldownMs) {
-      const remaining = config.formatDuration(cooldownMs - elapsed);
+      const remaining = notificationConfig.formatDuration(cooldownMs - elapsed);
       console.log(`${LOG_PREFIX} Anomaly alert suppressed for ${resourceType} (cooldown: ${remaining} remaining)`);
       return false;
     }
@@ -201,10 +201,10 @@ function recordAnomalyAlert(resourceType) {
  */
 function shouldSendAlert(resourceType, severity, percentUsed, threshold, currentValue) {
   const state = getAlertState(resourceType);
-  const cooldownMs = config.getCooldownPeriod(config.EVENT_TYPES.THRESHOLD_ALERT);
+  const cooldownMs = notificationConfig.getCooldownPeriod(notificationConfig.EVENT_TYPES.THRESHOLD_ALERT);
 
   // If below warning threshold, clear state
-  if (percentUsed < config.SMART_ALERTING.CLEAR_STATE_PERCENTAGE) {
+  if (percentUsed < notificationConfig.SMART_ALERTING.CLEAR_STATE_PERCENTAGE) {
     if (state.lastSeverity) {
       console.log(`${LOG_PREFIX} ${resourceType} returned to normal (${percentUsed.toFixed(1)}%)`);
       clearAlertState(resourceType);
@@ -213,15 +213,15 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold, current
   }
 
   // First time crossing threshold
-  if (!state.lastSeverity && config.SMART_ALERTING.ALERT_ON_FIRST_CROSSING) {
+  if (!state.lastSeverity && notificationConfig.SMART_ALERTING.ALERT_ON_FIRST_CROSSING) {
     console.log(`${LOG_PREFIX} ${resourceType} crossed ${severity} threshold for first time`);
     return true;
   }
 
   // Severity escalated (warning → critical)
-  if (config.SMART_ALERTING.ALERT_ON_ESCALATION &&
-      severity === config.SEVERITY_LEVELS.CRITICAL &&
-      state.lastSeverity === config.SEVERITY_LEVELS.WARNING) {
+  if (notificationConfig.SMART_ALERTING.ALERT_ON_ESCALATION &&
+      severity === notificationConfig.SEVERITY_LEVELS.CRITICAL &&
+      state.lastSeverity === notificationConfig.SEVERITY_LEVELS.WARNING) {
     console.log(`${LOG_PREFIX} ${resourceType} escalated from warning to critical`);
     return true;
   }
@@ -229,7 +229,7 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold, current
   // Usage changed significantly
   if (state.lastValue) {
     const changePercent = Math.abs((currentValue - state.lastValue) / state.lastValue * 100);
-    if (changePercent > config.SMART_ALERTING.SIGNIFICANT_CHANGE_PERCENTAGE) {
+    if (changePercent > notificationConfig.SMART_ALERTING.SIGNIFICANT_CHANGE_PERCENTAGE) {
       console.log(`${LOG_PREFIX} ${resourceType} usage changed significantly: ${state.lastValue} → ${currentValue} (${changePercent.toFixed(1)}%)`);
       return true;
     }
@@ -238,7 +238,7 @@ function shouldSendAlert(resourceType, severity, percentUsed, threshold, current
   // Check cooldown for same severity
   const elapsed = Date.now() - state.lastAlertTime;
   if (elapsed < cooldownMs) {
-    const remaining = config.formatDuration(cooldownMs - elapsed);
+    const remaining = notificationConfig.formatDuration(cooldownMs - elapsed);
     console.log(`${LOG_PREFIX} ${resourceType} ${severity} alert suppressed (cooldown: ${remaining} remaining)`);
     return false;
   }
@@ -623,7 +623,7 @@ async function runThresholdEvaluation(options = {}) {
     if (suppressedAlerts.length > 0 && alertedCount === 0) {
       cooldownActive = true;
       // Get cooldown info from alert states
-      const thresholdCooldown = config.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+      const thresholdCooldown = notificationConfig.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
       suppressedAlerts.forEach(alert => {
         const state = getAlertState(alert.resourceType);
         if (state.lastAlertTime) {
@@ -711,7 +711,7 @@ async function runThresholdEvaluation(options = {}) {
     // IMPORTANT: If email was sent, cooldown just started
     // We need to return the full cooldown period to the frontend
     if (consolidatedEmailSent) {
-      const thresholdCooldown = config.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+      const thresholdCooldown = notificationConfig.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
       cooldownActive = true;
       cooldownRemainingSeconds = Math.round(thresholdCooldown / 1000);
       console.log(`${LOG_PREFIX} Email sent - cooldown activated for ${cooldownRemainingSeconds} seconds`);
@@ -847,8 +847,8 @@ async function sendTestNotification() {
  */
 function getAlertStates() {
   const states = {};
-  const thresholdCooldown = config.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
-  const anomalyCooldown = config.COOLDOWN_PERIODS.ANOMALY_ALERT_MS;
+  const thresholdCooldown = notificationConfig.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+  const anomalyCooldown = notificationConfig.COOLDOWN_PERIODS.ANOMALY_ALERT_MS;
 
   for (const [resourceType, state] of alertState.entries()) {
     const history = getUsageHistory(resourceType);
