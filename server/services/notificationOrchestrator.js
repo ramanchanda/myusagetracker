@@ -708,6 +708,15 @@ async function runThresholdEvaluation(options = {}) {
     const duration = Date.now() - startTime;
     // Alert counts already calculated above (moved to fix TDZ error)
 
+    // IMPORTANT: If email was sent, cooldown just started
+    // We need to return the full cooldown period to the frontend
+    if (consolidatedEmailSent) {
+      const thresholdCooldown = config.COOLDOWN_PERIODS.THRESHOLD_ALERT_MS;
+      cooldownActive = true;
+      cooldownRemainingSeconds = Math.round(thresholdCooldown / 1000);
+      console.log(`${LOG_PREFIX} Email sent - cooldown activated for ${cooldownRemainingSeconds} seconds`);
+    }
+
     const logMessage = consolidatedEmailSent
       ? `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, 1 consolidated email sent`
       : `License audit complete in ${duration}ms: ${alertedCount} alert(s) triggered, ${suppressedCount} suppressed, no email sent (cooldown active)`;
