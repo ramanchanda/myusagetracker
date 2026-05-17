@@ -698,8 +698,7 @@ function NotificationManagementCenter() {
               )}
             </div>
 
-
-            {/* License Capacity Grid */}
+            {/* Licensed Resources */}
             <div className="nmc-section">
               <h2 className="nmc-section-title">Licensed Resources</h2>
               <div className="nmc-resource-grid">
@@ -834,10 +833,6 @@ function NotificationManagementCenter() {
                       <div className="nmc-threshold-limit">
                         <span className="nmc-threshold-limit-label">Licensed Capacity</span>
                         <span className="nmc-threshold-limit-value">{threshold.limit.toLocaleString()}</span>
-                      </div>
-                      <div className="nmc-threshold-percentages">
-                        <span>⚠️ Warning: {threshold.warningPercentage}%</span>
-                        <span>🚨 Critical: {threshold.criticalPercentage}%</span>
                       </div>
                     </div>
                   </div>
