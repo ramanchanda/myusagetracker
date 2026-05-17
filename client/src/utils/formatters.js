@@ -113,14 +113,14 @@ export function formatUtilization(used, limit) {
  *
  * @param {number} used - Current usage
  * @param {number} limit - Maximum limit
- * @returns {number} Percentage as decimal (0-1 range)
+ * @returns {number} Percentage as decimal (can exceed 1.0 for overages)
  */
 export function calculateUtilizationPercentage(used, limit) {
   if (!limit || limit === 0) {
     return 0;
   }
 
-  return Math.min(used / limit, 1);
+  return used / limit;
 }
 
 /**

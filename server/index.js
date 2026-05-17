@@ -530,6 +530,36 @@ app.get('/api/notifications/history-v2', async (req, res) => {
   }
 });
 
+// Get last audit time
+app.get('/api/notifications/last-audit', async (req, res) => {
+  try {
+    // Query directly to order by triggered_at (most recent audit execution time)
+    const query = `
+      SELECT triggered_at, id
+      FROM notification_history
+      WHERE notification_type = 'license-audit'
+        AND triggered_at IS NOT NULL
+      ORDER BY triggered_at DESC
+      LIMIT 1
+    `;
+
+    const db = require('./services/databaseService');
+    const result = await db.query(query);
+
+    if (result.rows.length > 0) {
+      res.json({
+        lastAuditTime: result.rows[0].triggered_at,
+        lastAuditId: result.rows[0].id
+      });
+    } else {
+      res.json({ lastAuditTime: null, lastAuditId: null });
+    }
+  } catch (error) {
+    console.error('Error fetching last audit time:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get notification statistics
 app.get('/api/notifications/stats', async (req, res) => {
   try {

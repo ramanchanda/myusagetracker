@@ -106,13 +106,16 @@ function NotificationManagementCenter() {
 
   const fetchCooldownStatus = async () => {
     try {
-      const response = await axios.get('/api/notifications/cooldown-status');
+      const [cooldownResponse, lastAuditResponse] = await Promise.all([
+        axios.get('/api/notifications/cooldown-status'),
+        axios.get('/api/notifications/last-audit').catch(() => ({ data: { lastAuditTime: null } }))
+      ]);
 
       // Check if any resource has active cooldown
       let maxCooldown = 0;
       let hasCooldown = false;
 
-      Object.values(response.data).forEach(state => {
+      Object.values(cooldownResponse.data).forEach(state => {
         if (state.cooldownRemaining > 0) {
           hasCooldown = true;
           maxCooldown = Math.max(maxCooldown, state.cooldownRemaining);
@@ -125,6 +128,11 @@ function NotificationManagementCenter() {
           remainingMinutes: Math.ceil(maxCooldown / 60),
           remainingSeconds: maxCooldown
         });
+      }
+
+      // Set last audit time from database
+      if (lastAuditResponse.data.lastAuditTime) {
+        setLastAuditTime(new Date(lastAuditResponse.data.lastAuditTime));
       }
     } catch (error) {
       console.error('Error fetching cooldown status:', error);
@@ -299,11 +307,12 @@ function NotificationManagementCenter() {
       }
     });
 
-    // Determine status based on highest utilization
+    // Determine status based on utilization
+    // If ANY resource exceeds 100%, status is OVERAGE
     let status = 'healthy';
     let label = 'LICENSE HEALTHY';
 
-    if (highestPercentage > 1.0) {
+    if (overageResources.length > 0) {
       status = 'overage';
       label = 'LICENSE OVERAGE';
     } else if (highestPercentage >= criticalThreshold) {
@@ -376,29 +385,18 @@ function NotificationManagementCenter() {
             className={`nmc-btn nmc-btn-primary nmc-btn-sm ${cooldownState.active ? 'nmc-btn-cooldown' : ''}`}
             title={
               cooldownState.active
-                ? `License audit cooldown active. Next audit available in ${formatCooldownTime(cooldownState.remainingSeconds)}.`
+                ? `⏱ License audits are rate-limited to prevent duplicate alerts. Last audit: ${lastAuditTime ? lastAuditTime.toLocaleTimeString() : 'Unknown'}`
                 : 'Run license audit across all enterprise accounts'
             }
           >
             {testing
               ? 'Running Audit...'
               : cooldownState.active
-                ? `Cooldown (${formatCooldownTime(cooldownState.remainingSeconds)})`
+                ? `Run License Audit (cooldown ${formatCooldownTime(cooldownState.remainingSeconds)})`
                 : 'Run License Audit'}
           </button>
         </div>
       </div>
-
-      {/* Cooldown Info Banner */}
-      {cooldownState.active && (
-        <div className="nmc-cooldown-info">
-          <span className="nmc-cooldown-icon">⏱</span>
-          <span>
-            License audits are rate-limited to prevent duplicate alerts.
-            Next audit available in <strong>{formatCooldownTime(cooldownState.remainingSeconds)}</strong>.
-          </span>
-        </div>
-      )}
 
       {/* Message Banner */}
       {message && (
@@ -578,6 +576,14 @@ function NotificationManagementCenter() {
                           </div>
                         ) : account.resources ? (
                           <div className="nmc-enterprise-metrics-v2">
+                            {/* Enterprise Teams (count only, no progress bar) */}
+                            <div className="nmc-metric-row-simple">
+                              <span className="nmc-metric-label">Enterprise Teams</span>
+                              <span className="nmc-metric-value-simple">
+                                {account.resources.enterpriseTeams || 0}
+                              </span>
+                            </div>
+
                             {/* Dyno Units with utilization */}
                             {(() => {
                               const dynoUtil = calculateUtilization(
@@ -617,28 +623,6 @@ function NotificationManagementCenter() {
                                   </span>
                                   <div className={`nmc-progress-bar nmc-util-${connectUtil.status}`}>
                                     <div className="nmc-progress-fill" style={{width: `${Math.min(connectUtil.percentage, 100)}%`}}></div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-
-                            {/* Enterprise Teams with utilization */}
-                            {(() => {
-                              const teamsUtil = calculateUtilization(
-                                account.resources.enterpriseTeams,
-                                config.thresholds.enterpriseTeams?.limit
-                              );
-                              return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">Enterprise Teams</span>
-                                  <span className="nmc-metric-usage">
-                                    {account.resources.enterpriseTeams || 0} / {config.thresholds.enterpriseTeams?.limit || 0}
-                                  </span>
-                                  <span className={`nmc-metric-percent nmc-util-${teamsUtil.status}`}>
-                                    {teamsUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${teamsUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(teamsUtil.percentage, 100)}%`}}></div>
                                   </div>
                                 </div>
                               );
@@ -688,21 +672,49 @@ function NotificationManagementCenter() {
                               );
                             })()}
 
-                            {/* Data Add-ons (no progress bar, count only) */}
-                            <div className="nmc-metric-row-simple">
-                              <span className="nmc-metric-label">Data Add-ons</span>
-                              <span className="nmc-metric-value-simple">
-                                {formatNumber(account.resources.dataAddons)}
-                              </span>
-                            </div>
+                            {/* Data Add-ons with utilization */}
+                            {(() => {
+                              const dataUtil = calculateUtilization(
+                                account.resources.dataAddons,
+                                config.thresholds.dataAddons?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">Data Add-ons</span>
+                                  <span className="nmc-metric-usage">
+                                    {formatNumber(account.resources.dataAddons)} / {formatNumber(config.thresholds.dataAddons?.limit || 0)}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${dataUtil.status}`}>
+                                    {dataUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${dataUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(dataUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
-                            {/* General Add-ons (no progress bar, count only) */}
-                            <div className="nmc-metric-row-simple">
-                              <span className="nmc-metric-label">General Add-ons</span>
-                              <span className="nmc-metric-value-simple">
-                                {formatNumber(account.resources.generalAddons)}
-                              </span>
-                            </div>
+                            {/* General Add-ons with utilization */}
+                            {(() => {
+                              const generalUtil = calculateUtilization(
+                                account.resources.generalAddons,
+                                config.thresholds.generalAddons?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">General Add-ons</span>
+                                  <span className="nmc-metric-usage">
+                                    {formatNumber(account.resources.generalAddons)} / {formatNumber(config.thresholds.generalAddons?.limit || 0)}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${generalUtil.status}`}>
+                                    {generalUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${generalUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(generalUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="nmc-enterprise-restricted">
