@@ -41,6 +41,65 @@ function licenseAuditTemplate(data) {
     return 'License Compliance Review';
   };
 
+  // Determine account status based on highest utilization
+  const allUtilizations = resources.map(r => parseFloat(r.utilization));
+  const maxUtilization = Math.max(...allUtilizations);
+  let accountStatus, accountStatusBadge, overageResources = [];
+
+  // Collect overage resources (>100%)
+  resources.forEach(resource => {
+    const util = parseFloat(resource.utilization);
+    if (util > 100) {
+      overageResources.push({
+        name: resource.resourceType,
+        percentage: resource.utilization
+      });
+    }
+  });
+
+  if (maxUtilization > 100) {
+    accountStatus = 'LICENSE OVERAGE';
+    accountStatusBadge = `
+      <div style="margin-bottom: 20px;">
+        <div style="display: inline-block; background: #450a0a; color: #fef2f2; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 14px; border: 1.5px solid #991b1b;">
+          ${accountStatus}
+        </div>
+        ${overageResources.length > 0 ? `
+          <div style="margin-top: 8px; font-size: 13px; color: #991b1b; font-weight: 600;">
+            ${overageResources.map(r => `${r.name}: >${r.percentage}%`).join(' • ')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } else if (maxUtilization >= 95) {
+    accountStatus = 'LICENSE CRITICAL';
+    accountStatusBadge = `
+      <div style="margin-bottom: 20px;">
+        <div style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 14px;">
+          ${accountStatus}
+        </div>
+      </div>
+    `;
+  } else if (maxUtilization >= 80) {
+    accountStatus = 'LICENSE WARNING';
+    accountStatusBadge = `
+      <div style="margin-bottom: 20px;">
+        <div style="display: inline-block; background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 14px;">
+          ${accountStatus}
+        </div>
+      </div>
+    `;
+  } else {
+    accountStatus = 'LICENSE HEALTHY';
+    accountStatusBadge = `
+      <div style="margin-bottom: 20px;">
+        <div style="display: inline-block; background: #d1fae5; color: #065f46; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 14px;">
+          ${accountStatus}
+        </div>
+      </div>
+    `;
+  }
+
   // Build resource table rows with enhanced formatting
   const resourceRows = resources.map(resource => {
     const utilization = parseFloat(resource.utilization);
@@ -91,6 +150,8 @@ function licenseAuditTemplate(data) {
         <strong style="color: #374151;">Account:</strong> ${accountName}<br>
         <strong style="color: #374151;">Report Generated:</strong> ${timestamp}
       </p>
+
+      ${accountStatusBadge}
 
       ${hasOverage || hasCritical ? `
         <div style="padding: 16px 20px; background: ${hasOverage ? '#7f1d1d' : '#991b1b'}; border-radius: 6px; margin-top: 16px;">
