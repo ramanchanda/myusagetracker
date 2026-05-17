@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './NotificationManagementCenter.css';
-import { formatNumber, formatUsage } from '../utils/formatters';
+import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizationStatus } from '../utils/formatters';
 
 function NotificationManagementCenter() {
   const [config, setConfig] = useState(null);
@@ -225,6 +225,93 @@ function NotificationManagementCenter() {
     return `${secs}s`;
   };
 
+  const calculateUtilization = (current, limit) => {
+    if (!limit || limit === 0) return { percentage: 0, status: 'normal' };
+    const percentage = calculateUtilizationPercentage(current, limit);
+    const status = getUtilizationStatus(percentage,
+      (config.thresholds.dynoUnits?.warningPercentage || 80) / 100,
+      (config.thresholds.dynoUnits?.criticalPercentage || 95) / 100
+    );
+    return { percentage: (percentage * 100).toFixed(1), status };
+  };
+
+  const calculateAccountLicenseStatus = (account) => {
+    if (!account.resources || !config) {
+      return { status: 'healthy', label: 'LICENSE HEALTHY', highestResource: null, highestPercentage: 0 };
+    }
+
+    const warningThreshold = (config.thresholds.dynoUnits?.warningPercentage || 80) / 100;
+    const criticalThreshold = (config.thresholds.dynoUnits?.criticalPercentage || 95) / 100;
+
+    const resourceUtilizations = [
+      {
+        name: 'Dyno Units',
+        current: account.resources.dynoUnits,
+        limit: config.thresholds.dynoUnits?.limit,
+        enabled: config.thresholds.dynoUnits?.enabled
+      },
+      {
+        name: 'Connect Rows',
+        current: account.resources.connectRows,
+        limit: config.thresholds.connectRows?.limit,
+        enabled: config.thresholds.connectRows?.enabled
+      },
+      {
+        name: 'Enterprise Teams',
+        current: account.resources.enterpriseTeams,
+        limit: config.thresholds.enterpriseTeams?.limit,
+        enabled: config.thresholds.enterpriseTeams?.enabled
+      },
+      {
+        name: 'Private Spaces',
+        current: account.resources.privateSpaces,
+        limit: config.thresholds.privateSpaces?.limit,
+        enabled: config.thresholds.privateSpaces?.enabled
+      },
+      {
+        name: 'Shield Spaces',
+        current: account.resources.shieldSpaces,
+        limit: config.thresholds.shieldSpaces?.limit,
+        enabled: config.thresholds.shieldSpaces?.enabled
+      }
+    ];
+
+    let highestPercentage = 0;
+    let highestResource = null;
+
+    resourceUtilizations.forEach(resource => {
+      if (resource.enabled && resource.limit && resource.limit > 0) {
+        const percentage = calculateUtilizationPercentage(resource.current, resource.limit);
+        if (percentage > highestPercentage) {
+          highestPercentage = percentage;
+          highestResource = resource.name;
+        }
+      }
+    });
+
+    // Determine status based on highest utilization
+    let status = 'healthy';
+    let label = 'LICENSE HEALTHY';
+
+    if (highestPercentage > 1.0) {
+      status = 'overage';
+      label = 'LICENSE OVERAGE';
+    } else if (highestPercentage >= criticalThreshold) {
+      status = 'critical';
+      label = 'LICENSE CRITICAL';
+    } else if (highestPercentage >= warningThreshold) {
+      status = 'warning';
+      label = 'LICENSE WARNING';
+    }
+
+    return {
+      status,
+      label,
+      highestResource,
+      highestPercentage: (highestPercentage * 100).toFixed(1)
+    };
+  };
+
   if (loading) {
     return (
       <div className="nmc-container">
@@ -436,19 +523,34 @@ function NotificationManagementCenter() {
 
                   {/* Enterprise Account Cards */}
                   <div className="nmc-enterprise-grid">
-                    {enterpriseAccounts.map((account, idx) => (
-                      <div
-                        key={idx}
-                        className={`nmc-enterprise-card ${!account.billingAccess ? 'restricted' : ''}`}
-                      >
-                        <div className="nmc-enterprise-header">
-                          <div className="nmc-enterprise-name">
-                            {account.accountName || account.accountEmail}
+                    {enterpriseAccounts.map((account, idx) => {
+                      const licenseStatus = calculateAccountLicenseStatus(account);
+                      return (
+                        <div
+                          key={idx}
+                          className={`nmc-enterprise-card ${!account.billingAccess ? 'restricted' : ''}`}
+                        >
+                          <div className="nmc-enterprise-header">
+                            <div className="nmc-enterprise-name">
+                              {account.accountName || account.accountEmail}
+                            </div>
+                            {!account.billingAccess ? (
+                              <span className="nmc-badge nmc-badge-restricted">
+                                Restricted
+                              </span>
+                            ) : (
+                              <div className="nmc-license-status">
+                                <span className={`nmc-badge nmc-badge-license-${licenseStatus.status}`}>
+                                  {licenseStatus.label}
+                                </span>
+                                {licenseStatus.highestResource && (
+                                  <div className="nmc-license-highest">
+                                    {licenseStatus.highestResource}: {licenseStatus.highestPercentage}%
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <span className={`nmc-badge ${account.billingAccess ? 'active' : 'warning'}`}>
-                            {account.billingAccess ? 'Billing OK' : 'Restricted'}
-                          </span>
-                        </div>
 
                         {!account.billingAccess ? (
                           <div className="nmc-enterprise-restricted">
@@ -456,46 +558,129 @@ function NotificationManagementCenter() {
                             <span>Billing Access Restricted</span>
                           </div>
                         ) : account.resources ? (
-                          <div className="nmc-enterprise-metrics">
-                            <div className="nmc-metric">
-                              <span className="nmc-metric-label">Teams</span>
-                              <span className="nmc-metric-value">
-                                {account.resources.enterpriseTeams || 0}
-                              </span>
-                            </div>
-                            <div className="nmc-metric">
-                              <span className="nmc-metric-label">Private Spaces</span>
-                              <span className="nmc-metric-value">
-                                {account.resources.privateSpaces || 0}
-                              </span>
-                            </div>
-                            <div className="nmc-metric">
-                              <span className="nmc-metric-label">Shield Spaces</span>
-                              <span className="nmc-metric-value">
-                                {account.resources.shieldSpaces || 0}
-                              </span>
-                            </div>
-                            <div className="nmc-metric">
-                              <span className="nmc-metric-label">Dyno Units</span>
-                              <span className="nmc-metric-value">
-                                {formatUsage(account.resources.dynoUnits)}
-                              </span>
-                            </div>
-                            <div className="nmc-metric">
-                              <span className="nmc-metric-label">Connect Rows</span>
-                              <span className="nmc-metric-value">
-                                {formatUsage(account.resources.connectRows)}
-                              </span>
-                            </div>
-                            <div className="nmc-metric">
+                          <div className="nmc-enterprise-metrics-v2">
+                            {/* Dyno Units with utilization */}
+                            {(() => {
+                              const dynoUtil = calculateUtilization(
+                                account.resources.dynoUnits,
+                                config.thresholds.dynoUnits?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">Dyno Units</span>
+                                  <span className="nmc-metric-usage">
+                                    {formatUsage(account.resources.dynoUnits)} / {formatUsage(config.thresholds.dynoUnits?.limit || 0)}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${dynoUtil.status}`}>
+                                    {dynoUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${dynoUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(dynoUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Connect Rows with utilization */}
+                            {(() => {
+                              const connectUtil = calculateUtilization(
+                                account.resources.connectRows,
+                                config.thresholds.connectRows?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">Connect Rows</span>
+                                  <span className="nmc-metric-usage">
+                                    {formatUsage(account.resources.connectRows)} / {formatUsage(config.thresholds.connectRows?.limit || 0)}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${connectUtil.status}`}>
+                                    {connectUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${connectUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(connectUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Enterprise Teams with utilization */}
+                            {(() => {
+                              const teamsUtil = calculateUtilization(
+                                account.resources.enterpriseTeams,
+                                config.thresholds.enterpriseTeams?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">Enterprise Teams</span>
+                                  <span className="nmc-metric-usage">
+                                    {account.resources.enterpriseTeams || 0} / {config.thresholds.enterpriseTeams?.limit || 0}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${teamsUtil.status}`}>
+                                    {teamsUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${teamsUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(teamsUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Private Spaces with utilization */}
+                            {(() => {
+                              const spacesUtil = calculateUtilization(
+                                account.resources.privateSpaces,
+                                config.thresholds.privateSpaces?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">Private Spaces</span>
+                                  <span className="nmc-metric-usage">
+                                    {account.resources.privateSpaces || 0} / {config.thresholds.privateSpaces?.limit || 0}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${spacesUtil.status}`}>
+                                    {spacesUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${spacesUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(spacesUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Shield Spaces with utilization */}
+                            {(() => {
+                              const shieldUtil = calculateUtilization(
+                                account.resources.shieldSpaces,
+                                config.thresholds.shieldSpaces?.limit
+                              );
+                              return (
+                                <div className="nmc-metric-row">
+                                  <span className="nmc-metric-label">Shield Spaces</span>
+                                  <span className="nmc-metric-usage">
+                                    {account.resources.shieldSpaces || 0} / {config.thresholds.shieldSpaces?.limit || 0}
+                                  </span>
+                                  <span className={`nmc-metric-percent nmc-util-${shieldUtil.status}`}>
+                                    {shieldUtil.percentage}%
+                                  </span>
+                                  <div className={`nmc-progress-bar nmc-util-${shieldUtil.status}`}>
+                                    <div className="nmc-progress-fill" style={{width: `${Math.min(shieldUtil.percentage, 100)}%`}}></div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Data Add-ons (no progress bar, count only) */}
+                            <div className="nmc-metric-row-simple">
                               <span className="nmc-metric-label">Data Add-ons</span>
-                              <span className="nmc-metric-value">
+                              <span className="nmc-metric-value-simple">
                                 {formatNumber(account.resources.dataAddons)}
                               </span>
                             </div>
-                            <div className="nmc-metric">
+
+                            {/* General Add-ons (no progress bar, count only) */}
+                            <div className="nmc-metric-row-simple">
                               <span className="nmc-metric-label">General Add-ons</span>
-                              <span className="nmc-metric-value">
+                              <span className="nmc-metric-value-simple">
                                 {formatNumber(account.resources.generalAddons)}
                               </span>
                             </div>
@@ -505,33 +690,14 @@ function NotificationManagementCenter() {
                             <span>No usage data available</span>
                           </div>
                         )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}
             </div>
 
-            {/* License Utilization Summary */}
-            <div className="nmc-section">
-              <h2 className="nmc-section-title">License Utilization</h2>
-              <div className="nmc-threshold-summary">
-                <div className="nmc-threshold-banner warning">
-                  <span className="nmc-threshold-icon">⚠️</span>
-                  <div>
-                    <div className="nmc-threshold-label">Warning Utilization</div>
-                    <div className="nmc-threshold-value">{config.thresholds.dynoUnits?.warningPercentage || 80}%</div>
-                  </div>
-                </div>
-                <div className="nmc-threshold-banner critical">
-                  <span className="nmc-threshold-icon">🚨</span>
-                  <div>
-                    <div className="nmc-threshold-label">Critical Utilization</div>
-                    <div className="nmc-threshold-value">{config.thresholds.dynoUnits?.criticalPercentage || 95}%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* License Capacity Grid */}
             <div className="nmc-section">

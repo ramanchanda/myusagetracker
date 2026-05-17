@@ -873,10 +873,24 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 12px;
   padding-bottom: 10px;
   border-bottom: 1px solid #e2e8f0;
+}
+
+.nmc-license-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.nmc-license-highest {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .nmc-enterprise-card.restricted .nmc-enterprise-header {
@@ -897,6 +911,36 @@
 .nmc-badge.warning {
   background: #fef3c7;
   color: #92400e;
+}
+
+.nmc-badge-restricted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nmc-badge-license-healthy {
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.nmc-badge-license-warning {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.nmc-badge-license-critical {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.nmc-badge-license-overage {
+  background: #450a0a;
+  color: #fef2f2;
+  font-weight: 700;
+  border: 1.5px solid #991b1b;
 }
 
 .nmc-enterprise-metrics {
@@ -1127,5 +1171,141 @@
 
   .nmc-enterprise-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================================
+   Enterprise Metrics V2 - Utilization Rows
+   ======================================================================== */
+
+.nmc-enterprise-metrics-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Metric Row with Progress Bar */
+.nmc-metric-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 60px;
+  grid-template-rows: auto auto;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.nmc-metric-row:last-of-type {
+  border-bottom: none;
+}
+
+.nmc-metric-row .nmc-metric-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.nmc-metric-row .nmc-metric-usage {
+  font-size: 0.8125rem;
+  color: #475569;
+  font-weight: 500;
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+}
+
+.nmc-metric-row .nmc-metric-percent {
+  font-size: 0.875rem;
+  font-weight: 700;
+  grid-column: 3;
+  grid-row: 1;
+  text-align: right;
+}
+
+.nmc-metric-percent.nmc-util-normal {
+  color: #10b981;
+}
+
+.nmc-metric-percent.nmc-util-warning {
+  color: #f59e0b;
+}
+
+.nmc-metric-percent.nmc-util-critical {
+  color: #ef4444;
+}
+
+/* Progress Bar */
+.nmc-progress-bar {
+  grid-column: 1 / 4;
+  grid-row: 2;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.nmc-progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.nmc-progress-bar.nmc-util-normal .nmc-progress-fill {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.nmc-progress-bar.nmc-util-warning .nmc-progress-fill {
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.nmc-progress-bar.nmc-util-critical .nmc-progress-fill {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* Simple Metric Row (no progress bar) */
+.nmc-metric-row-simple {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.nmc-metric-row-simple:last-of-type {
+  border-bottom: none;
+}
+
+.nmc-metric-row-simple .nmc-metric-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.nmc-metric-row-simple .nmc-metric-value-simple {
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* Responsive for Metric Rows */
+@media (max-width: 480px) {
+  .nmc-metric-row {
+    grid-template-columns: 100px 1fr 50px;
+  }
+
+  .nmc-metric-row .nmc-metric-label,
+  .nmc-metric-row .nmc-metric-usage {
+    font-size: 0.7rem;
+  }
+
+  .nmc-metric-row .nmc-metric-percent {
+    font-size: 0.75rem;
   }
 }
