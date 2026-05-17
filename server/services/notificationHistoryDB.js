@@ -202,6 +202,8 @@ async function addEvent(event) {
  */
 async function getHistory(options = {}) {
   try {
+    console.log(`${LOG_PREFIX} Fetching notification history`, { limit: options.limit, type: options.type });
+
     const {
       limit = 50,
       offset = 0,
@@ -272,6 +274,8 @@ async function getHistory(options = {}) {
     values.push(limit, offset);
 
     const result = await db.query(query, values);
+
+    console.log(`${LOG_PREFIX} Query returned ${result.rows.length} row(s)`);
 
     // Parse JSON fields
     const history = result.rows.map(row => ({

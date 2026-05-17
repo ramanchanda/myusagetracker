@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './NotificationManagementCenter-v2.css';
+import './NotificationManagementCenter.css';
 import { formatNumber, formatUsage } from '../utils/formatters';
 
 function NotificationManagementCenter() {
@@ -13,6 +13,10 @@ function NotificationManagementCenter() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [enterpriseAccounts, setEnterpriseAccounts] = useState([]);
   const [enterpriseLoading, setEnterpriseLoading] = useState(false);
+  const [cooldownState, setCooldownState] = useState({
+    active: false,
+    remainingMinutes: 0
+  });
 
   useEffect(() => {
     fetchData();
@@ -105,6 +109,12 @@ function NotificationManagementCenter() {
       const result = await axios.post('/api/notifications/check-thresholds');
 
       if (result.data.checked) {
+        // Update cooldown state
+        setCooldownState({
+          active: result.data.cooldownActive || false,
+          remainingMinutes: result.data.cooldownRemainingMinutes || 0
+        });
+
         // Check if cooldown is active
         if (result.data.cooldownActive && !result.data.consolidatedEmailSent) {
           // Cooldown suppression
@@ -189,10 +199,15 @@ function NotificationManagementCenter() {
           </button>
           <button
             onClick={checkThresholds}
-            disabled={testing}
+            disabled={testing || cooldownState.active}
             className="nmc-btn nmc-btn-primary nmc-btn-sm"
+            title={
+              cooldownState.active
+                ? `License audit cooldown active. Next audit available in ${cooldownState.remainingMinutes} minute(s).`
+                : 'Run license audit across all enterprise accounts'
+            }
           >
-            {testing ? 'Running Audit...' : 'Run License Audit'}
+            {testing ? 'Running Audit...' : cooldownState.active ? 'Cooldown Active' : 'Run License Audit'}
           </button>
         </div>
       </div>
@@ -453,9 +468,11 @@ function NotificationManagementCenter() {
             </div>
 
             {/* Recent Activity */}
-            {recentActivity.length > 0 && (
-              <div className="nmc-section">
-                <h2 className="nmc-section-title">Recent Activity</h2>
+            <div className="nmc-section">
+              <h2 className="nmc-section-title">Recent Activity</h2>
+              {loading ? (
+                <div className="nmc-activity-loading">Loading recent activity...</div>
+              ) : recentActivity.length > 0 ? (
                 <div className="nmc-activity-list">
                   {recentActivity.map((event) => (
                     <div key={event.id} className="nmc-activity-item">
@@ -463,13 +480,14 @@ function NotificationManagementCenter() {
                         {event.status === 'sent' && '✓'}
                         {event.status === 'failed' && '✗'}
                         {event.status === 'queued' && '⏱'}
+                        {event.status === 'suppressed' && '⚠'}
                       </span>
                       <div className="nmc-activity-content">
                         <div className="nmc-activity-title">
                           {event.subject || event.type}
                         </div>
                         <div className="nmc-activity-meta">
-                          {new Date(event.timestamp).toLocaleString()} • {event.provider || 'pending'}
+                          {new Date(event.timestamp).toLocaleString()} • {event.provider || event.status}
                         </div>
                       </div>
                       <span className={`nmc-activity-status ${event.status}`}>
@@ -478,8 +496,12 @@ function NotificationManagementCenter() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="nmc-activity-empty">
+                  No notification activity yet. Run a license audit to begin monitoring.
+                </div>
+              )}
+            </div>
           </>
         )}
 

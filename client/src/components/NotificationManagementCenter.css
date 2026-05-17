@@ -82,9 +82,18 @@
 }
 
 .nmc-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
+  background: #94a3b8;
+  border-color: #94a3b8;
+  color: white;
+}
+
+.nmc-btn-primary:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #64748b;
 }
 
 /* ========================================================================
@@ -477,6 +486,11 @@
   color: #92400e;
 }
 
+.nmc-activity-icon.suppressed {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
 .nmc-activity-content {
   flex: 1;
   min-width: 0;
@@ -513,6 +527,27 @@
 
 .nmc-activity-status.queued {
   color: #d97706;
+}
+
+.nmc-activity-status.suppressed {
+  color: #64748b;
+}
+
+.nmc-activity-loading {
+  padding: 32px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.nmc-activity-empty {
+  padding: 32px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
 }
 
 /* ========================================================================
