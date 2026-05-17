@@ -382,6 +382,63 @@ async function checkResourceThreshold(resourceType, currentValue, threshold, ski
 }
 
 /**
+ * Persist audit execution to history
+ * Helper function to ensure ALL audits are recorded
+ */
+async function persistAuditHistory(auditData) {
+  const {
+    status,
+    subject,
+    reason,
+    totalAccounts,
+    restrictedAccounts,
+    monitoredAccounts,
+    resourceConditions = [],
+    criticalCount = 0,
+    warningCount = 0,
+    cooldownRemainingSeconds = 0
+  } = auditData;
+
+  console.log(`${LOG_PREFIX} Persisting audit to history:`, { status, subject: subject?.substring(0, 50) });
+
+  try {
+    const historyRecord = await notificationHistory.addEvent({
+      accountName: 'Enterprise Accounts',
+      type: 'license-audit',
+      severity: status === 'failed' ? 'error' : (criticalCount > 0 ? 'critical' : (warningCount > 0 ? 'warning' : 'info')),
+      resourceType: 'consolidated',
+      recipients: [],
+      subject: subject,
+      provider: null,
+      status: status,
+      messageId: null,
+      error: reason || null,
+      resourceSummary: resourceConditions.length > 0 ? { resources: resourceConditions } : { reason: reason || 'Audit completed' },
+      criticalCount: criticalCount,
+      warningCount: warningCount,
+      metadata: {
+        accountsScanned: totalAccounts,
+        accountsRestricted: restrictedAccounts,
+        accountsMonitored: monitoredAccounts,
+        cooldownRemainingSeconds: cooldownRemainingSeconds || 0
+      }
+    });
+
+    if (historyRecord) {
+      console.log(`${LOG_PREFIX} Audit persisted to history successfully (ID: ${historyRecord.id})`);
+    } else {
+      console.error(`${LOG_PREFIX} CRITICAL: Failed to persist audit - addEvent returned null`);
+    }
+
+    return historyRecord;
+  } catch (error) {
+    console.error(`${LOG_PREFIX} CRITICAL: Failed to persist audit to history:`, error.message);
+    console.error(`${LOG_PREFIX} Error stack:`, error.stack);
+    return null;
+  }
+}
+
+/**
  * Run threshold evaluation for all resources
  * This is the main entry point for scheduled checks
  */
@@ -405,9 +462,26 @@ async function runThresholdEvaluation(options = {}) {
       month
     });
 
+    const totalAccounts = allAccountsData.enterpriseAccounts?.length || 0;
+    const restrictedAccounts = allAccountsData.enterpriseAccounts?.filter(
+      acc => !acc.enterpriseAccount?.has_billing_access
+    ).length || 0;
+    const monitoredAccounts = totalAccounts - restrictedAccounts;
+
     // Handle case: no enterprise accounts
     if (!allAccountsData.enterpriseAccounts || allAccountsData.enterpriseAccounts.length === 0) {
       console.log(`${LOG_PREFIX} No enterprise accounts configured`);
+
+      // Persist failed audit to history
+      await persistAuditHistory({
+        status: 'failed',
+        subject: '[License Audit] Failed - No Accounts',
+        reason: 'No enterprise accounts configured',
+        totalAccounts: 0,
+        restrictedAccounts: 0,
+        monitoredAccounts: 0
+      });
+
       return {
         checked: false,
         reason: 'No Enterprise Accounts Configured',
@@ -417,15 +491,20 @@ async function runThresholdEvaluation(options = {}) {
       };
     }
 
-    const totalAccounts = allAccountsData.enterpriseAccounts.length;
-    const restrictedAccounts = allAccountsData.enterpriseAccounts.filter(
-      acc => !acc.enterpriseAccount?.has_billing_access
-    ).length;
-    const monitoredAccounts = totalAccounts - restrictedAccounts;
-
     // Handle case: all accounts restricted
     if (monitoredAccounts === 0) {
       console.log(`${LOG_PREFIX} All enterprise accounts have restricted billing access`);
+
+      // Persist failed audit to history
+      await persistAuditHistory({
+        status: 'failed',
+        subject: '[License Audit] Failed - Billing Access Restricted',
+        reason: 'All enterprise accounts have restricted billing access',
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts: 0
+      });
+
       return {
         checked: false,
         reason: 'Billing Access Restricted',
@@ -443,6 +522,17 @@ async function runThresholdEvaluation(options = {}) {
     if (!aggregatedUsage.totalDynos && !aggregatedUsage.totalConnect &&
         !aggregatedUsage.totalDataAddons && !aggregatedUsage.totalOtherAddons) {
       console.log(`${LOG_PREFIX} No usage data in aggregated summary`);
+
+      // Persist failed audit to history
+      await persistAuditHistory({
+        status: 'failed',
+        subject: '[License Audit] Failed - No Usage Data',
+        reason: 'Usage data is still being collected',
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts
+      });
+
       return {
         checked: false,
         reason: 'Usage data is still being collected',
@@ -544,132 +634,75 @@ async function runThresholdEvaluation(options = {}) {
       });
     }
 
-    // ALWAYS persist audit execution to history (regardless of outcome)
-    console.log(`${LOG_PREFIX} Persisting audit execution to history...`);
+    // Case 1: Alerts triggered - send email and persist
+    if (resourceConditions.length > 0) {
+      console.log(`${LOG_PREFIX} Sending consolidated license audit email with ${resourceConditions.length} condition(s)`);
 
-    try {
-      let historyRecord = null;
+      const consolidatedPayload = {
+        accountName: 'Enterprise Accounts',
+        generatedAt: new Date().toISOString(),
+        warnings: resourceConditions.filter(r => r.severity === 'warning'),
+        criticals: resourceConditions.filter(r => r.severity === 'critical'),
+        resources: resourceConditions,
+        accountsScanned: totalAccounts,
+        accountsMonitored: monitoredAccounts,
+        accountsRestricted: restrictedAccounts
+      };
 
-      // Case 1: Alerts triggered - send email and persist
-      if (resourceConditions.length > 0) {
-        console.log(`${LOG_PREFIX} Sending consolidated license audit email with ${resourceConditions.length} condition(s)`);
+      const result = await notificationService.sendLicenseAuditSummary(consolidatedPayload);
+      consolidatedEmailSent = result.sent;
 
-        const consolidatedPayload = {
-          accountName: 'Enterprise Accounts',
-          generatedAt: new Date().toISOString(),
-          warnings: resourceConditions.filter(r => r.severity === 'warning'),
-          criticals: resourceConditions.filter(r => r.severity === 'critical'),
-          resources: resourceConditions,
-          accountsScanned: totalAccounts,
-          accountsMonitored: monitoredAccounts,
-          accountsRestricted: restrictedAccounts
-        };
+      console.log(`${LOG_PREFIX} Consolidated email result:`, {
+        sent: result.sent,
+        provider: result.provider,
+        messageId: result.messageId
+      });
 
-        const result = await notificationService.sendLicenseAuditSummary(consolidatedPayload);
-        consolidatedEmailSent = result.sent;
+      // Persist using helper
+      await persistAuditHistory({
+        status: result.sent ? 'sent' : 'failed',
+        subject: `[License Audit] ${consolidatedPayload.criticals.length} Critical, ${consolidatedPayload.warnings.length} Warning(s)`,
+        reason: result.error || null,
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts,
+        resourceConditions,
+        criticalCount: consolidatedPayload.criticals.length,
+        warningCount: consolidatedPayload.warnings.length
+      });
 
-        console.log(`${LOG_PREFIX} Consolidated email result:`, {
-          sent: result.sent,
-          provider: result.provider,
-          messageId: result.messageId
-        });
+    // Case 2: Cooldown active - persist suppressed audit
+    } else if (cooldownActive) {
+      console.log(`${LOG_PREFIX} License audit suppressed due to cooldown (${cooldownRemainingSeconds}s remaining)`);
 
-        // Persist alert delivery
-        historyRecord = await notificationHistory.addEvent({
-          accountName: consolidatedPayload.accountName,
-          type: 'license-audit',
-          severity: consolidatedPayload.criticals.length > 0 ? 'critical' : 'warning',
-          resourceType: 'consolidated',
-          recipients: result.recipients || [],
-          subject: `[License Audit] ${consolidatedPayload.criticals.length} Critical, ${consolidatedPayload.warnings.length} Warning(s)`,
-          provider: result.provider,
-          status: result.sent ? 'sent' : 'failed',
-          messageId: result.messageId,
-          error: result.error || null,
-          resourceSummary: {
-            resources: resourceConditions
-          },
-          criticalCount: consolidatedPayload.criticals.length,
-          warningCount: consolidatedPayload.warnings.length,
-          metadata: {
-            accountsScanned: totalAccounts,
-            accountsMonitored: monitoredAccounts,
-            accountsRestricted: restrictedAccounts,
-            resourcesAlerted: resourceConditions.length
-          }
-        });
+      await persistAuditHistory({
+        status: 'suppressed',
+        subject: '[License Audit] Suppressed (Cooldown Active)',
+        reason: `Cooldown active - ${Math.ceil(cooldownRemainingSeconds / 60)} minute(s) remaining`,
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts,
+        resourceConditions: [],
+        criticalCount: 0,
+        warningCount: 0,
+        cooldownRemainingSeconds
+      });
 
-      // Case 2: Cooldown active - persist suppressed audit
-      } else if (cooldownActive) {
-        console.log(`${LOG_PREFIX} License audit suppressed due to cooldown (${cooldownRemainingSeconds}s remaining)`);
+    // Case 3: No alerts triggered (healthy state) - persist audit completion
+    } else {
+      console.log(`${LOG_PREFIX} License audit completed - all resources within normal thresholds`);
 
-        historyRecord = await notificationHistory.addEvent({
-          accountName: 'Enterprise Accounts',
-          type: 'license-audit',
-          severity: 'info',
-          resourceType: 'consolidated',
-          recipients: [],
-          subject: '[License Audit] Suppressed (Cooldown Active)',
-          provider: null,
-          status: 'suppressed',
-          messageId: null,
-          error: null,
-          resourceSummary: {
-            suppressedAlerts: suppressedAlerts.map(a => ({
-              resourceType: a.resourceType,
-              reason: a.reason
-            }))
-          },
-          criticalCount: 0,
-          warningCount: 0,
-          metadata: {
-            accountsScanned: totalAccounts,
-            accountsMonitored: monitoredAccounts,
-            accountsRestricted: restrictedAccounts,
-            cooldownRemainingSeconds
-          }
-        });
-
-      // Case 3: No alerts triggered (healthy state) - persist audit completion
-      } else {
-        console.log(`${LOG_PREFIX} License audit completed - all resources within normal thresholds`);
-
-        historyRecord = await notificationHistory.addEvent({
-          accountName: 'Enterprise Accounts',
-          type: 'license-audit',
-          severity: 'info',
-          resourceType: 'consolidated',
-          recipients: [],
-          subject: '[License Audit] Completed - All Resources Normal',
-          provider: null,
-          status: 'completed',
-          messageId: null,
-          error: null,
-          resourceSummary: {
-            message: 'All licensed resources within normal thresholds'
-          },
-          criticalCount: 0,
-          warningCount: 0,
-          metadata: {
-            accountsScanned: totalAccounts,
-            accountsMonitored: monitoredAccounts,
-            accountsRestricted: restrictedAccounts,
-            checksPerformed: checks.length
-          }
-        });
-      }
-
-      // Log persistence result
-      if (historyRecord) {
-        console.log(`${LOG_PREFIX} Audit execution persisted to history (ID: ${historyRecord.id})`);
-      } else {
-        console.error(`${LOG_PREFIX} CRITICAL: Failed to persist audit to history - check database connection`);
-      }
-
-    } catch (error) {
-      console.error(`${LOG_PREFIX} Failed to persist audit execution:`, error.message);
-      console.error(`${LOG_PREFIX} Error stack:`, error.stack);
-      // Don't throw - allow audit to complete even if history persistence fails
+      await persistAuditHistory({
+        status: 'completed',
+        subject: '[License Audit] Completed - All Resources Normal',
+        reason: 'All licensed resources within normal thresholds',
+        totalAccounts,
+        restrictedAccounts,
+        monitoredAccounts,
+        resourceConditions: [],
+        criticalCount: 0,
+        warningCount: 0
+      });
     }
 
     const duration = Date.now() - startTime;
@@ -702,6 +735,16 @@ async function runThresholdEvaluation(options = {}) {
   } catch (error) {
     console.error(`${LOG_PREFIX} License audit failed:`, error.message);
     console.error(`${LOG_PREFIX} Error stack:`, error.stack);
+
+    // Persist failed audit to history
+    await persistAuditHistory({
+      status: 'failed',
+      subject: '[License Audit] Failed - Execution Error',
+      reason: error.message,
+      totalAccounts: 0,
+      restrictedAccounts: 0,
+      monitoredAccounts: 0
+    });
 
     return {
       checked: false,
