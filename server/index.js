@@ -705,15 +705,22 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
 
   // Protect React app - require authentication (except /login)
-  app.get('*', (req, res, next) => {
-    // Skip authentication for login page
+  app.get('*', (req, res) => {
+    // Handle login page - redirect if already authenticated
     if (req.path === '/login') {
-      return next();
+      if (req.session && req.session.authenticated) {
+        return res.redirect('/');
+      }
+      return res.sendFile(path.join(__dirname, '../client/public/login.html'));
     }
-    // Require authentication for all other routes
-    isAuthenticated(req, res, next);
-  }, (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+
+    // For all other routes, require authentication
+    if (req.session && req.session.authenticated) {
+      return res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    }
+
+    // Not authenticated - redirect to login
+    res.redirect('/login');
   });
 }
 
