@@ -199,3 +199,32 @@
     font-size: 0.6875rem;
   }
 }
+
+/* Print Styles */
+@media print {
+  .App-header {
+    position: static !important;
+    page-break-after: avoid;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-notification {
+    display: none !important;
+  }
+
+  .error-banner,
+  .last-update {
+    display: none !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .App {
+    background: white;
+  }
+}
