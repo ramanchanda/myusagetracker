@@ -1,4 +1,5 @@
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -23,9 +24,23 @@ const notificationHistory = require('./services/notificationHistoryDB');
 const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
+const { isAuthenticated, redirectIfAuthenticated } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Session configuration
+app.use(session({
+  secret: process.env.APP_SESSION_SECRET || 'heroku-usage-tracker-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    sameSite: 'lax'
+  }
+}));
 
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -34,15 +49,63 @@ app.use(compression());
 app.use(cors());
 app.use(express.json());
 
-// PDF Export Routes
-app.use('/api/pdf', pdfExportRouter);
+// Authentication routes (public)
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
 
-// Reports API Routes
-app.use('/api/reports', reportsRouter);
+  const expectedUsername = process.env.APP_LOGIN_USERNAME;
+  const expectedPassword = process.env.APP_LOGIN_PASSWORD;
 
+  if (!expectedUsername || !expectedPassword) {
+    return res.status(500).json({ error: 'Authentication not configured' });
+  }
+
+  if (username === expectedUsername && password === expectedPassword) {
+    req.session.authenticated = true;
+    req.session.username = username;
+    return res.json({ success: true });
+  }
+
+  res.status(401).json({ error: 'Invalid username or password' });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ success: true });
+  });
+});
+
+app.get('/api/auth/status', (req, res) => {
+  res.json({ authenticated: Boolean(req.session && req.session.authenticated) });
+});
+
+// Serve login page (public)
+app.get('/login', redirectIfAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/public/login.html'));
+});
+
+// Health check (public)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
+
+// Protect all API routes except auth and health
+app.use('/api', (req, res, next) => {
+  // Allow auth and health endpoints
+  if (req.path.startsWith('/auth/') || req.path === '/health') {
+    return next();
+  }
+  // Require authentication for all other API routes
+  return isAuthenticated(req, res, next);
+});
+
+// Protected API routes
+app.use('/api/pdf', pdfExportRouter);
+app.use('/api/reports', reportsRouter);
 
 app.get('/api/usage/dynos', async (req, res) => {
   try {
@@ -638,9 +701,11 @@ app.get('/api/debug/addons', async (req, res) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
+  // Serve static assets (public)
   app.use(express.static(path.join(__dirname, '../client/build')));
 
-  app.get('*', (req, res) => {
+  // Protect React app - require authentication
+  app.get('*', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
