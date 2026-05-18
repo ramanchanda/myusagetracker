@@ -55,6 +55,17 @@ function AppContent() {
     window.print();
   };
 
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if API call fails
+      window.location.href = '/login';
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -73,6 +84,9 @@ function AppContent() {
           <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
             {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}
           </Link>
+          <button onClick={handleLogout} className="btn btn-secondary" title="Logout">
+            🚪 Logout
+          </button>
         </div>
       </header>
 

@@ -1,0 +1,76 @@
+/**
+ * Authentication Middleware
+ * Protects routes with session-based authentication
+ */
+
+/**
+ * Check if user is authenticated
+ */
+function isAuthenticated(req, res, next) {
+  console.log('[Auth] Checking authentication for:', req.path, 'Session:', req.session?.authenticated);
+
+  if (req.session && req.session.authenticated) {
+    // Update last activity timestamp for auto-logout
+    req.session.lastActivity = Date.now();
+    return next();
+  }
+
+  // For API routes, return 401
+  if (req.path.startsWith('/api/')) {
+    console.log('[Auth] API route - returning 401');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // For page routes, redirect to login
+  console.log('[Auth] Not authenticated - redirecting to /login');
+  res.redirect('/login');
+}
+
+/**
+ * Redirect to dashboard if already authenticated
+ */
+function redirectIfAuthenticated(req, res, next) {
+  if (req.session && req.session.authenticated) {
+    return res.redirect('/');
+  }
+  next();
+}
+
+/**
+ * Auto-logout middleware - checks for session inactivity
+ * Default timeout: 8 hours (same as cookie maxAge)
+ */
+function checkSessionTimeout(req, res, next) {
+  const TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+
+  if (req.session && req.session.authenticated && req.session.lastActivity) {
+    const now = Date.now();
+    const inactiveTime = now - req.session.lastActivity;
+
+    if (inactiveTime > TIMEOUT_MS) {
+      console.log('[Auth] Session timeout - auto logout');
+      return req.session.destroy((err) => {
+        if (err) {
+          console.error('[Auth] Error destroying session:', err);
+        }
+        res.clearCookie('connect.sid');
+
+        // For API requests, return 401
+        if (req.path.startsWith('/api/')) {
+          return res.status(401).json({ error: 'Session expired' });
+        }
+
+        // For page requests, redirect to login
+        return res.redirect('/login');
+      });
+    }
+  }
+
+  next();
+}
+
+module.exports = {
+  isAuthenticated,
+  redirectIfAuthenticated,
+  checkSessionTimeout
+};

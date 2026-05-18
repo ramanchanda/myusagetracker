@@ -1,4 +1,5 @@
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -23,9 +24,26 @@ const notificationHistory = require('./services/notificationHistoryDB');
 const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
+const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Trust proxy - required for Heroku (app is behind a proxy)
+app.set('trust proxy', 1);
+
+// Session configuration
+app.use(session({
+  secret: process.env.APP_SESSION_SECRET || 'heroku-usage-tracker-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    sameSite: 'lax'
+  }
+}));
 
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -34,15 +52,80 @@ app.use(compression());
 app.use(cors());
 app.use(express.json());
 
-// PDF Export Routes
-app.use('/api/pdf', pdfExportRouter);
+// Check for session timeout on every request
+app.use(checkSessionTimeout);
 
-// Reports API Routes
-app.use('/api/reports', reportsRouter);
+// Authentication routes (public)
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
 
+  const expectedUsername = process.env.APP_LOGIN_USERNAME;
+  const expectedPassword = process.env.APP_LOGIN_PASSWORD;
+
+  if (!expectedUsername || !expectedPassword) {
+    return res.status(500).json({ error: 'Authentication not configured' });
+  }
+
+  if (username === expectedUsername && password === expectedPassword) {
+    req.session.authenticated = true;
+    req.session.username = username;
+    req.session.lastActivity = Date.now(); // Initialize last activity timestamp
+    console.log('[Auth] Login successful for user:', username);
+    return res.json({ success: true });
+  }
+
+  res.status(401).json({ error: 'Invalid username or password' });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ success: true });
+  });
+});
+
+// Simple logout route - destroys session and redirects
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/login');
+  });
+});
+
+app.get('/api/auth/status', (req, res) => {
+  res.json({ authenticated: Boolean(req.session && req.session.authenticated) });
+});
+
+// Serve login page (public)
+app.get('/login', redirectIfAuthenticated, (req, res) => {
+  console.log('[Auth] Serving login page');
+  res.sendFile(path.join(__dirname, '../client/public/login.html'));
+});
+
+// Health check (public)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
+
+// Protect all API routes except auth and health
+app.use('/api', (req, res, next) => {
+  // Allow auth and health endpoints
+  if (req.path.startsWith('/auth/') || req.path === '/health') {
+    return next();
+  }
+  // Require authentication for all other API routes
+  return isAuthenticated(req, res, next);
+});
+
+// Protected API routes
+app.use('/api/pdf', pdfExportRouter);
+app.use('/api/reports', reportsRouter);
 
 app.get('/api/usage/dynos', async (req, res) => {
   try {
@@ -637,10 +720,18 @@ app.get('/api/debug/addons', async (req, res) => {
   }
 });
 
+// Production: Serve React app
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
+  // Serve static assets EXCEPT index.html (JS, CSS, images, etc.)
+  // index.html is served only after authentication via wildcard route
+  app.use(express.static(path.join(__dirname, '../client/build'), {
+    index: false // Don't serve index.html from static middleware
+  }));
 
-  app.get('*', (req, res) => {
+  // Wildcard route for React app - must be LAST
+  // Requires authentication to serve the dashboard
+  app.get('*', isAuthenticated, (req, res) => {
+    console.log('[Auth] Serving dashboard - authenticated');
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
