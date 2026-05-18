@@ -281,20 +281,29 @@ body {
 
 .nmc-license-status {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.nmc-license-highest,
-.nmc-license-overage-item {
+.nmc-license-highest {
   font-size: 0.6875rem;
   color: #6b7280;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.nmc-license-overage-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .nmc-license-overage-item {
+  font-size: 0.6875rem;
   color: #991b1b;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ========================================================================
