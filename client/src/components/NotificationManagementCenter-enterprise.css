@@ -1,0 +1,1044 @@
+/* ========================================================================
+   Notification Management Center - Enterprise Operations Console
+   Modern, dense, operational UI for infrastructure monitoring
+   ======================================================================== */
+
+/* ========================================================================
+   GLOBAL TYPOGRAPHY - ENTERPRISE GRADE
+   ======================================================================== */
+
+* {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display",
+               system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ========================================================================
+   PAGE LAYOUT
+   ======================================================================== */
+
+body {
+  background: #f6f7fb;
+}
+
+.nmc-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 16px 32px;
+}
+
+/* ========================================================================
+   HEADER - COMPACT
+   ======================================================================== */
+
+.nmc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7eaf3;
+}
+
+.nmc-header-content h1 {
+  margin: 0 0 2px 0;
+  color: #1a1d29;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.nmc-subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.nmc-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.nmc-last-audit {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   BUTTONS - ENTERPRISE MINIMAL
+   ======================================================================== */
+
+.nmc-btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nmc-btn-sm {
+  padding: 5px 12px;
+  font-size: 0.75rem;
+}
+
+.nmc-btn-primary {
+  background: #5046e5;
+  color: white;
+  box-shadow: 0 1px 2px rgba(80, 70, 229, 0.15);
+}
+
+.nmc-btn-primary:hover {
+  background: #4338ca;
+  box-shadow: 0 2px 4px rgba(80, 70, 229, 0.2);
+}
+
+.nmc-btn-secondary {
+  background: white;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.nmc-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.nmc-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #9ca3af;
+  color: white;
+}
+
+.nmc-btn-cooldown {
+  background: #9ca3af;
+  cursor: not-allowed;
+  animation: cooldownPulse 2s ease-in-out infinite;
+}
+
+@keyframes cooldownPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.5; }
+}
+
+/* ========================================================================
+   TABS - MINIMAL
+   ======================================================================== */
+
+.nmc-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid #e7eaf3;
+  margin-bottom: 16px;
+  background: #f6f7fb;
+  padding: 0;
+}
+
+.nmc-tab {
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.nmc-tab:hover {
+  color: #5046e5;
+  background: rgba(80, 70, 229, 0.02);
+}
+
+.nmc-tab.active {
+  color: #5046e5;
+  border-bottom-color: #5046e5;
+}
+
+/* ========================================================================
+   SECTIONS - MINIMAL DEPTH
+   ======================================================================== */
+
+.nmc-content {
+  min-height: 400px;
+}
+
+.nmc-section {
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.nmc-section-title {
+  margin: 0 0 4px 0;
+  color: #1a1d29;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.nmc-section-desc {
+  margin: 0 0 14px 0;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   ENTERPRISE ACCOUNT CARDS - DENSE OPERATIONAL LAYOUT
+   ======================================================================== */
+
+.nmc-ops-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #e7eaf3;
+  border-radius: 5px;
+}
+
+.nmc-ops-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nmc-ops-label {
+  font-size: 0.6875rem;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nmc-ops-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1d29;
+}
+
+.nmc-ops-value.nmc-ops-warning {
+  color: #d97706;
+}
+
+/* ========================================================================
+   ENTERPRISE ACCOUNT HEADER - COMPACT
+   ======================================================================== */
+
+.nmc-enterprise-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nmc-enterprise-card {
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+  padding: 14px 16px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.nmc-enterprise-card:hover {
+  background: rgba(80, 70, 229, 0.005);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.nmc-enterprise-card.restricted {
+  background: #fffbeb;
+  border-color: #f59e0b;
+}
+
+.nmc-enterprise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.nmc-enterprise-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1d29;
+  line-height: 1.2;
+}
+
+.nmc-license-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nmc-license-highest,
+.nmc-license-overage-item {
+  font-size: 0.6875rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.nmc-license-overage-item {
+  color: #991b1b;
+}
+
+/* ========================================================================
+   STATUS BADGES - RESTRAINED ENTERPRISE COLORS
+   ======================================================================== */
+
+.nmc-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.nmc-badge-license-healthy {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-badge-license-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nmc-badge-license-critical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.nmc-badge-license-overage {
+  background: #7f1d1d;
+  color: #fef2f2;
+  font-weight: 700;
+}
+
+.nmc-badge-restricted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nmc-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-badge.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ========================================================================
+   UTILIZATION ROWS - ENTERPRISE OPERATIONAL LAYOUT
+   ======================================================================== */
+
+.nmc-enterprise-metrics-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Simple Row - No Progress Bar */
+.nmc-metric-row-simple {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.nmc-metric-row-simple:last-of-type {
+  border-bottom: none;
+}
+
+.nmc-metric-row-simple .nmc-metric-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.nmc-metric-row-simple .nmc-metric-value-simple {
+  font-size: 0.875rem;
+  color: #1a1d29;
+  font-weight: 700;
+}
+
+/* Utilization Row with Progress Bar */
+.nmc-metric-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 70px;
+  grid-template-rows: auto auto;
+  gap: 3px 10px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.nmc-metric-row:last-of-type {
+  border-bottom: none;
+}
+
+.nmc-metric-row .nmc-metric-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.nmc-metric-row .nmc-metric-usage {
+  font-size: 0.8125rem;
+  color: #4b5563;
+  font-weight: 500;
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+}
+
+.nmc-metric-row .nmc-metric-percent {
+  font-size: 0.875rem;
+  font-weight: 700;
+  grid-column: 3;
+  grid-row: 1;
+  text-align: right;
+}
+
+/* Utilization Colors */
+.nmc-metric-percent.nmc-util-normal {
+  color: #10b981;
+}
+
+.nmc-metric-percent.nmc-util-warning {
+  color: #f59e0b;
+}
+
+.nmc-metric-percent.nmc-util-critical {
+  color: #ef4444;
+}
+
+/* ========================================================================
+   PROGRESS BARS - THIN ENTERPRISE STYLE
+   ======================================================================== */
+
+.nmc-progress-bar {
+  grid-column: 1 / 4;
+  grid-row: 2;
+  height: 5px;
+  background: #f3f4f6;
+  border-radius: 2.5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.nmc-progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 2.5px;
+}
+
+.nmc-progress-bar.nmc-util-normal .nmc-progress-fill {
+  background: #10b981;
+}
+
+.nmc-progress-bar.nmc-util-warning .nmc-progress-fill {
+  background: #f59e0b;
+}
+
+.nmc-progress-bar.nmc-util-critical .nmc-progress-fill {
+  background: #ef4444;
+}
+
+/* ========================================================================
+   RESTRICTED STATE
+   ======================================================================== */
+
+.nmc-enterprise-restricted {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  color: #92400e;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.nmc-restricted-icon {
+  font-size: 1.125rem;
+}
+
+/* ========================================================================
+   MESSAGE BANNERS
+   ======================================================================== */
+
+.nmc-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: 5px;
+  margin-bottom: 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nmc-message-success {
+  background: #d1fae5;
+  color: #065f46;
+  border-left: 3px solid #10b981;
+}
+
+.nmc-message-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 3px solid #ef4444;
+}
+
+.nmc-message-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 3px solid #f59e0b;
+}
+
+.nmc-cooldown-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: 5px;
+  margin-bottom: 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #4b5563;
+  border-left: 3px solid #6b7280;
+}
+
+/* ========================================================================
+   INFO BANNER
+   ======================================================================== */
+
+.nmc-info-banner {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border: 1px solid #e7eaf3;
+  border-radius: 5px;
+  margin-top: 14px;
+  font-size: 0.8125rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.nmc-info-icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.nmc-info-banner code {
+  background: #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #374151;
+}
+
+/* ========================================================================
+   LOADING & EMPTY STATES
+   ======================================================================== */
+
+.nmc-enterprise-loading,
+.nmc-enterprise-empty,
+.nmc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 20px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.nmc-spinner,
+.nmc-spinner-sm {
+  border: 2px solid #e5e7eb;
+  border-top-color: #5046e5;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.nmc-spinner {
+  width: 36px;
+  height: 36px;
+}
+
+.nmc-spinner-sm {
+  width: 18px;
+  height: 18px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.nmc-enterprise-empty {
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+}
+
+.nmc-empty-icon {
+  font-size: 2.5rem;
+  opacity: 0.3;
+}
+
+.nmc-empty-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.nmc-empty-content h3 {
+  margin: 0 0 4px 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.nmc-empty-content p {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+/* ========================================================================
+   KPI CARDS - MINIMAL (Overview Tab)
+   ======================================================================== */
+
+.nmc-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.nmc-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 5px;
+  padding: 12px 14px;
+  transition: all 0.15s ease;
+}
+
+.nmc-kpi-card:hover {
+  background: rgba(80, 70, 229, 0.005);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.nmc-kpi-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.nmc-kpi-icon-email {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.nmc-kpi-icon-threshold {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nmc-kpi-icon-schedule {
+  background: #e9d5ff;
+  color: #6b21a8;
+}
+
+.nmc-kpi-icon-stats {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-kpi-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nmc-kpi-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.nmc-kpi-value {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #1a1d29;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nmc-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.nmc-status-dot.active {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.nmc-status-dot.inactive {
+  background: #9ca3af;
+}
+
+/* ========================================================================
+   FORM FIELDS
+   ======================================================================== */
+
+.nmc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.nmc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nmc-field-full {
+  grid-column: 1 / -1;
+}
+
+.nmc-field label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.nmc-field-value {
+  font-size: 0.875rem;
+  color: #1a1d29;
+  font-weight: 500;
+  padding: 7px 11px;
+  background: #f9fafb;
+  border: 1px solid #e7eaf3;
+  border-radius: 4px;
+}
+
+.nmc-field-empty {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.nmc-recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.nmc-recipient-badge {
+  display: inline-block;
+  padding: 4px 9px;
+  background: #dbeafe;
+  color: #075985;
+  border-radius: 3px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   ACTIVITY LIST
+   ======================================================================== */
+
+.nmc-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nmc-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  background: #f9fafb;
+  border: 1px solid #e7eaf3;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.nmc-activity-item:hover {
+  background: white;
+}
+
+.nmc-activity-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nmc-activity-icon.sent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-activity-icon.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.nmc-activity-icon.queued {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nmc-activity-icon.suppressed {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.nmc-activity-icon.completed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.nmc-activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nmc-activity-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1a1d29;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nmc-activity-meta {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+}
+
+.nmc-activity-status {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.nmc-activity-status.sent { color: #059669; }
+.nmc-activity-status.failed { color: #dc2626; }
+.nmc-activity-status.queued { color: #d97706; }
+.nmc-activity-status.suppressed { color: #6b7280; }
+.nmc-activity-status.completed { color: #2563eb; }
+
+.nmc-activity-loading,
+.nmc-activity-empty {
+  padding: 28px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.8125rem;
+}
+
+.nmc-activity-empty {
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 5px;
+}
+
+/* ========================================================================
+   RESOURCE & THRESHOLD CARDS (Compact)
+   ======================================================================== */
+
+.nmc-resource-grid,
+.nmc-threshold-cards,
+.nmc-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.nmc-resource-card,
+.nmc-threshold-card,
+.nmc-schedule-card {
+  background: #f9fafb;
+  border: 1px solid #e7eaf3;
+  border-radius: 5px;
+  padding: 10px 12px;
+  transition: all 0.15s ease;
+}
+
+.nmc-resource-card:hover,
+.nmc-threshold-card:hover,
+.nmc-schedule-card:hover {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.nmc-resource-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 5px;
+}
+
+.nmc-resource-name {
+  font-size: 0.75rem;
+  color: #4b5563;
+  font-weight: 600;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.nmc-resource-limit {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a1d29;
+  margin-bottom: 3px;
+}
+
+.nmc-resource-meta {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+
+@media (max-width: 768px) {
+  .nmc-container {
+    padding: 10px 14px 28px;
+  }
+
+  .nmc-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .nmc-header-actions {
+    width: 100%;
+  }
+
+  .nmc-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nmc-tabs {
+    overflow-x: auto;
+  }
+
+  .nmc-ops-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nmc-metric-row {
+    grid-template-columns: 90px 1fr 60px;
+  }
+
+  .nmc-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .nmc-ops-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .nmc-metric-row {
+    grid-template-columns: 80px 1fr 55px;
+  }
+
+  .nmc-metric-row .nmc-metric-label,
+  .nmc-metric-row .nmc-metric-usage {
+    font-size: 0.6875rem;
+  }
+
+  .nmc-metric-row .nmc-metric-percent {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ========================================================================
+   PRINT STYLES
+   ======================================================================== */
+
+@media print {
+  .nmc-section,
+  .nmc-enterprise-card,
+  .nmc-activity-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .nmc-header-actions,
+  .nmc-btn,
+  .nmc-tabs {
+    display: none !important;
+  }
+}

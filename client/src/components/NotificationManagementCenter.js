@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './NotificationManagementCenter.css';
+import './NotificationManagementCenter-enterprise.css';
 import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizationStatus } from '../utils/formatters';
 import EnterpriseLicenseManagement from './EnterpriseLicenseManagement';
 
