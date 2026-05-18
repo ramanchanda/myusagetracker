@@ -51,6 +51,10 @@ function AppContent() {
   const isHomePage = location.pathname === '/';
   const isNotificationsPage = location.pathname === '/notifications';
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -63,6 +67,11 @@ function AppContent() {
           <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
           </button>
+          {isHomePage && (
+            <button onClick={handlePrint} className="btn btn-secondary">
+              🖨️ Print
+            </button>
+          )}
           <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
             {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}
           </Link>

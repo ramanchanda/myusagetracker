@@ -456,14 +456,15 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
           >
             Daily - Datewise Report
           </button>
-          <button
+          {/* PDF Export button hidden - use Print button in navbar instead */}
+          {/* <button
             type="button"
             className="report-option-btn export-pdf-btn"
             onClick={handleExportPDF}
             disabled={exportingPDF}
           >
             {exportingPDF ? '📄 Generating PDF...' : '📥 Export PDF Report'}
-          </button>
+          </button> */}
         </div>
       )}
 

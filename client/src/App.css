@@ -78,6 +78,19 @@
   color: #64748b;
 }
 
+.btn-secondary {
+  background: white;
+  color: #475569;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .btn-notification {
   background: white;
   color: #475569;
