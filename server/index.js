@@ -29,6 +29,9 @@ const { isAuthenticated, redirectIfAuthenticated } = require('./middleware/authM
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - required for Heroku (app is behind a proxy)
+app.set('trust proxy', 1);
+
 // Session configuration
 app.use(session({
   secret: process.env.APP_SESSION_SECRET || 'heroku-usage-tracker-secret-change-in-production',
@@ -96,6 +99,7 @@ app.get('/api/auth/status', (req, res) => {
 
 // Serve login page (public)
 app.get('/login', redirectIfAuthenticated, (req, res) => {
+  console.log('[Auth] Serving login page');
   res.sendFile(path.join(__dirname, '../client/public/login.html'));
 });
 
@@ -719,6 +723,7 @@ if (process.env.NODE_ENV === 'production') {
   // Wildcard route for React app - must be LAST
   // Requires authentication to serve the dashboard
   app.get('*', isAuthenticated, (req, res) => {
+    console.log('[Auth] Serving dashboard - authenticated');
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
