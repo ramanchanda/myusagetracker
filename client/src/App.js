@@ -60,7 +60,7 @@ function AppContent() {
       <header className="App-header">
         <div className="header-left">
           <Link to="/" className="header-logo-link">
-            <h1>Heroku Enterprise Teams Usage</h1>
+            <h1>Heroku Enterprise Accounts Usage</h1>
           </Link>
         </div>
         <div className="header-actions">
