@@ -281,8 +281,9 @@ body {
 
 .nmc-license-status {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .nmc-license-highest,
