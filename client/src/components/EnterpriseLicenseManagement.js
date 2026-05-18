@@ -260,24 +260,24 @@ function EnterpriseLicenseManagement() {
                   )}
                 </div>
 
-                {status === 'RESTRICTED' && (
+                {status === 'RESTRICTED' ? (
                   <div className="elm-restricted-notice">
                     <span className="elm-restricted-icon">🔒</span>
                     <div className="elm-restricted-message">
                       <strong>Billing Access Restricted</strong>
-                      <p>This Enterprise Account does not have billing access. License configuration is read-only.</p>
+                      <p>This Enterprise Account does not have billing access. License configuration cannot be viewed or managed.</p>
                     </div>
                   </div>
-                )}
+                ) : (
+                  <>
+                    {config.updated_at && (
+                      <div className="elm-account-meta">
+                        Last updated: {new Date(config.updated_at).toLocaleString()}
+                        {config.updated_by && ` by ${config.updated_by}`}
+                      </div>
+                    )}
 
-                {config.updated_at && (
-                  <div className="elm-account-meta">
-                    Last updated: {new Date(config.updated_at).toLocaleString()}
-                    {config.updated_by && ` by ${config.updated_by}`}
-                  </div>
-                )}
-
-                <div className="elm-license-cards">
+                    <div className="elm-license-cards">
                   <LicenseCard
                     title="Dyno Units"
                     value={displayConfig.dyno_units_limit}
@@ -322,25 +322,27 @@ function EnterpriseLicenseManagement() {
                   />
                 </div>
 
-                <div className="elm-thresholds">
-                  <h4>Monitoring Thresholds</h4>
-                  <div className="elm-threshold-cards">
-                    <ThresholdCard
-                      label="Warning Threshold"
-                      value={displayConfig.warning_percentage}
-                      isEditing={isEditing}
-                      onChange={(value) => handleInputChange(account.id, 'warning_percentage', value)}
-                      color="#f59e0b"
-                    />
-                    <ThresholdCard
-                      label="Critical Threshold"
-                      value={displayConfig.critical_percentage}
-                      isEditing={isEditing}
-                      onChange={(value) => handleInputChange(account.id, 'critical_percentage', value)}
-                      color="#dc2626"
-                    />
-                  </div>
-                </div>
+                    <div className="elm-thresholds">
+                      <h4>Monitoring Thresholds</h4>
+                      <div className="elm-threshold-cards">
+                        <ThresholdCard
+                          label="Warning Threshold"
+                          value={displayConfig.warning_percentage}
+                          isEditing={isEditing}
+                          onChange={(value) => handleInputChange(account.id, 'warning_percentage', value)}
+                          color="#f59e0b"
+                        />
+                        <ThresholdCard
+                          label="Critical Threshold"
+                          value={displayConfig.critical_percentage}
+                          isEditing={isEditing}
+                          onChange={(value) => handleInputChange(account.id, 'critical_percentage', value)}
+                          color="#dc2626"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}

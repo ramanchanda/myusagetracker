@@ -14,6 +14,7 @@ function NotificationManagementCenter() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [enterpriseAccounts, setEnterpriseAccounts] = useState([]);
   const [enterpriseLoading, setEnterpriseLoading] = useState(false);
+  const [licenseConfigs, setLicenseConfigs] = useState({});
   const [cooldownState, setCooldownState] = useState({
     active: false,
     remainingMinutes: 0,
@@ -95,6 +96,20 @@ function NotificationManagementCenter() {
           totalCost: account.summary?.totalMonthlyCost || 0
         }));
         setEnterpriseAccounts(transformedAccounts);
+
+        // Fetch license configs for each account
+        const configs = {};
+        for (const account of transformedAccounts) {
+          if (account.accountId) {
+            try {
+              const configResponse = await axios.get(`/api/licenses/enterprise/${account.accountId}`);
+              configs[account.accountId] = configResponse.data;
+            } catch (err) {
+              console.warn(`Could not fetch license config for ${account.accountId}:`, err);
+            }
+          }
+        }
+        setLicenseConfigs(configs);
       }
     } catch (error) {
       console.error('Error fetching enterprise usage:', error);
@@ -234,66 +249,66 @@ function NotificationManagementCenter() {
     return `${secs}s`;
   };
 
-  const calculateUtilization = (current, limit) => {
+  const calculateUtilization = (current, limit, warningPct = 80, criticalPct = 95) => {
     if (!limit || limit === 0) return { percentage: 0, status: 'normal' };
     const percentage = calculateUtilizationPercentage(current, limit);
     const status = getUtilizationStatus(percentage,
-      (config.thresholds.dynoUnits?.warningPercentage || 80) / 100,
-      (config.thresholds.dynoUnits?.criticalPercentage || 95) / 100
+      warningPct / 100,
+      criticalPct / 100
     );
     return { percentage: (percentage * 100).toFixed(1), status };
   };
 
   const calculateAccountLicenseStatus = (account) => {
-    if (!account.resources || !config) {
+    if (!account.resources) {
       return { status: 'healthy', label: 'LICENSE HEALTHY', overageResources: [], highestResource: null, highestPercentage: 0 };
     }
 
-    const warningThreshold = (config.thresholds.dynoUnits?.warningPercentage || 80) / 100;
-    const criticalThreshold = (config.thresholds.dynoUnits?.criticalPercentage || 95) / 100;
+    // Get per-EA license config
+    const licenseConfig = licenseConfigs[account.accountId];
+    if (!licenseConfig) {
+      return { status: 'healthy', label: 'LICENSE HEALTHY', overageResources: [], highestResource: null, highestPercentage: 0 };
+    }
+
+    const warningThreshold = (licenseConfig.warning_percentage || 80) / 100;
+    const criticalThreshold = (licenseConfig.critical_percentage || 95) / 100;
 
     const resourceUtilizations = [
       {
         name: 'Dyno Units',
         current: account.resources.dynoUnits,
-        limit: config.thresholds.dynoUnits?.limit,
-        enabled: config.thresholds.dynoUnits?.enabled
+        limit: licenseConfig.dyno_units_limit,
+        enabled: licenseConfig.dyno_units_limit > 0
       },
       {
         name: 'Connect Rows',
         current: account.resources.connectRows,
-        limit: config.thresholds.connectRows?.limit,
-        enabled: config.thresholds.connectRows?.enabled
-      },
-      {
-        name: 'Enterprise Teams',
-        current: account.resources.enterpriseTeams,
-        limit: config.thresholds.enterpriseTeams?.limit,
-        enabled: config.thresholds.enterpriseTeams?.enabled
+        limit: licenseConfig.connect_rows_limit,
+        enabled: licenseConfig.connect_rows_limit > 0
       },
       {
         name: 'Private Spaces',
         current: account.resources.privateSpaces,
-        limit: config.thresholds.privateSpaces?.limit,
-        enabled: config.thresholds.privateSpaces?.enabled
+        limit: licenseConfig.private_spaces_limit,
+        enabled: licenseConfig.private_spaces_limit > 0
       },
       {
         name: 'Shield Spaces',
         current: account.resources.shieldSpaces,
-        limit: config.thresholds.shieldSpaces?.limit,
-        enabled: config.thresholds.shieldSpaces?.enabled
+        limit: licenseConfig.shield_spaces_limit,
+        enabled: licenseConfig.shield_spaces_limit > 0
       },
       {
         name: 'Data Add-ons',
         current: account.resources.dataAddons,
-        limit: config.thresholds.dataAddons?.limit,
-        enabled: config.thresholds.dataAddons?.enabled
+        limit: licenseConfig.data_addons_limit,
+        enabled: licenseConfig.data_addons_limit > 0
       },
       {
         name: 'General Add-ons',
         current: account.resources.generalAddons,
-        limit: config.thresholds.generalAddons?.limit,
-        enabled: config.thresholds.generalAddons?.enabled
+        limit: licenseConfig.general_addons_limit,
+        enabled: licenseConfig.general_addons_limit > 0
       }
     ];
 
@@ -588,147 +603,171 @@ function NotificationManagementCenter() {
                             <span>Billing Access Restricted</span>
                           </div>
                         ) : account.resources ? (
-                          <div className="nmc-enterprise-metrics-v2">
-                            {/* Enterprise Teams (count only, no progress bar) */}
-                            <div className="nmc-metric-row-simple">
-                              <span className="nmc-metric-label">Enterprise Teams</span>
-                              <span className="nmc-metric-value-simple">
-                                {account.resources.enterpriseTeams || 0}
-                              </span>
-                            </div>
-
-                            {/* Dyno Units with utilization */}
-                            {(() => {
-                              const dynoUtil = calculateUtilization(
-                                account.resources.dynoUnits,
-                                config.thresholds.dynoUnits?.limit
-                              );
+                          (() => {
+                            const eaLicense = licenseConfigs[account.accountId];
+                            if (!eaLicense) {
                               return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">Dyno Units</span>
-                                  <span className="nmc-metric-usage">
-                                    {formatUsage(account.resources.dynoUnits)} / {formatUsage(config.thresholds.dynoUnits?.limit || 0)}
-                                  </span>
-                                  <span className={`nmc-metric-percent nmc-util-${dynoUtil.status}`}>
-                                    {dynoUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${dynoUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(dynoUtil.percentage, 100)}%`}}></div>
-                                  </div>
+                                <div className="nmc-enterprise-restricted">
+                                  <span>License configuration not found</span>
                                 </div>
                               );
-                            })()}
-
-                            {/* Connect Rows with utilization */}
-                            {(() => {
-                              const connectUtil = calculateUtilization(
-                                account.resources.connectRows,
-                                config.thresholds.connectRows?.limit
-                              );
-                              return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">Connect Rows</span>
-                                  <span className="nmc-metric-usage">
-                                    {formatUsage(account.resources.connectRows)} / {formatUsage(config.thresholds.connectRows?.limit || 0)}
+                            }
+                            return (
+                              <div className="nmc-enterprise-metrics-v2">
+                                {/* Enterprise Teams (count only, no progress bar) */}
+                                <div className="nmc-metric-row-simple">
+                                  <span className="nmc-metric-label">Enterprise Teams</span>
+                                  <span className="nmc-metric-value-simple">
+                                    {account.resources.enterpriseTeams || 0}
                                   </span>
-                                  <span className={`nmc-metric-percent nmc-util-${connectUtil.status}`}>
-                                    {connectUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${connectUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(connectUtil.percentage, 100)}%`}}></div>
-                                  </div>
                                 </div>
-                              );
-                            })()}
 
-                            {/* Private Spaces with utilization */}
-                            {(() => {
-                              const spacesUtil = calculateUtilization(
-                                account.resources.privateSpaces,
-                                config.thresholds.privateSpaces?.limit
-                              );
-                              return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">Private Spaces</span>
-                                  <span className="nmc-metric-usage">
-                                    {account.resources.privateSpaces || 0} / {config.thresholds.privateSpaces?.limit || 0}
-                                  </span>
-                                  <span className={`nmc-metric-percent nmc-util-${spacesUtil.status}`}>
-                                    {spacesUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${spacesUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(spacesUtil.percentage, 100)}%`}}></div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                                {/* Dyno Units with utilization */}
+                                {(() => {
+                                  const dynoUtil = calculateUtilization(
+                                    account.resources.dynoUnits,
+                                    eaLicense.dyno_units_limit,
+                                    eaLicense.warning_percentage,
+                                    eaLicense.critical_percentage
+                                  );
+                                  return (
+                                    <div className="nmc-metric-row">
+                                      <span className="nmc-metric-label">Dyno Units</span>
+                                      <span className="nmc-metric-usage">
+                                        {formatUsage(account.resources.dynoUnits)} / {formatUsage(eaLicense.dyno_units_limit || 0)}
+                                      </span>
+                                      <span className={`nmc-metric-percent nmc-util-${dynoUtil.status}`}>
+                                        {dynoUtil.percentage}%
+                                      </span>
+                                      <div className={`nmc-progress-bar nmc-util-${dynoUtil.status}`}>
+                                        <div className="nmc-progress-fill" style={{width: `${Math.min(dynoUtil.percentage, 100)}%`}}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
-                            {/* Shield Spaces with utilization */}
-                            {(() => {
-                              const shieldUtil = calculateUtilization(
-                                account.resources.shieldSpaces,
-                                config.thresholds.shieldSpaces?.limit
-                              );
-                              return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">Shield Spaces</span>
-                                  <span className="nmc-metric-usage">
-                                    {account.resources.shieldSpaces || 0} / {config.thresholds.shieldSpaces?.limit || 0}
-                                  </span>
-                                  <span className={`nmc-metric-percent nmc-util-${shieldUtil.status}`}>
-                                    {shieldUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${shieldUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(shieldUtil.percentage, 100)}%`}}></div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                                {/* Connect Rows with utilization */}
+                                {(() => {
+                                  const connectUtil = calculateUtilization(
+                                    account.resources.connectRows,
+                                    eaLicense.connect_rows_limit,
+                                    eaLicense.warning_percentage,
+                                    eaLicense.critical_percentage
+                                  );
+                                  return (
+                                    <div className="nmc-metric-row">
+                                      <span className="nmc-metric-label">Connect Rows</span>
+                                      <span className="nmc-metric-usage">
+                                        {formatUsage(account.resources.connectRows)} / {formatUsage(eaLicense.connect_rows_limit || 0)}
+                                      </span>
+                                      <span className={`nmc-metric-percent nmc-util-${connectUtil.status}`}>
+                                        {connectUtil.percentage}%
+                                      </span>
+                                      <div className={`nmc-progress-bar nmc-util-${connectUtil.status}`}>
+                                        <div className="nmc-progress-fill" style={{width: `${Math.min(connectUtil.percentage, 100)}%`}}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
-                            {/* Data Add-ons with utilization */}
-                            {(() => {
-                              const dataUtil = calculateUtilization(
-                                account.resources.dataAddons,
-                                config.thresholds.dataAddons?.limit
-                              );
-                              return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">Data Add-ons</span>
-                                  <span className="nmc-metric-usage">
-                                    {formatNumber(account.resources.dataAddons)} / {formatNumber(config.thresholds.dataAddons?.limit || 0)}
-                                  </span>
-                                  <span className={`nmc-metric-percent nmc-util-${dataUtil.status}`}>
-                                    {dataUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${dataUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(dataUtil.percentage, 100)}%`}}></div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                                {/* Private Spaces with utilization */}
+                                {(() => {
+                                  const spacesUtil = calculateUtilization(
+                                    account.resources.privateSpaces,
+                                    eaLicense.private_spaces_limit,
+                                    eaLicense.warning_percentage,
+                                    eaLicense.critical_percentage
+                                  );
+                                  return (
+                                    <div className="nmc-metric-row">
+                                      <span className="nmc-metric-label">Private Spaces</span>
+                                      <span className="nmc-metric-usage">
+                                        {account.resources.privateSpaces || 0} / {eaLicense.private_spaces_limit || 0}
+                                      </span>
+                                      <span className={`nmc-metric-percent nmc-util-${spacesUtil.status}`}>
+                                        {spacesUtil.percentage}%
+                                      </span>
+                                      <div className={`nmc-progress-bar nmc-util-${spacesUtil.status}`}>
+                                        <div className="nmc-progress-fill" style={{width: `${Math.min(spacesUtil.percentage, 100)}%`}}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
-                            {/* General Add-ons with utilization */}
-                            {(() => {
-                              const generalUtil = calculateUtilization(
-                                account.resources.generalAddons,
-                                config.thresholds.generalAddons?.limit
-                              );
-                              return (
-                                <div className="nmc-metric-row">
-                                  <span className="nmc-metric-label">General Add-ons</span>
-                                  <span className="nmc-metric-usage">
-                                    {formatNumber(account.resources.generalAddons)} / {formatNumber(config.thresholds.generalAddons?.limit || 0)}
-                                  </span>
-                                  <span className={`nmc-metric-percent nmc-util-${generalUtil.status}`}>
-                                    {generalUtil.percentage}%
-                                  </span>
-                                  <div className={`nmc-progress-bar nmc-util-${generalUtil.status}`}>
-                                    <div className="nmc-progress-fill" style={{width: `${Math.min(generalUtil.percentage, 100)}%`}}></div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
+                                {/* Shield Spaces with utilization */}
+                                {(() => {
+                                  const shieldUtil = calculateUtilization(
+                                    account.resources.shieldSpaces,
+                                    eaLicense.shield_spaces_limit,
+                                    eaLicense.warning_percentage,
+                                    eaLicense.critical_percentage
+                                  );
+                                  return (
+                                    <div className="nmc-metric-row">
+                                      <span className="nmc-metric-label">Shield Spaces</span>
+                                      <span className="nmc-metric-usage">
+                                        {account.resources.shieldSpaces || 0} / {eaLicense.shield_spaces_limit || 0}
+                                      </span>
+                                      <span className={`nmc-metric-percent nmc-util-${shieldUtil.status}`}>
+                                        {shieldUtil.percentage}%
+                                      </span>
+                                      <div className={`nmc-progress-bar nmc-util-${shieldUtil.status}`}>
+                                        <div className="nmc-progress-fill" style={{width: `${Math.min(shieldUtil.percentage, 100)}%`}}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* Data Add-ons with utilization */}
+                                {(() => {
+                                  const dataUtil = calculateUtilization(
+                                    account.resources.dataAddons,
+                                    eaLicense.data_addons_limit,
+                                    eaLicense.warning_percentage,
+                                    eaLicense.critical_percentage
+                                  );
+                                  return (
+                                    <div className="nmc-metric-row">
+                                      <span className="nmc-metric-label">Data Add-ons</span>
+                                      <span className="nmc-metric-usage">
+                                        {formatNumber(account.resources.dataAddons)} / {formatNumber(eaLicense.data_addons_limit || 0)}
+                                      </span>
+                                      <span className={`nmc-metric-percent nmc-util-${dataUtil.status}`}>
+                                        {dataUtil.percentage}%
+                                      </span>
+                                      <div className={`nmc-progress-bar nmc-util-${dataUtil.status}`}>
+                                        <div className="nmc-progress-fill" style={{width: `${Math.min(dataUtil.percentage, 100)}%`}}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* General Add-ons with utilization */}
+                                {(() => {
+                                  const generalUtil = calculateUtilization(
+                                    account.resources.generalAddons,
+                                    eaLicense.general_addons_limit,
+                                    eaLicense.warning_percentage,
+                                    eaLicense.critical_percentage
+                                  );
+                                  return (
+                                    <div className="nmc-metric-row">
+                                      <span className="nmc-metric-label">General Add-ons</span>
+                                      <span className="nmc-metric-usage">
+                                        {formatNumber(account.resources.generalAddons)} / {formatNumber(eaLicense.general_addons_limit || 0)}
+                                      </span>
+                                      <span className={`nmc-metric-percent nmc-util-${generalUtil.status}`}>
+                                        {generalUtil.percentage}%
+                                      </span>
+                                      <div className={`nmc-progress-bar nmc-util-${generalUtil.status}`}>
+                                        <div className="nmc-progress-fill" style={{width: `${Math.min(generalUtil.percentage, 100)}%`}}></div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            );
+                          })()
                         ) : (
                           <div className="nmc-enterprise-restricted">
                             <span>No usage data available</span>
