@@ -121,12 +121,25 @@ function EnterpriseLicenseManagement() {
   };
 
   const getAccountStatus = (accountId) => {
+    const account = accounts.find(a => a.id === accountId);
     const config = licenseConfigs[accountId];
-    if (!config) return 'UNKNOWN';
+
+    if (!account || !config) return 'UNKNOWN';
+
+    // Check billing access first - highest priority
+    if (!account.has_billing_access) {
+      return 'RESTRICTED';
+    }
 
     // This would need actual usage data - for now return based on limits
     if (config.source === 'env_fallback') return 'ENV FALLBACK';
     return 'LICENSE OK';
+  };
+
+  const canEditAccount = (accountId) => {
+    const account = accounts.find(a => a.id === accountId);
+    // Can only edit if user is admin AND account has billing access
+    return isAdmin && account?.has_billing_access !== false;
   };
 
   const getStatusColor = (status) => {
@@ -135,8 +148,20 @@ function EnterpriseLicenseManagement() {
       case 'WARNING': return '#f59e0b';
       case 'CRITICAL': return '#dc2626';
       case 'OVERAGE': return '#7f1d1d';
-      case 'RESTRICTED': return '#64748b';
+      case 'RESTRICTED': return '#f97316';
+      case 'ENV FALLBACK': return '#8b5cf6';
       default: return '#6b7280';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'LICENSE OK': return '✓';
+      case 'WARNING': return '⚠️';
+      case 'CRITICAL': return '🔴';
+      case 'OVERAGE': return '🚨';
+      case 'RESTRICTED': return '🔒';
+      default: return '•';
     }
   };
 
@@ -201,10 +226,10 @@ function EnterpriseLicenseManagement() {
                       className="elm-account-status"
                       style={{ backgroundColor: getStatusColor(status), color: 'white' }}
                     >
-                      {status}
+                      {getStatusIcon(status)} {status}
                     </span>
                   </div>
-                  {isAdmin && (
+                  {canEditAccount(account.id) && (
                     <div className="elm-account-actions">
                       {!isEditing ? (
                         <button
@@ -234,6 +259,16 @@ function EnterpriseLicenseManagement() {
                     </div>
                   )}
                 </div>
+
+                {status === 'RESTRICTED' && (
+                  <div className="elm-restricted-notice">
+                    <span className="elm-restricted-icon">🔒</span>
+                    <div className="elm-restricted-message">
+                      <strong>Billing Access Restricted</strong>
+                      <p>This Enterprise Account does not have billing access. License configuration is read-only.</p>
+                    </div>
+                  </div>
+                )}
 
                 {config.updated_at && (
                   <div className="elm-account-meta">
@@ -331,7 +366,7 @@ function LicenseCard({ title, value, isEditing, onChange, icon }) {
               min="0"
             />
           ) : (
-            <span className="elm-value-display">{value.toLocaleString()}</span>
+            <span className="elm-value-display">{Math.round(value).toLocaleString()}</span>
           )}
         </div>
         <div className="elm-card-label">Licensed Capacity</div>

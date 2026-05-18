@@ -9,7 +9,7 @@ const db = require('./databaseService');
  * Initialize enterprise license config table
  */
 async function initializeSchema() {
-  const client = await db.getPool().connect();
+  const client = await db.getClient();
   try {
     await client.query(`
       CREATE TABLE IF NOT EXISTS enterprise_license_config (
@@ -47,9 +47,8 @@ async function initializeSchema() {
  * Falls back to environment variables if no DB config exists
  */
 async function getLicenseConfig(accountId) {
-  const client = await db.getPool().connect();
   try {
-    const result = await client.query(
+    const result = await db.query(
       'SELECT * FROM enterprise_license_config WHERE account_id = $1 AND is_active = true',
       [accountId]
     );
@@ -62,8 +61,10 @@ async function getLicenseConfig(accountId) {
     // Fallback to environment variables (legacy compatibility)
     console.log(`[EnterpriseLicense] No DB config found for ${accountId}, using env var fallback`);
     return getEnvFallbackConfig(accountId);
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error(`[EnterpriseLicense] Error fetching config for ${accountId}:`, error);
+    // Fallback on error
+    return getEnvFallbackConfig(accountId);
   }
 }
 
@@ -71,14 +72,14 @@ async function getLicenseConfig(accountId) {
  * Get license configs for all enterprise accounts
  */
 async function getAllLicenseConfigs() {
-  const client = await db.getPool().connect();
   try {
-    const result = await client.query(
+    const result = await db.query(
       'SELECT * FROM enterprise_license_config WHERE is_active = true ORDER BY account_name'
     );
     return result.rows;
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error('[EnterpriseLicense] Error fetching all configs:', error);
+    return [];
   }
 }
 
@@ -86,9 +87,8 @@ async function getAllLicenseConfigs() {
  * Create or update license config for an enterprise account
  */
 async function upsertLicenseConfig(config, updatedBy) {
-  const client = await db.getPool().connect();
   try {
-    const result = await client.query(`
+    const result = await db.query(`
       INSERT INTO enterprise_license_config (
         account_id, account_name,
         dyno_units_limit, connect_rows_limit,
@@ -114,21 +114,22 @@ async function upsertLicenseConfig(config, updatedBy) {
     `, [
       config.account_id,
       config.account_name,
-      config.dyno_units_limit || 0,
-      config.connect_rows_limit || 0,
-      config.data_addons_limit || 0,
-      config.general_addons_limit || 0,
-      config.private_spaces_limit || 0,
-      config.shield_spaces_limit || 0,
-      config.warning_percentage || 80,
-      config.critical_percentage || 95,
+      parseFloat(config.dyno_units_limit) || 0,
+      parseFloat(config.connect_rows_limit) || 0,
+      parseFloat(config.data_addons_limit) || 0,
+      parseFloat(config.general_addons_limit) || 0,
+      parseFloat(config.private_spaces_limit) || 0,
+      parseFloat(config.shield_spaces_limit) || 0,
+      parseFloat(config.warning_percentage) || 80,
+      parseFloat(config.critical_percentage) || 95,
       updatedBy
     ]);
 
     console.log(`[EnterpriseLicense] Saved config for account: ${config.account_id} by ${updatedBy}`);
     return result.rows[0];
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error(`[EnterpriseLicense] Error saving config for ${config.account_id}:`, error);
+    throw new Error('Failed to save enterprise license configuration');
   }
 }
 
