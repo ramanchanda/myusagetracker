@@ -281,8 +281,9 @@ body {
 
 .nmc-license-status {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .nmc-license-highest {
@@ -294,9 +295,9 @@ body {
 
 .nmc-license-overage-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
 }
 
 .nmc-license-overage-item {
