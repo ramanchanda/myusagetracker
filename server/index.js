@@ -79,6 +79,17 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
+// Simple logout route - destroys session and redirects
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/login');
+  });
+});
+
 app.get('/api/auth/status', (req, res) => {
   res.json({ authenticated: Boolean(req.session && req.session.authenticated) });
 });
@@ -700,27 +711,15 @@ app.get('/api/debug/addons', async (req, res) => {
   }
 });
 
+// Production: Serve React app
 if (process.env.NODE_ENV === 'production') {
-  // Serve static assets (public)
+  // Serve static assets (public - CSS, JS, images from build folder)
   app.use(express.static(path.join(__dirname, '../client/build')));
 
-  // Protect React app - require authentication (except /login)
-  app.get('*', (req, res) => {
-    // Handle login page - redirect if already authenticated
-    if (req.path === '/login') {
-      if (req.session && req.session.authenticated) {
-        return res.redirect('/');
-      }
-      return res.sendFile(path.join(__dirname, '../client/public/login.html'));
-    }
-
-    // For all other routes, require authentication
-    if (req.session && req.session.authenticated) {
-      return res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-    }
-
-    // Not authenticated - redirect to login
-    res.redirect('/login');
+  // Wildcard route for React app - must be LAST
+  // Requires authentication to serve the dashboard
+  app.get('*', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
 
