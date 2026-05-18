@@ -774,9 +774,9 @@ app.put('/api/licenses/enterprise/:accountId', requireAdmin, async (req, res) =>
     const account = await enterpriseUsageService.getEnterpriseAccount(client, accountId);
 
     const config = {
-      account_id: accountId,
-      account_name: account?.name || accountId, // Use actual name from Heroku
-      ...req.body
+      ...req.body, // Spread body first
+      account_id: accountId, // Then override with correct values
+      account_name: account?.name || accountId // Use actual name from Heroku
     };
 
     const updatedBy = req.session.user.username;
