@@ -1187,11 +1187,11 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                                 const spaceInfo = teamAppsCache[team.id]?.[app.name] || {};
                                 return (
                                   <div key={appIdx} className="apps-usage-row">
-                                    <span className="app-name">
-                                      {app.name}
-                                      {spaceInfo.isInPrivateSpace && <span className="space-badge private">Private Space</span>}
-                                      {spaceInfo.isInShieldSpace && <span className="space-badge shield">Shield Space</span>}
-                                    </span>
+                                    <div className="app-name">
+                                      <span className="app-name-text">{app.name}</span>
+                                      {spaceInfo.isInPrivateSpace && <span className="space-badge private">Private</span>}
+                                      {spaceInfo.isInShieldSpace && <span className="space-badge shield">Shield</span>}
+                                    </div>
                                     <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
                                     <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
                                     <span className="app-usage">Data: {formatUsage(app.dataAddons)}</span>
