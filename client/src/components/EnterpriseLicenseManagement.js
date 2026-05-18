@@ -22,38 +22,46 @@ function EnterpriseLicenseManagement() {
       setLoading(true);
       setError(null);
 
-      // Fetch current user
-      const userResponse = await axios.get('/api/auth/user');
-      setCurrentUser(userResponse.data);
+      // Fetch current user and enterprise accounts in parallel
+      const [userResponse, accountsResponse] = await Promise.all([
+        axios.get('/api/auth/user'),
+        axios.get('/api/enterprise/accounts')
+      ]);
 
-      // Fetch enterprise accounts
-      const accountsResponse = await axios.get('/api/enterprise/accounts');
+      setCurrentUser(userResponse.data);
       const accountsList = accountsResponse.data || [];
       setAccounts(accountsList);
 
-      // Fetch license configs for each account
+      // Fetch license configs for all accounts in parallel
+      const configPromises = accountsList.map(account =>
+        axios.get(`/api/licenses/enterprise/${account.id}`)
+          .then(response => ({ accountId: account.id, data: response.data }))
+          .catch(err => {
+            console.error(`Error fetching config for ${account.id}:`, err);
+            // Use defaults if no config exists
+            return {
+              accountId: account.id,
+              data: {
+                account_id: account.id,
+                account_name: account.name,
+                dyno_units_limit: 0,
+                connect_rows_limit: 0,
+                data_addons_limit: 0,
+                general_addons_limit: 0,
+                private_spaces_limit: 0,
+                shield_spaces_limit: 0,
+                warning_percentage: 80,
+                critical_percentage: 95
+              }
+            };
+          })
+      );
+
+      const configResults = await Promise.all(configPromises);
       const configs = {};
-      for (const account of accountsList) {
-        try {
-          const configResponse = await axios.get(`/api/licenses/enterprise/${account.id}`);
-          configs[account.id] = configResponse.data;
-        } catch (err) {
-          console.error(`Error fetching config for ${account.id}:`, err);
-          // Use defaults if no config exists
-          configs[account.id] = {
-            account_id: account.id,
-            account_name: account.name,
-            dyno_units_limit: 0,
-            connect_rows_limit: 0,
-            data_addons_limit: 0,
-            general_addons_limit: 0,
-            private_spaces_limit: 0,
-            shield_spaces_limit: 0,
-            warning_percentage: 80,
-            critical_percentage: 95
-          };
-        }
-      }
+      configResults.forEach(result => {
+        configs[result.accountId] = result.data;
+      });
       setLicenseConfigs(configs);
       setLoading(false);
     } catch (err) {

@@ -97,18 +97,25 @@ function NotificationManagementCenter() {
         }));
         setEnterpriseAccounts(transformedAccounts);
 
-        // Fetch license configs for each account
+        // Fetch license configs for all accounts in parallel
+        const configPromises = transformedAccounts
+          .filter(account => account.accountId)
+          .map(account =>
+            axios.get(`/api/licenses/enterprise/${account.accountId}`)
+              .then(response => ({ accountId: account.accountId, data: response.data }))
+              .catch(err => {
+                console.warn(`Could not fetch license config for ${account.accountId}:`, err);
+                return null;
+              })
+          );
+
+        const configResults = await Promise.all(configPromises);
         const configs = {};
-        for (const account of transformedAccounts) {
-          if (account.accountId) {
-            try {
-              const configResponse = await axios.get(`/api/licenses/enterprise/${account.accountId}`);
-              configs[account.accountId] = configResponse.data;
-            } catch (err) {
-              console.warn(`Could not fetch license config for ${account.accountId}:`, err);
-            }
+        configResults.forEach(result => {
+          if (result) {
+            configs[result.accountId] = result.data;
           }
-        }
+        });
         setLicenseConfigs(configs);
       }
     } catch (error) {
