@@ -24,7 +24,7 @@ const notificationHistory = require('./services/notificationHistoryDB');
 const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
-const { isAuthenticated, redirectIfAuthenticated } = require('./middleware/authMiddleware');
+const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -52,6 +52,9 @@ app.use(compression());
 app.use(cors());
 app.use(express.json());
 
+// Check for session timeout on every request
+app.use(checkSessionTimeout);
+
 // Authentication routes (public)
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
@@ -66,6 +69,8 @@ app.post('/api/auth/login', (req, res) => {
   if (username === expectedUsername && password === expectedPassword) {
     req.session.authenticated = true;
     req.session.username = username;
+    req.session.lastActivity = Date.now(); // Initialize last activity timestamp
+    console.log('[Auth] Login successful for user:', username);
     return res.json({ success: true });
   }
 
@@ -717,8 +722,11 @@ app.get('/api/debug/addons', async (req, res) => {
 
 // Production: Serve React app
 if (process.env.NODE_ENV === 'production') {
-  // Serve static assets (public - CSS, JS, images from build folder)
-  app.use(express.static(path.join(__dirname, '../client/build')));
+  // Serve static assets EXCEPT index.html (JS, CSS, images, etc.)
+  // index.html is served only after authentication via wildcard route
+  app.use(express.static(path.join(__dirname, '../client/build'), {
+    index: false // Don't serve index.html from static middleware
+  }));
 
   // Wildcard route for React app - must be LAST
   // Requires authentication to serve the dashboard
