@@ -19,10 +19,7 @@ const notificationService = require('./services/notificationService');
 const thresholdMonitor = require('./services/thresholdMonitor');
 const autoThresholdMonitor = require('./services/autoThresholdMonitor');
 const notificationOrchestrator = require('./services/notificationOrchestrator');
-// PHASE 4: PostgreSQL-backed notification history
-const notificationHistory = process.env.DATABASE_URL
-  ? require('./services/notificationHistoryDB')
-  : require('./services/notificationHistory');
+const notificationHistory = require('./services/notificationHistoryDB');
 const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');

@@ -10,10 +10,7 @@
 const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
 const notificationService = require('./notificationService');
-// Use PostgreSQL-backed history if DATABASE_URL is configured
-const notificationHistory = process.env.DATABASE_URL
-  ? require('./notificationHistoryDB')
-  : require('./notificationHistory');
+const notificationHistory = require('./notificationHistoryDB');
 const notificationConfig = require('../config/notificationConfig');
 
 // Service name for structured logging
