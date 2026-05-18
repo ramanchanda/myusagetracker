@@ -51,17 +51,24 @@ function AppContent() {
   const isHomePage = location.pathname === '/';
   const isNotificationsPage = location.pathname === '/notifications';
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="App">
       <header className="App-header">
         <div className="header-left">
           <Link to="/" className="header-logo-link">
-            <h1>Heroku Enterprise Teams Usage</h1>
+            <h1>Heroku Enterprise Accounts Usage</h1>
           </Link>
         </div>
         <div className="header-actions">
           <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
+          </button>
+          <button onClick={handlePrint} className="btn btn-secondary">
+            🖨️ Print
           </button>
           <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
             {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}

@@ -1,30 +1,34 @@
 .daily-usage-chart {
   background: white;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  margin-bottom: 30px;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .chart-header h3 {
   margin: 0;
-  font-size: 1.5rem;
-  color: #333;
+  font-size: 1.125rem;
+  color: #0f172a;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .chart-summary {
   display: flex;
-  gap: 24px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -32,31 +36,33 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  border: 2px solid #e0e0e0;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .summary-stat .stat-label {
-  font-size: 0.8rem;
-  color: #666;
-  font-weight: 500;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
   margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .summary-stat .stat-value {
-  font-size: 1.3rem;
-  color: #333;
+  font-size: 1.125rem;
+  color: #0f172a;
   font-weight: 700;
 }
 
 .chart-container {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 12px;
-  padding: 30px 20px;
-  margin-bottom: 20px;
-  border: 2px solid #e9ecef;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
   overflow-x: auto;
 }
 
@@ -91,23 +97,23 @@
 
 .bar {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
   border-radius: 6px 6px 0 0;
   transition: all 0.3s ease;
   cursor: pointer;
   min-height: 4px;
   position: relative;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 4px rgba(103, 98, 166, 0.2);
 }
 
 .bar:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 8px rgba(103, 98, 166, 0.3);
 }
 
 .bar.weekend {
-  opacity: 0.6;
-  background: linear-gradient(135deg, #a8b3ea 0%, #b39bc2 100%);
+  opacity: 0.5;
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
 }
 
 .bar-segments {
@@ -124,20 +130,20 @@
 }
 
 .bar-segment.dyno {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
 }
 
 .bar-segment.data {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .bar-segment.other {
-  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
 .bar-value {
-  font-size: 0.7rem;
-  color: #666;
+  font-size: 0.6875rem;
+  color: #64748b;
   margin-top: 6px;
   font-weight: 600;
   white-space: nowrap;
@@ -146,21 +152,22 @@
 .bar-label {
   margin-top: 8px;
   font-size: 0.75rem;
-  color: #666;
+  color: #64748b;
   font-weight: 600;
 }
 
 .bar-label.weekend {
-  color: #999;
+  color: #94a3b8;
 }
 
 .chart-legend {
   display: flex;
   justify-content: center;
-  gap: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
+  gap: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
   flex-wrap: wrap;
 }
 
@@ -174,33 +181,36 @@
   width: 24px;
   height: 16px;
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .legend-color.dyno {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
 }
 
 .legend-color.data {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .legend-color.other {
-  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
 .legend-label {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 0.8125rem;
+  color: #64748b;
   font-weight: 600;
 }
 
 .no-data {
   text-align: center;
-  padding: 60px 20px;
-  color: #999;
+  padding: 48px 20px;
+  color: #94a3b8;
   font-style: italic;
-  font-size: 1.1rem;
+  font-size: 0.9375rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
 }
 
 /* Responsive */
@@ -216,11 +226,11 @@
   }
 
   .summary-stat {
-    padding: 10px 16px;
+    padding: 8px 12px;
   }
 
   .chart-container {
-    padding: 20px 10px;
+    padding: 16px 10px;
   }
 
   .chart-bars {
@@ -235,10 +245,10 @@
   }
 
   .bar-value {
-    font-size: 0.6rem;
+    font-size: 0.625rem;
   }
 
   .bar-label {
-    font-size: 0.65rem;
+    font-size: 0.6875rem;
   }
 }

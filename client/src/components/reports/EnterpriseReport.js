@@ -8,6 +8,13 @@ import './EnterpriseReport.css';
  *
  * Renders professional PDF-ready reports from normalized report datasets.
  * Contains ZERO business logic - only presentation.
+ *
+ * Styling aligned with Enterprise Design System:
+ * - Modern typography scale and spacing
+ * - Consistent color palette (#6366f1 brand, #0f172a text)
+ * - Compact layouts with proper information density
+ * - Dark gradient table headers
+ * - Softer chart aesthetics
  */
 function EnterpriseReport() {
   const { accountEmail } = useParams();

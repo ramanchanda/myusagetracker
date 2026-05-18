@@ -10,10 +10,7 @@
 const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
 const notificationService = require('./notificationService');
-// Use PostgreSQL-backed history if DATABASE_URL is configured
-const notificationHistory = process.env.DATABASE_URL
-  ? require('./notificationHistoryDB')
-  : require('./notificationHistory');
+const notificationHistory = require('./notificationHistoryDB');
 const notificationConfig = require('../config/notificationConfig');
 
 // Service name for structured logging
@@ -641,12 +638,73 @@ async function runThresholdEvaluation(options = {}) {
     if (resourceConditions.length > 0) {
       console.log(`${LOG_PREFIX} Sending consolidated license audit email with ${resourceConditions.length} condition(s)`);
 
+      // Build account-level resource breakdown
+      const accountsData = (allAccountsData.enterpriseAccounts || [])
+        .filter(acc => acc.enterpriseAccount?.has_billing_access)
+        .map(acc => {
+          const summary = acc.summary || {};
+          return {
+            accountName: acc.enterpriseAccount.name,
+            resources: [
+              {
+                resourceType: 'Dyno Units',
+                currentUsage: summary.totalDynos || 0,
+                licensedCapacity: thresholds.dynoUnits.limit,
+                utilization: thresholds.dynoUnits.limit > 0
+                  ? ((summary.totalDynos || 0) / thresholds.dynoUnits.limit * 100).toFixed(1)
+                  : '0.0'
+              },
+              {
+                resourceType: 'Connect Rows',
+                currentUsage: summary.totalConnect || 0,
+                licensedCapacity: thresholds.connectRows.limit,
+                utilization: thresholds.connectRows.limit > 0
+                  ? ((summary.totalConnect || 0) / thresholds.connectRows.limit * 100).toFixed(1)
+                  : '0.0'
+              },
+              {
+                resourceType: 'Data Add-ons',
+                currentUsage: summary.totalDataAddons || 0,
+                licensedCapacity: thresholds.dataAddons.limit,
+                utilization: thresholds.dataAddons.limit > 0
+                  ? ((summary.totalDataAddons || 0) / thresholds.dataAddons.limit * 100).toFixed(1)
+                  : '0.0'
+              },
+              {
+                resourceType: 'General Add-ons',
+                currentUsage: summary.totalOtherAddons || 0,
+                licensedCapacity: thresholds.generalAddons.limit,
+                utilization: thresholds.generalAddons.limit > 0
+                  ? ((summary.totalOtherAddons || 0) / thresholds.generalAddons.limit * 100).toFixed(1)
+                  : '0.0'
+              },
+              {
+                resourceType: 'Private Spaces',
+                currentUsage: summary.totalPrivateSpaces || 0,
+                licensedCapacity: thresholds.privateSpaces.limit,
+                utilization: thresholds.privateSpaces.limit > 0
+                  ? ((summary.totalPrivateSpaces || 0) / thresholds.privateSpaces.limit * 100).toFixed(1)
+                  : '0.0'
+              },
+              {
+                resourceType: 'Shield Spaces',
+                currentUsage: summary.totalShieldSpaces || 0,
+                licensedCapacity: thresholds.shieldSpaces.limit,
+                utilization: thresholds.shieldSpaces.limit > 0
+                  ? ((summary.totalShieldSpaces || 0) / thresholds.shieldSpaces.limit * 100).toFixed(1)
+                  : '0.0'
+              }
+            ]
+          };
+        });
+
       const consolidatedPayload = {
         accountName: 'Enterprise Accounts',
         generatedAt: new Date().toISOString(),
         warnings: resourceConditions.filter(r => r.severity === 'warning'),
         criticals: resourceConditions.filter(r => r.severity === 'critical'),
         resources: resourceConditions,
+        accountsData: accountsData,
         accountsScanned: totalAccounts,
         accountsMonitored: monitoredAccounts,
         accountsRestricted: restrictedAccounts

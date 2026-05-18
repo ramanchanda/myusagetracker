@@ -1,61 +1,70 @@
 .addons-list {
   background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .addons-header {
-  padding: 25px;
-  border-bottom: 2px solid #f0f0f0;
+  padding: 20px;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 12px;
 }
 
 .addons-header h2 {
-  font-size: 22px;
-  font-weight: 600;
-  color: #333;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .addons-controls {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .search-input {
-  padding: 8px 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
+  padding: 8px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
   min-width: 200px;
+  color: #0f172a;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #6762a6;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
 }
 
 .sort-select {
-  padding: 8px 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  background-color: white;
+  padding: 8px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
   cursor: pointer;
+  color: #0f172a;
+  font-weight: 500;
 }
 
 .sort-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #6762a6;
 }
 
 .addons-table-container {
   overflow-x: auto;
-  padding: 25px;
 }
 
 .addons-table {
@@ -64,62 +73,83 @@
 }
 
 .addons-table thead {
-  background-color: #f8f9fa;
+  background: linear-gradient(135deg, #430098 0%, #6762a6 100%);
 }
 
 .addons-table th {
-  padding: 15px;
+  padding: 14px 12px;
   text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  color: #666;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: white;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 2px solid #374151;
 }
 
 .addons-table td {
-  padding: 15px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 14px;
-  color: #333;
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  color: #475569;
 }
 
 .addons-table tbody tr:hover {
-  background-color: #f8f9fa;
+  background: #f8fafc;
+}
+
+.addons-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .addon-name {
   font-weight: 600;
-  color: #667eea;
+  color: #0f172a;
 }
 
 .plan-name {
-  font-family: monospace;
-  font-size: 13px;
-  color: #666;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .cost {
-  font-weight: 600;
-  color: #28a745;
+  font-weight: 700;
+  color: #10b981;
+  font-size: 0.9375rem;
 }
 
 .state-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  color: white;
-  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
   font-weight: 600;
-  text-transform: capitalize;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.state-badge.provisioned {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.state-badge.deprovisioned {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .no-results {
   text-align: center;
-  padding: 50px;
-  color: #999;
-  font-size: 16px;
+  padding: 48px 20px;
+  color: #64748b;
+  font-size: 0.875rem;
+  background: #f8fafc;
+  border-top: 1px dashed #cbd5e1;
 }
 
 @media (max-width: 768px) {
@@ -137,7 +167,7 @@
   }
 
   .addons-table {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .addons-table th,

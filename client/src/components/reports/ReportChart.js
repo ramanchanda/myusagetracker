@@ -34,7 +34,7 @@ function ReportChart({ data, type = 'line', title, dataKeys, height = 300 }) {
     return null;
   }
 
-  const colors = ['#6f42c1', '#2563eb', '#10b981', '#f59e0b', '#ef4444'];
+  const colors = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
   return (
     <div className="report-chart-container">
@@ -46,9 +46,9 @@ function ReportChart({ data, type = 'line', title, dataKeys, height = 300 }) {
               data={data}
               margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#64748b" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#64748b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} stroke="#cbd5e1" />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} stroke="#cbd5e1" />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               {dataKeys.map((key, idx) => (
@@ -69,9 +69,9 @@ function ReportChart({ data, type = 'line', title, dataKeys, height = 300 }) {
               data={data}
               margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#64748b" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#64748b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} stroke="#cbd5e1" />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} stroke="#cbd5e1" />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               {dataKeys.map((key, idx) => (

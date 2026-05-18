@@ -2,28 +2,28 @@ import React from 'react';
 import './UsageCard.css';
 
 function UsageCard({ title, used, limit, remaining, percentage, icon }) {
-  const getStatusColor = (percent) => {
-    if (percent >= 90) return '#dc3545';
-    if (percent >= 75) return '#ffc107';
-    return '#28a745';
+  const getStatusClass = (percent) => {
+    if (percent >= 90) return 'critical';
+    if (percent >= 75) return 'warning';
+    return 'healthy';
   };
 
   const getStatusLabel = (percent) => {
-    if (percent >= 90) return '⚠️ Critical';
-    if (percent >= 75) return '⚡ Warning';
-    return '✅ Healthy';
+    if (percent >= 90) return 'Critical';
+    if (percent >= 75) return 'Warning';
+    return 'Healthy';
   };
 
-  const statusColor = getStatusColor(percentage);
+  const statusClass = getStatusClass(percentage);
   const statusLabel = getStatusLabel(percentage);
 
   return (
     <div className="usage-card card">
-      <div className="card-header" style={{ background: `linear-gradient(135deg, ${statusColor} 0%, ${statusColor}dd 100%)` }}>
+      <div className="card-header">
         <h2>
           {icon} {title}
         </h2>
-        <div className="status-badge">{statusLabel}</div>
+        <div className={`status-badge ${statusClass}`}>{statusLabel}</div>
       </div>
 
       <div className="card-body">
@@ -42,11 +42,8 @@ function UsageCard({ title, used, limit, remaining, percentage, icon }) {
         <div className="progress-bar-container">
           <div className="progress-bar">
             <div
-              className="progress-fill"
-              style={{
-                width: `${Math.min(percentage, 100)}%`,
-                backgroundColor: statusColor
-              }}
+              className={`progress-fill ${statusClass}`}
+              style={{ width: `${Math.min(percentage, 100)}%` }}
             >
               {percentage > 10 && <span className="progress-text">{percentage}%</span>}
             </div>
@@ -57,7 +54,7 @@ function UsageCard({ title, used, limit, remaining, percentage, icon }) {
         </div>
 
         <div className="remaining-info">
-          <span className="remaining-label">Remaining:</span>
+          <span className="remaining-label">Remaining</span>
           <span className="remaining-value">{remaining.toLocaleString()} hours</span>
         </div>
       </div>
