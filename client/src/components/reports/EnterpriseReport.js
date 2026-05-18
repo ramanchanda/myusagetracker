@@ -23,6 +23,7 @@ function EnterpriseReport() {
   const [reportReady, setReportReady] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [chartsRendered, setChartsRendered] = useState(0);
+  const [teamSortBy, setTeamSortBy] = useState('dynoUnits');
 
   useEffect(() => {
     const fetchReportData = async () => {
@@ -97,6 +98,28 @@ function EnterpriseReport() {
   }
 
   const { metadata, executiveSummary, trendAnalysis, monthlyUsage, resourceBreakdown, teamAnalysis } = reportData;
+
+  // Sort teams based on selected criteria
+  const getSortedTeams = (teams) => {
+    if (!teams || teams.length === 0) return [];
+
+    const sorted = [...teams].sort((a, b) => {
+      switch (teamSortBy) {
+        case 'dynoUnits':
+          return b.totalDynoUnits - a.totalDynoUnits;
+        case 'connectRows':
+          return b.totalConnectRows - a.totalConnectRows;
+        case 'apps':
+          return b.appCount - a.appCount;
+        case 'teamName':
+          return a.teamName.localeCompare(b.teamName);
+        default:
+          return b.totalDynoUnits - a.totalDynoUnits;
+      }
+    });
+
+    return sorted;
+  };
 
   return (
     <div className="enterprise-report">
@@ -310,7 +333,24 @@ function EnterpriseReport() {
         <div className="report-page">
           <h2 className="page-title">Team Analysis</h2>
 
-          <h3>Top Teams by Usage</h3>
+          <div className="team-header">
+            <h3>Top Teams by Usage</h3>
+            <div className="sort-filter">
+              <label htmlFor="team-sort">Sort by:</label>
+              <select
+                id="team-sort"
+                value={teamSortBy}
+                onChange={(e) => setTeamSortBy(e.target.value)}
+                className="sort-select"
+              >
+                <option value="dynoUnits">Dyno Units (High to Low)</option>
+                <option value="connectRows">Connect Rows (High to Low)</option>
+                <option value="apps">App Count (High to Low)</option>
+                <option value="teamName">Team Name (A-Z)</option>
+              </select>
+            </div>
+          </div>
+
           <table className="team-table">
             <thead>
               <tr>
@@ -321,7 +361,7 @@ function EnterpriseReport() {
               </tr>
             </thead>
             <tbody>
-              {monthlyUsage.topTeams.slice(0, 15).map((team, idx) => (
+              {getSortedTeams(monthlyUsage.topTeams).slice(0, 15).map((team, idx) => (
                 <tr key={idx}>
                   <td>{team.teamName}</td>
                   <td>{formatNumber(team.totalDynoUnits)}</td>

@@ -280,6 +280,62 @@ table {
   font-weight: 600;
 }
 
+/* Team Header with Sort Filter */
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.team-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.sort-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-filter label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.sort-select {
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.sort-select:hover {
+  border-color: #6762a6;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #6762a6;
+  box-shadow: 0 0 0 3px rgba(103, 98, 166, 0.1);
+}
+
+/* Hide sort filter in print/PDF */
+@media print {
+  .sort-filter {
+    display: none;
+  }
+}
+
 thead {
   background: linear-gradient(135deg, #430098 0%, #6762a6 100%);
   color: white;
