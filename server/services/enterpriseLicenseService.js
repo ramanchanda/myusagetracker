@@ -134,22 +134,22 @@ async function upsertLicenseConfig(config, updatedBy) {
 }
 
 /**
- * Fallback to environment variable config (legacy compatibility)
+ * Fallback config with zero limits (no env var inheritance)
  */
 function getEnvFallbackConfig(accountId) {
   return {
     account_id: accountId,
     account_name: accountId,
-    dyno_units_limit: parseFloat(process.env.LICENSE_DYNO_UNITS_LIMIT || 0),
-    connect_rows_limit: parseFloat(process.env.LICENSE_CONNECT_ROWS_LIMIT || 0),
-    data_addons_limit: parseFloat(process.env.LICENSE_DATA_ADDONS_LIMIT || 0),
-    general_addons_limit: parseFloat(process.env.LICENSE_GENERAL_ADDONS_LIMIT || 0),
-    private_spaces_limit: parseFloat(process.env.LICENSE_PRIVATE_SPACES_LIMIT || 0),
-    shield_spaces_limit: parseFloat(process.env.LICENSE_SHIELD_SPACES_LIMIT || 0),
-    warning_percentage: parseFloat(process.env.LICENSE_WARNING_THRESHOLD || 80),
-    critical_percentage: parseFloat(process.env.LICENSE_CRITICAL_THRESHOLD || 95),
+    dyno_units_limit: 0,
+    connect_rows_limit: 0,
+    data_addons_limit: 0,
+    general_addons_limit: 0,
+    private_spaces_limit: 0,
+    shield_spaces_limit: 0,
+    warning_percentage: 80,
+    critical_percentage: 95,
     is_active: true,
-    source: 'env_fallback'
+    source: 'default'
   };
 }
 
