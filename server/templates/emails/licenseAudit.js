@@ -153,68 +153,74 @@ function licenseAuditTemplate(data) {
       </table>
     </div>
 
-    <!-- License Utilization Analysis by Account -->
-    ${accountsData.length > 0 ? accountsData.map(account => {
-      const accountResourceRows = account.resources.map(resource => {
-        const utilization = parseFloat(resource.utilization);
-        let statusIcon, statusText, statusTextColor, utilizationColor;
+    <!-- License Utilization Analysis -->
+    ${accountsData.length > 0 ? `
+    <div style="margin-bottom: 24px;">
+      <h2 style="margin: 0 0 20px 0; font-size: 16px; color: #430098; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">LICENSE UTILIZATION ANALYSIS</h2>
 
-        if (utilization > 100) {
-          statusIcon = '🔴';
-          statusText = 'Overage';
-          statusTextColor = '#7f1d1d';
-          utilizationColor = '#7f1d1d';
-        } else if (utilization >= 95) {
-          statusIcon = '⚠️';
-          statusText = 'Critical';
-          statusTextColor = '#dc2626';
-          utilizationColor = '#dc2626';
-        } else if (utilization >= 80) {
-          statusIcon = '⚠️';
-          statusText = 'Warning';
-          statusTextColor = '#f59e0b';
-          utilizationColor = '#f59e0b';
-        } else {
-          statusIcon = '✓';
-          statusText = 'Normal';
-          statusTextColor = '#10b981';
-          utilizationColor = '#475569';
-        }
+      ${accountsData.map(account => {
+        const accountResourceRows = account.resources.map(resource => {
+          const utilization = parseFloat(resource.utilization);
+          let statusIcon, statusText, statusTextColor, utilizationColor;
+
+          if (utilization > 100) {
+            statusIcon = '🔴';
+            statusText = 'Overage';
+            statusTextColor = '#7f1d1d';
+            utilizationColor = '#7f1d1d';
+          } else if (utilization >= 95) {
+            statusIcon = '⚠️';
+            statusText = 'Critical';
+            statusTextColor = '#dc2626';
+            utilizationColor = '#dc2626';
+          } else if (utilization >= 80) {
+            statusIcon = '⚠️';
+            statusText = 'Warning';
+            statusTextColor = '#f59e0b';
+            utilizationColor = '#f59e0b';
+          } else {
+            statusIcon = '✓';
+            statusText = 'Normal';
+            statusTextColor = '#10b981';
+            utilizationColor = '#475569';
+          }
+
+          return `
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+              <td style="padding: 14px 12px; font-weight: 500; color: #0f172a; font-size: 14px;">${resource.resourceType}</td>
+              <td style="padding: 14px 12px; text-align: right; font-family: 'Courier New', monospace; color: #475569; font-size: 14px;">${resource.currentUsage.toLocaleString()}</td>
+              <td style="padding: 14px 12px; text-align: right; font-family: 'Courier New', monospace; color: #475569; font-size: 14px;">${resource.licensedCapacity.toLocaleString()}</td>
+              <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: ${utilizationColor}; font-size: 16px;">${resource.utilization}%</td>
+              <td style="padding: 14px 12px; text-align: center; color: ${statusTextColor}; font-weight: 600; font-size: 13px;">${statusIcon} ${statusText}</td>
+            </tr>
+          `;
+        }).join('');
 
         return `
-          <tr style="border-bottom: 1px solid #e5e7eb;">
-            <td style="padding: 14px 12px; font-weight: 500; color: #0f172a; font-size: 14px;">${resource.resourceType}</td>
-            <td style="padding: 14px 12px; text-align: right; font-family: 'Courier New', monospace; color: #475569; font-size: 14px;">${resource.currentUsage.toLocaleString()}</td>
-            <td style="padding: 14px 12px; text-align: right; font-family: 'Courier New', monospace; color: #475569; font-size: 14px;">${resource.licensedCapacity.toLocaleString()}</td>
-            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: ${utilizationColor}; font-size: 16px;">${resource.utilization}%</td>
-            <td style="padding: 14px 12px; text-align: center; color: ${statusTextColor}; font-weight: 600; font-size: 13px;">${statusIcon} ${statusText}</td>
-          </tr>
-        `;
-      }).join('');
+          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+            <div style="background: #f8fafc; padding: 14px 20px; border-bottom: 2px solid #e2e8f0;">
+              <h3 style="margin: 0; color: #430098; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${account.accountName}</h3>
+            </div>
 
-      return `
-        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 24px;">
-          <div style="background: linear-gradient(135deg, #430098 0%, #6762a6 100%); padding: 16px 20px;">
-            <h2 style="margin: 0; color: white; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">LICENSE UTILIZATION ANALYSIS - ${account.accountName}</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #fafbfc; border-bottom: 1px solid #e2e8f0;">
+                  <th style="padding: 12px; text-align: left; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">RESOURCE TYPE</th>
+                  <th style="padding: 12px; text-align: right; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">CURRENT USAGE</th>
+                  <th style="padding: 12px; text-align: right; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">LICENSED CAPACITY</th>
+                  <th style="padding: 12px; text-align: right; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">UTILIZATION</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${accountResourceRows}
+              </tbody>
+            </table>
           </div>
-
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                <th style="padding: 12px; text-align: left; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">RESOURCE TYPE</th>
-                <th style="padding: 12px; text-align: right; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">CURRENT USAGE</th>
-                <th style="padding: 12px; text-align: right; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">LICENSED CAPACITY</th>
-                <th style="padding: 12px; text-align: right; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">UTILIZATION</th>
-                <th style="padding: 12px; text-align: center; font-weight: 700; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${accountResourceRows}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }).join('') : ''}
+        `;
+      }).join('')}
+    </div>
+    ` : ''}
 
     <!-- Recommended Actions -->
     <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #6762a6; margin-bottom: 24px;">
