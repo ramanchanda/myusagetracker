@@ -108,12 +108,6 @@ function licenseAuditTemplate(data) {
   }).join('');
 
   const content = `
-    <!-- Header Banner -->
-    <div style="background: linear-gradient(135deg, #430098 0%, #6762a6 100%); padding: 32px 24px; text-align: center; border-radius: 10px 10px 0 0; margin: -30px -30px 24px -30px;">
-      <div style="font-size: 48px; margin-bottom: 12px;">🔔</div>
-      <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;">Enterprise License Audit Report</h1>
-    </div>
-
     <!-- Account Info Card -->
     <div style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #6762a6; margin-bottom: 24px;">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
