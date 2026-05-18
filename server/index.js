@@ -334,12 +334,30 @@ app.get('/api/enterprise/trend-summary', async (req, res) => {
   }
 });
 
-// List enterprise accounts
+// List enterprise accounts with billing access check
 app.get('/api/enterprise/accounts', async (req, res) => {
   try {
     const client = enterpriseUsageService.createHerokuClient();
     const accounts = await enterpriseUsageService.getAllEnterpriseAccounts(client);
-    res.json(accounts);
+
+    // Test billing access for each account
+    const accountsWithAccess = await Promise.all(
+      accounts.map(async (account) => {
+        const accessCheck = await enterpriseUsageService.testBillingAccess(
+          client,
+          account.id,
+          enterpriseUsageService.getCurrentMonth()
+        );
+        return {
+          ...account,
+          has_billing_access: accessCheck.hasAccess,
+          billing_error: accessCheck.error,
+          billing_status: accessCheck.status
+        };
+      })
+    );
+
+    res.json(accountsWithAccess);
   } catch (error) {
     console.error('Error fetching enterprise accounts list:', error.message);
     res.status(500).json({ error: error.message });
@@ -725,6 +743,20 @@ app.get('/api/licenses/enterprise/:accountId', async (req, res) => {
   try {
     const { accountId } = req.params;
     const config = await enterpriseLicenseService.getLicenseConfig(accountId);
+
+    // If config doesn't have proper account_name, fetch it from Heroku
+    if (!config.account_name || config.account_name === accountId) {
+      try {
+        const client = enterpriseUsageService.createHerokuClient();
+        const account = await enterpriseUsageService.getEnterpriseAccount(client, accountId);
+        if (account && account.name) {
+          config.account_name = account.name;
+        }
+      } catch (err) {
+        console.warn(`Could not fetch account name for ${accountId}:`, err.message);
+      }
+    }
+
     res.json(config);
   } catch (error) {
     console.error('Error fetching license config:', error.message);
@@ -736,10 +768,17 @@ app.get('/api/licenses/enterprise/:accountId', async (req, res) => {
 app.put('/api/licenses/enterprise/:accountId', requireAdmin, async (req, res) => {
   try {
     const { accountId } = req.params;
+
+    // Fetch actual account name from Heroku API
+    const client = enterpriseUsageService.createHerokuClient();
+    const account = await enterpriseUsageService.getEnterpriseAccount(client, accountId);
+
     const config = {
       account_id: accountId,
+      account_name: account?.name || accountId, // Use actual name from Heroku
       ...req.body
     };
+
     const updatedBy = req.session.user.username;
     const result = await enterpriseLicenseService.upsertLicenseConfig(config, updatedBy);
     res.json(result);

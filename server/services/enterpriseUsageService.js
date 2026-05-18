@@ -784,5 +784,6 @@ module.exports = {
   getEnterpriseTrendSummary,
   getTeamAppsWithSpaceInfo,
   testBillingAccess,
-  createHerokuClient
+  createHerokuClient,
+  getCurrentMonth
 };

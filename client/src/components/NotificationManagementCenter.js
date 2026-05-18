@@ -742,27 +742,16 @@ function NotificationManagementCenter() {
               )}
             </div>
 
-            {/* Licensed Resources */}
+            {/* License Management Note */}
             <div className="nmc-section">
-              <h2 className="nmc-section-title">Licensed Resources</h2>
-              <div className="nmc-resource-grid">
-                {Object.entries(config.thresholds).map(([key, threshold]) => {
-                  const resourceLabel = key.replace(/([A-Z])/g, ' $1').trim();
-                  return (
-                    <div key={key} className="nmc-resource-card">
-                      <div className="nmc-resource-header">
-                        <span className="nmc-resource-name">{resourceLabel}</span>
-                        <span className={`nmc-badge ${threshold.enabled ? 'active' : 'inactive'}`}>
-                          {threshold.enabled ? 'Monitored' : 'Off'}
-                        </span>
-                      </div>
-                      <div className="nmc-resource-limit">{formatUsage(threshold.limit)}</div>
-                      <div className="nmc-resource-meta">
-                        Alert: {threshold.warningPercentage}% / {threshold.criticalPercentage}%
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="nmc-info-banner" style={{ borderLeft: '4px solid #6762a6' }}>
+                <span className="nmc-info-icon">📋</span>
+                <div>
+                  <strong>Per-Enterprise Account License Management</strong>
+                  <br />
+                  View and configure license limits for each Enterprise Account in the <strong>Licenses</strong> tab above.
+                  Each Enterprise Account has independent license capacity limits and monitoring thresholds.
+                </div>
               </div>
             </div>
 
