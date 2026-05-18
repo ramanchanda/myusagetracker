@@ -1,16 +1,17 @@
 /**
  * Print-optimized chart styles
+ * Aligned with Enterprise Design System
  */
 
 .report-chart-container {
-  margin: 20px 0;
+  margin: 16px 0;
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
 .report-chart-title {
-  font-size: 16px;
-  color: #1e293b;
+  font-size: 0.9375rem;
+  color: #0f172a;
   margin: 0 0 10px 0;
   font-weight: 600;
 }
@@ -19,8 +20,8 @@
   width: 100%;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 15px;
+  border-radius: 10px;
+  padding: 16px;
   box-sizing: border-box;
   break-inside: avoid;
   page-break-inside: avoid;
@@ -29,6 +30,48 @@
 /* Ensure chart container doesn't collapse */
 .report-chart-wrapper > div {
   min-height: inherit;
+}
+
+/* Chart styling improvements */
+.report-chart-wrapper .recharts-cartesian-grid-horizontal line,
+.report-chart-wrapper .recharts-cartesian-grid-vertical line {
+  stroke: #f1f5f9;
+  stroke-opacity: 1;
+}
+
+.report-chart-wrapper .recharts-text {
+  fill: #64748b;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.report-chart-wrapper .recharts-legend-wrapper {
+  font-size: 0.75rem !important;
+  color: #475569;
+}
+
+.report-chart-wrapper .recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.report-chart-wrapper .recharts-default-tooltip {
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  padding: 10px !important;
+  font-size: 0.75rem;
+}
+
+.report-chart-wrapper .recharts-tooltip-label {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px;
+}
+
+.report-chart-wrapper .recharts-tooltip-item {
+  color: #475569 !important;
+  font-size: 0.75rem !important;
 }
 
 .chart-ready-marker {

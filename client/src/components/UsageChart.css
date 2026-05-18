@@ -3,17 +3,18 @@
 }
 
 .chart-header {
-  padding: 25px;
-  border-bottom: 2px solid #f0f0f0;
+  padding: 20px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .chart-header h2 {
-  font-size: 22px;
-  font-weight: 600;
-  color: #333;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .chart-container {
-  padding: 25px;
+  padding: 20px;
 }
