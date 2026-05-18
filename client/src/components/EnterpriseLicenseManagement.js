@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './EnterpriseLicenseManagement-enterprise.css';
+import './EnterpriseLicenseManagement.css';
 
 function EnterpriseLicenseManagement() {
   const [accounts, setAccounts] = useState([]);
