@@ -164,7 +164,7 @@ function EnterpriseLicenseManagement() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'LICENSE OK': return '✓';
+      case 'LICENSE OK': return '';
       case 'WARNING': return '⚠️';
       case 'CRITICAL': return '🔴';
       case 'OVERAGE': return '🚨';
@@ -230,12 +230,14 @@ function EnterpriseLicenseManagement() {
                 <div className="elm-account-header">
                   <div className="elm-account-info">
                     <h3 className="elm-account-name">{account.name || account.email}</h3>
-                    <span
-                      className="elm-account-status"
-                      style={{ backgroundColor: getStatusColor(status), color: 'white' }}
-                    >
-                      {getStatusIcon(status)} {status}
-                    </span>
+                    {status === 'RESTRICTED' && (
+                      <span
+                        className="elm-account-status"
+                        style={{ backgroundColor: getStatusColor(status), color: 'white' }}
+                      >
+                        {getStatusIcon(status) && <span>{getStatusIcon(status)} </span>}{status}
+                      </span>
+                    )}
                   </div>
                   {canEditAccount(account.id) && (
                     <div className="elm-account-actions">
@@ -291,42 +293,42 @@ function EnterpriseLicenseManagement() {
                     value={displayConfig.dyno_units_limit}
                     isEditing={isEditing}
                     onChange={(value) => handleInputChange(account.id, 'dyno_units_limit', value)}
-                    icon="⚙️"
+                    icon="⚡"
                   />
                   <LicenseCard
                     title="Connect Rows"
                     value={displayConfig.connect_rows_limit}
                     isEditing={isEditing}
                     onChange={(value) => handleInputChange(account.id, 'connect_rows_limit', value)}
-                    icon="🔗"
+                    icon="⟷"
                   />
                   <LicenseCard
                     title="Data Add-ons"
                     value={displayConfig.data_addons_limit}
                     isEditing={isEditing}
                     onChange={(value) => handleInputChange(account.id, 'data_addons_limit', value)}
-                    icon="💾"
+                    icon="◉"
                   />
                   <LicenseCard
                     title="General Add-ons"
                     value={displayConfig.general_addons_limit}
                     isEditing={isEditing}
                     onChange={(value) => handleInputChange(account.id, 'general_addons_limit', value)}
-                    icon="🔌"
+                    icon="⊕"
                   />
                   <LicenseCard
                     title="Private Spaces"
                     value={displayConfig.private_spaces_limit}
                     isEditing={isEditing}
                     onChange={(value) => handleInputChange(account.id, 'private_spaces_limit', value)}
-                    icon="🔒"
+                    icon="◼"
                   />
                   <LicenseCard
                     title="Shield Spaces"
                     value={displayConfig.shield_spaces_limit}
                     isEditing={isEditing}
                     onChange={(value) => handleInputChange(account.id, 'shield_spaces_limit', value)}
-                    icon="🛡️"
+                    icon="◆"
                   />
                 </div>
 
