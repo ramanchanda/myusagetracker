@@ -56,18 +56,18 @@
 }
 
 .date-input:hover {
-  border-color: #6366f1;
+  border-color: #6762a6;
 }
 
 .date-input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #6762a6;
+  box-shadow: 0 0 0 3px rgba(103, 98, 166, 0.1);
 }
 
 .fetch-daily-btn {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -75,13 +75,13 @@
   font-size: 0.875rem;
   font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 4px rgba(103, 98, 166, 0.2);
   white-space: nowrap;
 }
 
 .fetch-daily-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 8px rgba(103, 98, 166, 0.3);
 }
 
 .fetch-daily-btn:disabled {

@@ -40,7 +40,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: #6762a6;
 }
 
 .search-input::placeholder {
@@ -60,7 +60,7 @@
 
 .sort-select:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: #6762a6;
 }
 
 .addons-table-container {

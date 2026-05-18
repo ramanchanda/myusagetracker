@@ -97,18 +97,18 @@
 
 .bar {
   width: 100%;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
   border-radius: 6px 6px 0 0;
   transition: all 0.3s ease;
   cursor: pointer;
   min-height: 4px;
   position: relative;
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 4px rgba(103, 98, 166, 0.2);
 }
 
 .bar:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 8px rgba(103, 98, 166, 0.3);
 }
 
 .bar.weekend {
@@ -130,7 +130,7 @@
 }
 
 .bar-segment.dyno {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
 }
 
 .bar-segment.data {
@@ -185,7 +185,7 @@
 }
 
 .legend-color.dyno {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
 }
 
 .legend-color.data {

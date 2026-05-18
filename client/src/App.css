@@ -63,14 +63,14 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 4px rgba(103, 98, 166, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 8px rgba(103, 98, 166, 0.3);
 }
 
 .btn-primary:disabled {
@@ -148,7 +148,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
+  border-top-color: #6762a6;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

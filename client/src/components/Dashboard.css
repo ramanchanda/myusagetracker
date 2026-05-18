@@ -125,14 +125,14 @@
 }
 
 .addons-view-toggle button:hover {
-  color: #4f46e5;
+  color: #430098;
   background: #f1f5f9;
 }
 
 .addons-view-toggle button.active {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 4px rgba(103, 98, 166, 0.2);
 }
 
 @media (max-width: 768px) {

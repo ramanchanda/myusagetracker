@@ -332,7 +332,7 @@
   border-radius: 10px;
   font-size: 1.25rem;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
 }
 
 .stat-item.highlight .stat-icon {
