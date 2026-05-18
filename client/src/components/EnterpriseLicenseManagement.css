@@ -1,0 +1,414 @@
+/* Enterprise License Management - Heroku-themed Design */
+
+.enterprise-license-management {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.elm-header {
+  margin-bottom: 32px;
+}
+
+.elm-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #430098;
+  letter-spacing: -0.02em;
+}
+
+.elm-description {
+  color: #64748b;
+  font-size: 0.9375rem;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.elm-readonly-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fb923c;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.elm-icon {
+  font-size: 1.125rem;
+}
+
+.elm-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.elm-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6762a6;
+  border-radius: 50%;
+  animation: elm-spin 0.8s linear infinite;
+}
+
+@keyframes elm-spin {
+  to { transform: rotate(360deg); }
+}
+
+.elm-error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 16px 24px;
+  border-radius: 10px;
+  border-left: 4px solid #ef4444;
+  font-size: 0.9375rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.elm-retry-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.elm-retry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.elm-message {
+  padding: 14px 20px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.elm-message-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.elm-message-error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border-color: #ef4444;
+}
+
+.elm-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* Account Sections */
+
+.elm-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.elm-account-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(67, 0, 152, 0.05);
+}
+
+.elm-account-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.elm-account-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.elm-account-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.elm-account-status {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.elm-account-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.elm-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.elm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.elm-btn-edit {
+  background: linear-gradient(135deg, #6762a6 0%, #430098 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(103, 98, 166, 0.2);
+}
+
+.elm-btn-edit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(103, 98, 166, 0.3);
+}
+
+.elm-btn-save {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.elm-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.elm-btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.elm-btn-cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.elm-account-meta {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* License Cards */
+
+.elm-license-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.elm-license-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: all 0.2s;
+}
+
+.elm-license-card:hover {
+  border-color: #6762a6;
+  box-shadow: 0 4px 8px rgba(103, 98, 166, 0.1);
+}
+
+.elm-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.elm-card-content {
+  flex: 1;
+}
+
+.elm-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #430098;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.elm-card-value {
+  margin-bottom: 4px;
+}
+
+.elm-value-display {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-family: 'Courier New', monospace;
+}
+
+.elm-card-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.elm-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  border: 2px solid #6762a6;
+  border-radius: 8px;
+  background: white;
+  color: #0f172a;
+  transition: all 0.2s;
+}
+
+.elm-input:focus {
+  outline: none;
+  border-color: #430098;
+  box-shadow: 0 0 0 3px rgba(103, 98, 166, 0.1);
+}
+
+/* Thresholds */
+
+.elm-thresholds {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #f1f5f9;
+}
+
+.elm-thresholds h4 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.elm-threshold-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.elm-threshold-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid;
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.elm-threshold-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.elm-threshold-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: #0f172a;
+}
+
+.elm-input-small {
+  width: 80px;
+  padding: 6px 10px;
+  font-size: 1rem;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .enterprise-license-management {
+    padding: 16px;
+  }
+
+  .elm-account-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .elm-account-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .elm-account-actions {
+    width: 100%;
+  }
+
+  .elm-btn {
+    flex: 1;
+  }
+
+  .elm-license-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Print Styles */
+
+@media print {
+  .elm-account-actions,
+  .elm-btn {
+    display: none !important;
+  }
+
+  .elm-readonly-notice {
+    display: none !important;
+  }
+
+  .elm-account-section {
+    page-break-inside: avoid;
+  }
+}

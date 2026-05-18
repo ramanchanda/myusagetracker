@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './NotificationManagementCenter.css';
 import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizationStatus } from '../utils/formatters';
+import EnterpriseLicenseManagement from './EnterpriseLicenseManagement';
 
 function NotificationManagementCenter() {
   const [config, setConfig] = useState(null);
@@ -857,32 +858,7 @@ function NotificationManagementCenter() {
         )}
 
         {activeTab === 'licenses' && (
-          <div className="nmc-section">
-            <h2 className="nmc-section-title">Enterprise Licenses</h2>
-            <p className="nmc-section-desc">Current enterprise license allocations and monitored usage limits</p>
-
-            <div className="nmc-threshold-cards">
-              {Object.entries(config.thresholds).map(([key, threshold]) => {
-                const resourceLabel = key.replace(/([A-Z])/g, ' $1').trim();
-                return (
-                  <div key={key} className="nmc-threshold-card">
-                    <div className="nmc-threshold-card-header">
-                      <h3>{resourceLabel}</h3>
-                      <span className={`nmc-badge ${threshold.enabled ? 'active' : 'inactive'}`}>
-                        {threshold.enabled ? 'Monitored' : 'Disabled'}
-                      </span>
-                    </div>
-                    <div className="nmc-threshold-card-body">
-                      <div className="nmc-threshold-limit">
-                        <span className="nmc-threshold-limit-label">Licensed Capacity</span>
-                        <span className="nmc-threshold-limit-value">{threshold.limit.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <EnterpriseLicenseManagement />
         )}
 
         {activeTab === 'schedule' && (
