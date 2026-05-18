@@ -1322,3 +1322,25 @@
     font-size: 0.75rem;
   }
 }
+
+/* Print Styles - Prevent Page Breaks */
+@media print {
+  .nmc-section,
+  .nmc-kpi-card,
+  .nmc-enterprise-card,
+  .nmc-activity-item,
+  .nmc-threshold-card,
+  .nmc-schedule-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .nmc-header-actions,
+  .nmc-btn {
+    display: none !important;
+  }
+
+  .nmc-tabs {
+    position: static !important;
+  }
+}

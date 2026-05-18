@@ -237,3 +237,19 @@
     width: fit-content;
   }
 }
+
+/* Print Styles - Prevent Page Breaks */
+@media print {
+  .group-card,
+  .team-card,
+  .account-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+
+  .team-header {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+}

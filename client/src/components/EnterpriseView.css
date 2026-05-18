@@ -1121,3 +1121,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Print Styles - Prevent Page Breaks */
+@media print {
+  .account-summary-grid,
+  .enterprise-account-card,
+  .team-summary-card,
+  .usage-card,
+  .summary-section,
+  .chart-section,
+  .stats-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .enterprise-account-card {
+    margin-bottom: 20px;
+  }
+
+  .team-summary-card {
+    margin-bottom: 15px;
+  }
+}

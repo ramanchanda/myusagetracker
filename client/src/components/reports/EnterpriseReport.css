@@ -484,3 +484,26 @@ tbody td {
   opacity: 0;
   pointer-events: none;
 }
+
+/* Print Styles - Prevent Page Breaks */
+@media print {
+  .report-section,
+  .team-card,
+  .metric-card,
+  .chart-container,
+  .summary-block {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+
+  .report-header {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  .report-filters,
+  .report-actions {
+    display: none !important;
+  }
+}

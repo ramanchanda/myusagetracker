@@ -227,4 +227,46 @@
   .App {
     background: white;
   }
+
+  /* Prevent page breaks inside elements */
+  .usage-summary,
+  .team-card,
+  .account-card,
+  .resource-card,
+  .kpi-card,
+  .summary-card,
+  .stats-card,
+  .metric-card,
+  .chart-container,
+  .table-container {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Keep headings with their content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Prevent orphaned table rows */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
 }

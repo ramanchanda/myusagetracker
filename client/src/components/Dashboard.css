@@ -152,3 +152,15 @@
     flex: 1;
   }
 }
+
+/* Print Styles - Prevent Page Breaks */
+@media print {
+  .dashboard-card,
+  .kpi-card,
+  .chart-card,
+  .summary-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 15px;
+  }
+}
