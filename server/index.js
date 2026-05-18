@@ -704,8 +704,15 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static assets (public)
   app.use(express.static(path.join(__dirname, '../client/build')));
 
-  // Protect React app - require authentication
-  app.get('*', isAuthenticated, (req, res) => {
+  // Protect React app - require authentication (except /login)
+  app.get('*', (req, res, next) => {
+    // Skip authentication for login page
+    if (req.path === '/login') {
+      return next();
+    }
+    // Require authentication for all other routes
+    isAuthenticated(req, res, next);
+  }, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
