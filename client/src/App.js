@@ -67,11 +67,9 @@ function AppContent() {
           <button onClick={handleRefresh} className="btn btn-primary" disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
           </button>
-          {isHomePage && (
-            <button onClick={handlePrint} className="btn btn-secondary">
-              🖨️ Print
-            </button>
-          )}
+          <button onClick={handlePrint} className="btn btn-secondary">
+            🖨️ Print
+          </button>
           <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
             {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}
           </Link>
