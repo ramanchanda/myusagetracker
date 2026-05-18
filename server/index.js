@@ -24,7 +24,8 @@ const notificationHistory = require('./services/notificationHistoryDB');
 const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
-const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout } = require('./middleware/authMiddleware');
+const enterpriseLicenseService = require('./services/enterpriseLicenseService');
+const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -59,19 +60,33 @@ app.use(checkSessionTimeout);
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
 
-  const expectedUsername = process.env.APP_LOGIN_USERNAME;
-  const expectedPassword = process.env.APP_LOGIN_PASSWORD;
+  const adminUsername = process.env.APP_ADMIN_USERNAME;
+  const adminPassword = process.env.APP_ADMIN_PASSWORD;
+  const generalUsername = process.env.APP_GENERAL_USERNAME;
+  const generalPassword = process.env.APP_GENERAL_PASSWORD;
 
-  if (!expectedUsername || !expectedPassword) {
-    return res.status(500).json({ error: 'Authentication not configured' });
+  // Validate admin credentials
+  if (username === adminUsername && password === adminPassword && adminUsername && adminPassword) {
+    req.session.authenticated = true;
+    req.session.user = {
+      username: username,
+      role: 'admin'
+    };
+    req.session.lastActivity = Date.now();
+    console.log('[Auth] Admin login successful for user:', username);
+    return res.json({ success: true, role: 'admin' });
   }
 
-  if (username === expectedUsername && password === expectedPassword) {
+  // Validate general user credentials
+  if (username === generalUsername && password === generalPassword && generalUsername && generalPassword) {
     req.session.authenticated = true;
-    req.session.username = username;
-    req.session.lastActivity = Date.now(); // Initialize last activity timestamp
-    console.log('[Auth] Login successful for user:', username);
-    return res.json({ success: true });
+    req.session.user = {
+      username: username,
+      role: 'general'
+    };
+    req.session.lastActivity = Date.now();
+    console.log('[Auth] General user login successful for user:', username);
+    return res.json({ success: true, role: 'general' });
   }
 
   res.status(401).json({ error: 'Invalid username or password' });
@@ -99,7 +114,15 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/api/auth/status', (req, res) => {
-  res.json({ authenticated: Boolean(req.session && req.session.authenticated) });
+  res.json({
+    authenticated: Boolean(req.session && req.session.authenticated),
+    user: req.session?.user || null
+  });
+});
+
+// Get current user info
+app.get('/api/auth/user', isAuthenticated, (req, res) => {
+  res.json(req.session.user);
 });
 
 // Serve login page (public)
@@ -682,6 +705,69 @@ app.post('/api/notifications/history/cleanup', async (req, res) => {
   }
 });
 
+// ========================================
+// Enterprise License Management API
+// ========================================
+
+// Get all enterprise license configs
+app.get('/api/licenses/enterprise', async (req, res) => {
+  try {
+    const configs = await enterpriseLicenseService.getAllLicenseConfigs();
+    res.json(configs);
+  } catch (error) {
+    console.error('Error fetching enterprise license configs:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get license config for specific enterprise account
+app.get('/api/licenses/enterprise/:accountId', async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const config = await enterpriseLicenseService.getLicenseConfig(accountId);
+    res.json(config);
+  } catch (error) {
+    console.error('Error fetching license config:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update license config (admin only)
+app.put('/api/licenses/enterprise/:accountId', requireAdmin, async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const config = {
+      account_id: accountId,
+      ...req.body
+    };
+    const updatedBy = req.session.user.username;
+    const result = await enterpriseLicenseService.upsertLicenseConfig(config, updatedBy);
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating license config:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk update license configs (admin only)
+app.post('/api/licenses/enterprise/bulk', requireAdmin, async (req, res) => {
+  try {
+    const { configs } = req.body;
+    const updatedBy = req.session.user.username;
+    const results = [];
+
+    for (const config of configs) {
+      const result = await enterpriseLicenseService.upsertLicenseConfig(config, updatedBy);
+      results.push(result);
+    }
+
+    res.json({ success: true, updated: results.length, configs: results });
+  } catch (error) {
+    console.error('Error bulk updating license configs:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug endpoint to check addon pricing
 app.get('/api/debug/addons', async (req, res) => {
   try {
@@ -747,6 +833,10 @@ async function initializeDatabase() {
       console.log('[Database] Initializing PostgreSQL schema...');
       await db.initializeSchema();
       console.log('[Database] Schema initialized successfully');
+
+      // Initialize enterprise license schema
+      await enterpriseLicenseService.initializeSchema();
+      console.log('[Database] Enterprise license schema initialized');
 
       // Health check
       const health = await db.healthCheck();

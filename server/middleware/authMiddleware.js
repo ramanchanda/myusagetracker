@@ -69,8 +69,27 @@ function checkSessionTimeout(req, res, next) {
   next();
 }
 
+/**
+ * Check if user has admin role
+ */
+function requireAdmin(req, res, next) {
+  if (!req.session || !req.session.authenticated) {
+    console.log('[Auth] Not authenticated - cannot check admin role');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (req.session.user && req.session.user.role === 'admin') {
+    console.log('[Auth] Admin access granted for:', req.session.user.username);
+    return next();
+  }
+
+  console.log('[Auth] Admin access denied - insufficient permissions');
+  res.status(403).json({ error: 'Admin access required' });
+}
+
 module.exports = {
   isAuthenticated,
   redirectIfAuthenticated,
-  checkSessionTimeout
+  checkSessionTimeout,
+  requireAdmin
 };
