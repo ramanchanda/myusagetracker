@@ -4,17 +4,17 @@
 }
 
 .App-header {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  background: linear-gradient(135deg, #430098 0%, #6762a6 100%);
   padding: 16px 40px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(67, 0, 152, 0.2);
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 2px solid #374151;
+  border-bottom: 2px solid #8a7fbf;
 }
 
 .header-left {

@@ -281,7 +281,7 @@ table {
 }
 
 thead {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  background: linear-gradient(135deg, #430098 0%, #6762a6 100%);
   color: white;
 }
 
@@ -292,7 +292,7 @@ thead th {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #374151;
+  border-bottom: 2px solid #8a7fbf;
 }
 
 tbody tr {

@@ -31,10 +31,10 @@
 }
 
 .addons-summary-card .card-header {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  background: linear-gradient(135deg, #430098 0%, #6762a6 100%);
   color: white;
   padding: 14px 16px;
-  border-bottom: 2px solid #374151;
+  border-bottom: 2px solid #8a7fbf;
 }
 
 .addons-summary-card .card-header h2 {

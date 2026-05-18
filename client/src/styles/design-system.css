@@ -324,7 +324,7 @@
 }
 
 .ds-table thead {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  background: linear-gradient(135deg, #430098 0%, #6762a6 100%);
 }
 
 .ds-table thead th {
@@ -335,7 +335,7 @@
   font-size: var(--font-size-base);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #374151;
+  border-bottom: 2px solid #8a7fbf;
 }
 
 .ds-table tbody tr {
