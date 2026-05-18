@@ -661,7 +661,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     setDailyDateError('');
                   }}
                   className="date-input"
-                  max={dailyEndDate || undefined}
+                  max={dailyEndDate || new Date().toISOString().split('T')[0]}
                 />
               </label>
               <label>
@@ -675,6 +675,15 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                   }}
                   className="date-input"
                   min={dailyStartDate || undefined}
+                  max={(() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (!dailyStartDate) return today;
+                    const startDate = new Date(dailyStartDate);
+                    const maxDate = new Date(startDate);
+                    maxDate.setDate(startDate.getDate() + 31);
+                    const maxDateStr = maxDate.toISOString().split('T')[0];
+                    return maxDateStr < today ? maxDateStr : today;
+                  })()}
                 />
               </label>
               <button
@@ -1189,8 +1198,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                                   <div key={appIdx} className="apps-usage-row">
                                     <div className="app-name">
                                       <span className="app-name-text">{app.name}</span>
-                                      {spaceInfo.isInPrivateSpace && <span className="space-badge private">Private</span>}
-                                      {spaceInfo.isInShieldSpace && <span className="space-badge shield">Shield</span>}
+                                      {spaceInfo.isInPrivateSpace && <span className="space-badge private">Private Space</span>}
+                                      {spaceInfo.isInShieldSpace && <span className="space-badge shield">Shield Space</span>}
                                     </div>
                                     <span className="app-usage">Dyno: {formatUsage(app.dynos)}</span>
                                     <span className="app-usage">Connect: {formatUsage(app.connect)}</span>
