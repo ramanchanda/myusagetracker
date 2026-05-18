@@ -1142,4 +1142,39 @@
   .team-summary-card {
     margin-bottom: 15px;
   }
+
+  /* Fix wide tables for print - Daily & Breakdown tables */
+  .daily-table,
+  .breakdown-table {
+    font-size: 9px !important;
+    width: 100%;
+  }
+
+  .daily-table th,
+  .daily-table td,
+  .breakdown-table th,
+  .breakdown-table td {
+    padding: 6px 4px !important;
+    font-size: 9px !important;
+    white-space: nowrap;
+  }
+
+  .daily-table th,
+  .breakdown-table th {
+    font-size: 8px !important;
+    letter-spacing: 0px !important;
+  }
+
+  /* Ensure table fits on page */
+  .daily-table-wrap,
+  .breakdown-table-wrap {
+    overflow: visible !important;
+    width: 100%;
+  }
+
+  /* Make table responsive for print */
+  @page {
+    size: landscape;
+    margin: 0.5cm;
+  }
 }

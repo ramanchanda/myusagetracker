@@ -269,4 +269,15 @@
   tfoot {
     display: table-footer-group;
   }
+
+  /* Landscape orientation for wide tables */
+  @page {
+    size: auto;
+    margin: 1cm;
+  }
+
+  /* Scale down very wide content */
+  body {
+    zoom: 0.9;
+  }
 }
