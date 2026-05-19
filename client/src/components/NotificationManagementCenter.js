@@ -1014,7 +1014,6 @@ function NotificationManagementCenter() {
             <div className="nmc-section-header">
               <div>
                 <h2 className="nmc-section-title">Email Configuration</h2>
-                <p className="nmc-section-desc">Mailgun API with SMTP fallback</p>
               </div>
               {!editingEmail && (
                 <button onClick={startEditingEmail} className="nmc-btn nmc-btn-primary">
@@ -1029,7 +1028,7 @@ function NotificationManagementCenter() {
                 <div className="nmc-api-section">
                   <div className="nmc-subsection-header">
                     <h3 className="nmc-subsection-title">API Configuration</h3>
-                    <p className="nmc-subsection-desc">Primary email delivery via Mailgun API</p>
+                    <p className="nmc-subsection-desc">Primary email delivery via API</p>
                   </div>
 
                   <div className="nmc-form-grid">
@@ -1250,7 +1249,7 @@ function NotificationManagementCenter() {
                 {/* API Configuration Display */}
                 <div className="nmc-api-section-readonly">
                   <h3 className="nmc-subsection-title">API Configuration</h3>
-                  <p className="nmc-subsection-desc">Primary email delivery via Mailgun API</p>
+                  <p className="nmc-subsection-desc">Primary email delivery via API</p>
 
                   <div className="nmc-form-grid">
                     <div className="nmc-field">
