@@ -9,6 +9,7 @@
 
 const enterpriseUsageService = require('./enterpriseUsageService');
 const configService = require('./configService');
+const enterpriseLicenseService = require('./enterpriseLicenseService');
 const notificationService = require('./notificationService');
 const notificationHistory = require('./notificationHistoryDB');
 const notificationConfig = require('../config/notificationConfig');
@@ -449,11 +450,66 @@ async function runThresholdEvaluation(options = {}) {
   try {
     // Get configuration
     const config = await configService.getConfig();
-    const thresholds = config.thresholds;
 
     // Fetch all enterprise accounts usage data
     const month = options.month || new Date().toISOString().slice(0, 7);
     const allAccountsData = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
+
+    // Load license configs from database for all accounts
+    const licenseConfigs = {};
+    for (const accountData of (allAccountsData.enterpriseAccounts || [])) {
+      const accountId = accountData.enterpriseAccount?.id;
+      if (accountId) {
+        try {
+          licenseConfigs[accountId] = await enterpriseLicenseService.getLicenseConfig(accountId);
+        } catch (err) {
+          console.warn(`${LOG_PREFIX} Could not load license config for ${accountId}:`, err.message);
+        }
+      }
+    }
+
+    // Aggregate license limits across all accounts
+    const aggregatedLimits = {
+      dynoUnits: { limit: 0, enabled: false },
+      connectRows: { limit: 0, enabled: false },
+      dataAddons: { limit: 0, enabled: false },
+      generalAddons: { limit: 0, enabled: false },
+      privateSpaces: { limit: 0, enabled: false },
+      shieldSpaces: { limit: 0, enabled: false }
+    };
+
+    let warningPercentage = 80;
+    let criticalPercentage = 95;
+
+    Object.values(licenseConfigs).forEach(config => {
+      aggregatedLimits.dynoUnits.limit += config.dyno_units_limit || 0;
+      aggregatedLimits.connectRows.limit += config.connect_rows_limit || 0;
+      aggregatedLimits.dataAddons.limit += config.data_addons_limit || 0;
+      aggregatedLimits.generalAddons.limit += config.general_addons_limit || 0;
+      aggregatedLimits.privateSpaces.limit += config.private_spaces_limit || 0;
+      aggregatedLimits.shieldSpaces.limit += config.shield_spaces_limit || 0;
+
+      // Use first account's threshold percentages (assume consistent across accounts)
+      if (config.warning_percentage) warningPercentage = config.warning_percentage;
+      if (config.critical_percentage) criticalPercentage = config.critical_percentage;
+
+      // Enable monitoring if any account has limits > 0
+      if (config.dyno_units_limit > 0) aggregatedLimits.dynoUnits.enabled = true;
+      if (config.connect_rows_limit > 0) aggregatedLimits.connectRows.enabled = true;
+      if (config.data_addons_limit > 0) aggregatedLimits.dataAddons.enabled = true;
+      if (config.general_addons_limit > 0) aggregatedLimits.generalAddons.enabled = true;
+      if (config.private_spaces_limit > 0) aggregatedLimits.privateSpaces.enabled = true;
+      if (config.shield_spaces_limit > 0) aggregatedLimits.shieldSpaces.enabled = true;
+    });
+
+    const thresholds = {
+      dynoUnits: { ...aggregatedLimits.dynoUnits, warningPercentage, criticalPercentage },
+      connectRows: { ...aggregatedLimits.connectRows, warningPercentage, criticalPercentage },
+      dataAddons: { ...aggregatedLimits.dataAddons, warningPercentage, criticalPercentage },
+      generalAddons: { ...aggregatedLimits.generalAddons, warningPercentage, criticalPercentage },
+      privateSpaces: { ...aggregatedLimits.privateSpaces, warningPercentage, criticalPercentage },
+      shieldSpaces: { ...aggregatedLimits.shieldSpaces, warningPercentage, criticalPercentage }
+    };
 
     // Diagnostic logging
     console.log(`${LOG_PREFIX} Audit diagnostics:`, {
