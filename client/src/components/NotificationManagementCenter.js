@@ -944,6 +944,14 @@ function NotificationManagementCenter() {
             <h2 className="nmc-section-title">Notification Schedule</h2>
             <p className="nmc-section-desc">Automated threshold checks and usage reports</p>
 
+            <div className="nmc-info-banner">
+              <span className="nmc-info-icon">ℹ️</span>
+              <div className="nmc-info-content">
+                <strong>Note:</strong> After changing schedule settings, restart the clock dyno to apply changes:
+                <code>heroku ps:restart clock</code>
+              </div>
+            </div>
+
             <div className="nmc-schedule-grid">
               {/* Real-time Alerts */}
               <div className="nmc-schedule-card editable">

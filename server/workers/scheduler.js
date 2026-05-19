@@ -1,16 +1,18 @@
 /**
- * Heroku Scheduler Worker (Clock Process)
+ * Heroku Scheduler Worker (Clock Process) - DYNAMIC SCHEDULING
  *
  * Dedicated process for scheduled notification tasks.
  * Runs independently from web dyno.
  *
- * Responsibilities:
- * - Hourly threshold evaluations
- * - Daily usage summaries
- * - Weekly usage summaries
- * - Monthly executive reports
+ * IMPORTANT: Configuration is loaded from database on startup.
+ * To apply config changes, restart the clock dyno:
+ *   heroku ps:restart clock
  *
- * Does NOT directly send emails - orchestrator handles that.
+ * Responsibilities:
+ * - Real-time threshold evaluations (configurable interval)
+ * - Daily usage summaries (configurable time)
+ * - Weekly usage summaries (configurable day/time)
+ * - Monthly executive reports (configurable day/time)
  */
 
 const cron = require('node-cron');
@@ -20,48 +22,186 @@ const config = require('../config/notificationConfig');
 
 const LOG_PREFIX = config.LOGGING.PREFIXES.SCHEDULER;
 
-// Track last run times for debugging
-const lastRuns = {
-  hourly: null,
+// Track scheduled jobs
+const scheduledJobs = {
+  realtime: null,
   daily: null,
   weekly: null,
   monthly: null
 };
 
-console.log('='.repeat(60));
-console.log(`${LOG_PREFIX} Heroku Clock Process Starting...`);
-console.log(`${LOG_PREFIX} Environment:`, process.env.NODE_ENV || 'development');
-console.log(`${LOG_PREFIX} Timezone:`, process.env.TZ || config.SCHEDULER.DEFAULT_TIMEZONE);
-console.log('='.repeat(60));
+// Track last run times for debugging
+const lastRuns = {
+  realtime: null,
+  daily: null,
+  weekly: null,
+  monthly: null
+};
 
 /**
- * Hourly Threshold Evaluation
- * Runs every hour at :00
+ * Convert day name to cron day number (0 = Sunday, 1 = Monday, etc.)
  */
-cron.schedule('0 * * * *', async () => {
-  const now = new Date().toISOString();
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`${LOG_PREFIX} Hourly Threshold Evaluation - ${now}`);
+function dayNameToCronDay(dayName) {
+  const days = {
+    'Sunday': 0,
+    'Monday': 1,
+    'Tuesday': 2,
+    'Wednesday': 3,
+    'Thursday': 4,
+    'Friday': 5,
+    'Saturday': 6
+  };
+  return days[dayName] || 1; // Default to Monday
+}
+
+/**
+ * Convert time string (HH:MM) to cron minute/hour
+ */
+function parseTime(timeString) {
+  const [hour, minute] = timeString.split(':').map(Number);
+  return { minute: minute || 0, hour: hour || 9 };
+}
+
+/**
+ * Convert interval minutes to cron expression
+ */
+function intervalToCron(minutes) {
+  if (minutes < 60) {
+    // Every X minutes
+    return `*/${minutes} * * * *`;
+  } else {
+    // Every X hours
+    const hours = Math.floor(minutes / 60);
+    return `0 */${hours} * * *`;
+  }
+}
+
+/**
+ * Initialize dynamic scheduling based on database config
+ */
+async function initializeScheduler() {
+  console.log('='.repeat(60));
+  console.log(`${LOG_PREFIX} Heroku Clock Process Starting (Dynamic Scheduling)...`);
+  console.log(`${LOG_PREFIX} Environment:`, process.env.NODE_ENV || 'development');
+  console.log(`${LOG_PREFIX} Timezone:`, process.env.TZ || config.SCHEDULER.DEFAULT_TIMEZONE);
   console.log('='.repeat(60));
 
   try {
-    // Check if realtime alerts are enabled
-    const config = await configService.getConfig();
+    // Load configuration from database
+    const notificationConfig = await configService.getConfig();
+    const scheduleConfig = notificationConfig.triggerSchedule;
 
-    if (!config.triggerSchedule.realtimeAlerts.enabled) {
-      console.log('${LOG_PREFIX} ⏸️  Realtime alerts disabled in config - skipping');
-      return;
+    console.log(`${LOG_PREFIX} Loading schedule configuration from database...`);
+    console.log(`${LOG_PREFIX} Configuration loaded:`, JSON.stringify(scheduleConfig, null, 2));
+
+    // Setup Real-time Alerts
+    if (scheduleConfig.realtimeAlerts.enabled) {
+      const interval = scheduleConfig.realtimeAlerts.checkIntervalMinutes;
+      const cronExpression = intervalToCron(interval);
+
+      console.log(`${LOG_PREFIX} ✓ Real-time Alerts: ENABLED`);
+      console.log(`${LOG_PREFIX}   - Interval: ${interval} minutes`);
+      console.log(`${LOG_PREFIX}   - Cron: ${cronExpression}`);
+
+      scheduledJobs.realtime = cron.schedule(cronExpression, async () => {
+        await runRealtimeAlerts();
+      }, {
+        scheduled: true,
+        timezone: process.env.TZ || 'UTC'
+      });
+    } else {
+      console.log(`${LOG_PREFIX} ⏸️  Real-time Alerts: DISABLED`);
     }
 
-    console.log('${LOG_PREFIX} ✓ Realtime alerts enabled - running evaluation');
+    // Setup Daily Summary
+    if (scheduleConfig.dailySummary.enabled) {
+      const { hour, minute } = parseTime(scheduleConfig.dailySummary.time);
+      const cronExpression = `${minute} ${hour} * * *`;
 
-    // Run threshold evaluation via orchestrator
+      console.log(`${LOG_PREFIX} ✓ Daily Summary: ENABLED`);
+      console.log(`${LOG_PREFIX}   - Time: ${scheduleConfig.dailySummary.time} UTC`);
+      console.log(`${LOG_PREFIX}   - Cron: ${cronExpression}`);
+
+      scheduledJobs.daily = cron.schedule(cronExpression, async () => {
+        await runDailySummary();
+      }, {
+        scheduled: true,
+        timezone: process.env.TZ || 'UTC'
+      });
+    } else {
+      console.log(`${LOG_PREFIX} ⏸️  Daily Summary: DISABLED`);
+    }
+
+    // Setup Weekly Summary
+    if (scheduleConfig.weeklySummary.enabled) {
+      const { hour, minute } = parseTime(scheduleConfig.weeklySummary.time);
+      const dayOfWeek = dayNameToCronDay(scheduleConfig.weeklySummary.dayOfWeek);
+      const cronExpression = `${minute} ${hour} * * ${dayOfWeek}`;
+
+      console.log(`${LOG_PREFIX} ✓ Weekly Summary: ENABLED`);
+      console.log(`${LOG_PREFIX}   - Day: ${scheduleConfig.weeklySummary.dayOfWeek}`);
+      console.log(`${LOG_PREFIX}   - Time: ${scheduleConfig.weeklySummary.time} UTC`);
+      console.log(`${LOG_PREFIX}   - Cron: ${cronExpression}`);
+
+      scheduledJobs.weekly = cron.schedule(cronExpression, async () => {
+        await runWeeklySummary();
+      }, {
+        scheduled: true,
+        timezone: process.env.TZ || 'UTC'
+      });
+    } else {
+      console.log(`${LOG_PREFIX} ⏸️  Weekly Summary: DISABLED`);
+    }
+
+    // Setup Monthly Summary
+    if (scheduleConfig.monthlySummary.enabled) {
+      const { hour, minute } = parseTime(scheduleConfig.monthlySummary.time);
+      const dayOfMonth = scheduleConfig.monthlySummary.dayOfMonth;
+      const cronExpression = `${minute} ${hour} ${dayOfMonth} * *`;
+
+      console.log(`${LOG_PREFIX} ✓ Monthly Summary: ENABLED`);
+      console.log(`${LOG_PREFIX}   - Day of Month: ${dayOfMonth}`);
+      console.log(`${LOG_PREFIX}   - Time: ${scheduleConfig.monthlySummary.time} UTC`);
+      console.log(`${LOG_PREFIX}   - Cron: ${cronExpression}`);
+
+      scheduledJobs.monthly = cron.schedule(cronExpression, async () => {
+        await runMonthlySummary();
+      }, {
+        scheduled: true,
+        timezone: process.env.TZ || 'UTC'
+      });
+    } else {
+      console.log(`${LOG_PREFIX} ⏸️  Monthly Summary: DISABLED`);
+    }
+
+    console.log('='.repeat(60));
+    console.log(`${LOG_PREFIX} Scheduler initialized successfully!`);
+    console.log(`${LOG_PREFIX} To update schedules, change settings in UI then run:`);
+    console.log(`${LOG_PREFIX}   heroku ps:restart clock`);
+    console.log('='.repeat(60));
+
+  } catch (error) {
+    console.error(`${LOG_PREFIX} ❌ Failed to initialize scheduler:`, error);
+    console.error(`${LOG_PREFIX} Stack:`, error.stack);
+    process.exit(1);
+  }
+}
+
+/**
+ * Real-time Alerts Handler
+ */
+async function runRealtimeAlerts() {
+  const now = new Date().toISOString();
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`${LOG_PREFIX} Real-time Threshold Evaluation - ${now}`);
+  console.log('='.repeat(60));
+
+  try {
     const result = await notificationOrchestrator.runThresholdEvaluation();
-
-    lastRuns.hourly = now;
+    lastRuns.realtime = now;
 
     if (result.checked) {
-      console.log('${LOG_PREFIX} ✓ Threshold evaluation complete:');
+      console.log(`${LOG_PREFIX} ✓ Threshold evaluation complete:`);
       console.log(`${LOG_PREFIX}   - Duration: ${result.duration}ms`);
       console.log(`${LOG_PREFIX}   - Checks: ${result.totalChecks}`);
       console.log(`${LOG_PREFIX}   - Alerts sent: ${result.alertsTriggered}`);
@@ -78,195 +218,117 @@ cron.schedule('0 * * * *', async () => {
       console.log(`${LOG_PREFIX} ⚠️  Evaluation not completed: ${result.reason || result.error}`);
     }
   } catch (error) {
-    console.error('${LOG_PREFIX} ❌ Hourly evaluation failed:', error.message);
-    console.error('${LOG_PREFIX} Stack:', error.stack);
+    console.error(`${LOG_PREFIX} ❌ Real-time evaluation failed:`, error.message);
+    console.error(`${LOG_PREFIX} Stack:`, error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
-}, {
-  scheduled: true,
-  timezone: process.env.TZ || 'UTC'
-});
+}
 
 /**
- * Daily Summary
- * Runs every day at configured time (default: 9:00 AM)
+ * Daily Summary Handler
  */
-cron.schedule('0 9 * * *', async () => {
+async function runDailySummary() {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
   console.log(`${LOG_PREFIX} Daily Summary - ${now}`);
   console.log('='.repeat(60));
 
   try {
-    // Check if daily summaries are enabled
-    const config = await configService.getConfig();
-
-    if (!config.triggerSchedule.dailySummary.enabled) {
-      console.log('${LOG_PREFIX} ⏸️  Daily summaries disabled in config - skipping');
-      return;
-    }
-
-    console.log('${LOG_PREFIX} ✓ Daily summaries enabled - sending summary');
-
-    // Send daily summary via orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary('daily');
-
     lastRuns.daily = now;
 
     if (result.sent) {
-      console.log('${LOG_PREFIX} ✓ Daily summary sent successfully');
+      console.log(`${LOG_PREFIX} ✓ Daily summary sent successfully`);
       console.log(`${LOG_PREFIX}   - Recipients: ${result.recipients.join(', ')}`);
       console.log(`${LOG_PREFIX}   - Provider: ${result.provider}`);
     } else {
       console.log(`${LOG_PREFIX} ⚠️  Daily summary not sent: ${result.reason}`);
     }
   } catch (error) {
-    console.error('${LOG_PREFIX} ❌ Daily summary failed:', error.message);
-    console.error('${LOG_PREFIX} Stack:', error.stack);
+    console.error(`${LOG_PREFIX} ❌ Daily summary failed:`, error.message);
+    console.error(`${LOG_PREFIX} Stack:`, error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
-}, {
-  scheduled: true,
-  timezone: process.env.TZ || 'UTC'
-});
+}
 
 /**
- * Weekly Summary
- * Runs every Monday at configured time (default: 9:00 AM)
+ * Weekly Summary Handler
  */
-cron.schedule('0 9 * * 1', async () => {
+async function runWeeklySummary() {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
   console.log(`${LOG_PREFIX} Weekly Summary - ${now}`);
   console.log('='.repeat(60));
 
   try {
-    // Check if weekly summaries are enabled
-    const config = await configService.getConfig();
-
-    if (!config.triggerSchedule.weeklySummary.enabled) {
-      console.log('${LOG_PREFIX} ⏸️  Weekly summaries disabled in config - skipping');
-      return;
-    }
-
-    console.log('${LOG_PREFIX} ✓ Weekly summaries enabled - sending summary');
-
-    // Send weekly summary via orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary('weekly');
-
     lastRuns.weekly = now;
 
     if (result.sent) {
-      console.log('${LOG_PREFIX} ✓ Weekly summary sent successfully');
+      console.log(`${LOG_PREFIX} ✓ Weekly summary sent successfully`);
       console.log(`${LOG_PREFIX}   - Recipients: ${result.recipients.join(', ')}`);
       console.log(`${LOG_PREFIX}   - Provider: ${result.provider}`);
     } else {
       console.log(`${LOG_PREFIX} ⚠️  Weekly summary not sent: ${result.reason}`);
     }
   } catch (error) {
-    console.error('${LOG_PREFIX} ❌ Weekly summary failed:', error.message);
-    console.error('${LOG_PREFIX} Stack:', error.stack);
+    console.error(`${LOG_PREFIX} ❌ Weekly summary failed:`, error.message);
+    console.error(`${LOG_PREFIX} Stack:`, error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
-}, {
-  scheduled: true,
-  timezone: process.env.TZ || 'UTC'
-});
+}
 
 /**
- * Monthly Summary
- * Runs on 1st of every month at configured time (default: 9:00 AM)
+ * Monthly Summary Handler
  */
-cron.schedule('0 9 1 * *', async () => {
+async function runMonthlySummary() {
   const now = new Date().toISOString();
   console.log(`\n${'='.repeat(60)}`);
   console.log(`${LOG_PREFIX} Monthly Summary - ${now}`);
   console.log('='.repeat(60));
 
   try {
-    // Check if monthly summaries are enabled
-    const config = await configService.getConfig();
-
-    if (!config.triggerSchedule.monthlySummary.enabled) {
-      console.log('${LOG_PREFIX} ⏸️  Monthly summaries disabled in config - skipping');
-      return;
-    }
-
-    console.log('${LOG_PREFIX} ✓ Monthly summaries enabled - sending summary');
-
-    // Send monthly summary via orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary('monthly');
-
     lastRuns.monthly = now;
 
     if (result.sent) {
-      console.log('${LOG_PREFIX} ✓ Monthly summary sent successfully');
+      console.log(`${LOG_PREFIX} ✓ Monthly summary sent successfully`);
       console.log(`${LOG_PREFIX}   - Recipients: ${result.recipients.join(', ')}`);
       console.log(`${LOG_PREFIX}   - Provider: ${result.provider}`);
     } else {
       console.log(`${LOG_PREFIX} ⚠️  Monthly summary not sent: ${result.reason}`);
     }
   } catch (error) {
-    console.error('${LOG_PREFIX} ❌ Monthly summary failed:', error.message);
-    console.error('${LOG_PREFIX} Stack:', error.stack);
+    console.error(`${LOG_PREFIX} ❌ Monthly summary failed:`, error.message);
+    console.error(`${LOG_PREFIX} Stack:`, error.stack);
   }
 
   console.log('='.repeat(60) + '\n');
-}, {
-  scheduled: true,
-  timezone: process.env.TZ || 'UTC'
-});
+}
 
 /**
- * Health check - log status every 15 minutes
+ * Graceful shutdown handler
  */
-cron.schedule('*/15 * * * *', () => {
-  const now = new Date().toISOString();
-  console.log(`${LOG_PREFIX} ❤️  Health Check - ${now}`);
-  console.log('${LOG_PREFIX} Status: Running');
-  console.log('${LOG_PREFIX} Last runs:');
-  console.log(`${LOG_PREFIX}   - Hourly: ${lastRuns.hourly || 'Not yet run'}`);
-  console.log(`${LOG_PREFIX}   - Daily: ${lastRuns.daily || 'Not yet run'}`);
-  console.log(`${LOG_PREFIX}   - Weekly: ${lastRuns.weekly || 'Not yet run'}`);
-  console.log(`${LOG_PREFIX}   - Monthly: ${lastRuns.monthly || 'Not yet run'}`);
-}, {
-  scheduled: true,
-  timezone: process.env.TZ || 'UTC'
-});
-
-// Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('\n${LOG_PREFIX} Received SIGTERM - shutting down gracefully...');
+  console.log(`\n${LOG_PREFIX} Received SIGTERM signal. Shutting down gracefully...`);
+
+  // Stop all cron jobs
+  Object.keys(scheduledJobs).forEach(key => {
+    if (scheduledJobs[key]) {
+      scheduledJobs[key].stop();
+      console.log(`${LOG_PREFIX} Stopped ${key} job`);
+    }
+  });
+
+  console.log(`${LOG_PREFIX} Scheduler stopped. Goodbye!`);
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
-  console.log('\n${LOG_PREFIX} Received SIGINT - shutting down gracefully...');
-  process.exit(0);
+// Initialize scheduler on startup
+initializeScheduler().catch(error => {
+  console.error(`${LOG_PREFIX} Fatal error during initialization:`, error);
+  process.exit(1);
 });
-
-// Handle uncaught errors
-process.on('uncaughtException', (error) => {
-  console.error('${LOG_PREFIX} ❌ Uncaught Exception:', error);
-  console.error('${LOG_PREFIX} Stack:', error.stack);
-  // Don't exit - keep clock running
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('${LOG_PREFIX} ❌ Unhandled Rejection at:', promise);
-  console.error('${LOG_PREFIX} Reason:', reason);
-  // Don't exit - keep clock running
-});
-
-console.log('${LOG_PREFIX} ✓ All scheduled jobs registered');
-console.log('${LOG_PREFIX} ✓ Clock process ready');
-console.log('${LOG_PREFIX} Scheduled jobs:');
-console.log('${LOG_PREFIX}   - Hourly threshold evaluation: 0 * * * *');
-console.log('${LOG_PREFIX}   - Daily summary: 0 9 * * *');
-console.log('${LOG_PREFIX}   - Weekly summary: 0 9 * * 1 (Monday)');
-console.log('${LOG_PREFIX}   - Monthly summary: 0 9 1 * * (1st of month)');
-console.log('${LOG_PREFIX}   - Health check: */15 * * * * (every 15 min)');
-console.log('='.repeat(60) + '\n');

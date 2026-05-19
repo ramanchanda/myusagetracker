@@ -768,6 +768,47 @@
    Schedule Cards
    ======================================================================== */
 
+.nmc-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+}
+
+.nmc-info-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.nmc-info-content {
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.nmc-info-content strong {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.nmc-info-content code {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8125rem;
+  color: #1e3a8a;
+  font-weight: 500;
+}
+
 .nmc-schedule-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
