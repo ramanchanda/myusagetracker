@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
-// PHASE 2: cron removed - now in clock process (server/workers/scheduler.js)
 require('dotenv').config();
 
 const herokuService = require('./services/herokuService');
@@ -387,7 +386,7 @@ app.get('/api/enterprise/structure', async (req, res) => {
     const enterpriseAccountId = req.query.accountId; // Optional: specific account
     const structure = await enterpriseUsageService.getEnterpriseStructure(month, enterpriseAccountId);
 
-    // PHASE 1: Dashboard refresh no longer triggers notifications
+    // Dashboard refresh no longer triggers notifications
     // Notifications are now handled by scheduled orchestrator
     // This endpoint only fetches and returns data
 
@@ -404,7 +403,7 @@ app.get('/api/enterprise/all-accounts', async (req, res) => {
     const month = req.query.month;
     const structure = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
 
-    // PHASE 1: Dashboard refresh no longer triggers notifications
+    // Dashboard refresh no longer triggers notifications
     // Notifications are now handled by scheduled orchestrator
 
     res.json(structure);
@@ -675,7 +674,7 @@ app.post('/api/notifications/test-email', async (req, res) => {
 // Send test notification
 app.post('/api/notifications/send-test', async (req, res) => {
   try {
-    // PHASE 1: Route through orchestrator
+    // Route through orchestrator
     const result = await notificationOrchestrator.sendTestNotification();
     res.json(result);
   } catch (error) {
@@ -735,7 +734,7 @@ app.delete('/api/notifications/history', async (req, res) => {
 // Manually trigger threshold monitoring
 app.post('/api/notifications/check-thresholds', async (req, res) => {
   try {
-    // PHASE 1: Route through orchestrator
+    // Route through orchestrator
     const result = await notificationOrchestrator.runThresholdEvaluation();
     res.json(result);
   } catch (error) {
@@ -747,7 +746,7 @@ app.post('/api/notifications/check-thresholds', async (req, res) => {
 // Get orchestrator alert states (replaces cooldown-status)
 app.get('/api/notifications/cooldown-status', async (req, res) => {
   try {
-    // PHASE 1: Use orchestrator's smart alert states
+    // Use orchestrator's smart alert states
     const status = notificationOrchestrator.getAlertStates();
     res.json(status);
   } catch (error) {
@@ -760,7 +759,7 @@ app.get('/api/notifications/cooldown-status', async (req, res) => {
 app.post('/api/notifications/reset-cooldown', async (req, res) => {
   try {
     const { resourceType } = req.body;
-    // PHASE 1: Reset via orchestrator (no longer needs severity)
+    // Reset via orchestrator (no longer needs severity)
     notificationOrchestrator.resetAlertState(resourceType || null);
     res.json({
       success: true,
@@ -778,7 +777,7 @@ app.post('/api/notifications/reset-cooldown', async (req, res) => {
 app.post('/api/notifications/send-summary', async (req, res) => {
   try {
     const period = req.body.period || 'daily';
-    // PHASE 1: Route through orchestrator
+    // Route through orchestrator
     const result = await notificationOrchestrator.sendScheduledSummary(period);
     res.json(result);
   } catch (error) {
@@ -787,7 +786,7 @@ app.post('/api/notifications/send-summary', async (req, res) => {
   }
 });
 
-// PHASE 4: Notification History API Endpoints
+// Notification History API Endpoints
 
 // Get notification history with filters
 app.get('/api/notifications/history-v2', async (req, res) => {
@@ -1019,7 +1018,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// PHASE 2: Cron jobs removed from web process
+// Cron jobs removed from web process
 // All scheduled jobs now run in dedicated clock process (server/workers/scheduler.js)
 // Web dyno focuses only on HTTP requests
 

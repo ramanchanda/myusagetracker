@@ -271,13 +271,13 @@ async function checkResourceThreshold(resourceType, currentValue, threshold, ski
     return null;
   }
 
-  // PHASE 3: Record usage value for trend analysis
+  // Record usage value for trend analysis
   recordUsageValue(resourceType, currentValue);
 
   const percentUsed = (currentValue / threshold.limit) * 100;
   const severity = getSeverity(percentUsed, threshold);
 
-  // PHASE 3: Check for anomalies regardless of threshold
+  // Check for anomalies regardless of threshold
   const anomalies = detectAnomalies(resourceType, currentValue);
   if (anomalies && shouldSendAnomalyAlert(resourceType, anomalies)) {
     console.log(`${LOG_PREFIX} 🚨 Anomalies detected for ${resourceType}:`);
@@ -332,7 +332,7 @@ async function checkResourceThreshold(resourceType, currentValue, threshold, ski
         severity
       );
 
-      // PHASE 4: Log to notification history
+      // Log to notification history
       await notificationHistory.addEvent({
         type: 'threshold-alert',
         severity,
