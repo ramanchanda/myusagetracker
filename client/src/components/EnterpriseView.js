@@ -385,6 +385,10 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
         return (b.resources?.dataAddons?.count || 0) - (a.resources?.dataAddons?.count || 0);
       case 'generalAddons':
         return (b.resources?.generalAddons?.count || 0) - (a.resources?.generalAddons?.count || 0);
+      case 'privateSpaces':
+        return (b.resources?.privateSpaces || 0) - (a.resources?.privateSpaces || 0);
+      case 'shieldSpaces':
+        return (b.resources?.shieldSpaces || 0) - (a.resources?.shieldSpaces || 0);
       case 'teamName':
         return (a.name || '').localeCompare(b.name || '');
       default:
@@ -1120,6 +1124,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                     <option value="connectRows">Connect Rows (High to Low)</option>
                     <option value="dataAddons">Data Add-ons (High to Low)</option>
                     <option value="generalAddons">General Add-ons (High to Low)</option>
+                    <option value="privateSpaces">Private Spaces (High to Low)</option>
+                    <option value="shieldSpaces">Shield Spaces (High to Low)</option>
                     <option value="teamName">Team Name (A-Z)</option>
                   </select>
                 </div>
@@ -1151,6 +1157,8 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                       return (b.dataAddons || 0) - (a.dataAddons || 0);
                     case 'generalAddons':
                       return (b.generalAddons || 0) - (a.generalAddons || 0);
+                    case 'privateSpaces':
+                    case 'shieldSpaces':
                     case 'teamName':
                       return (a.name || '').localeCompare(b.name || '');
                     default:
