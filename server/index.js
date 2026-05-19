@@ -452,6 +452,55 @@ app.put('/api/notifications/config', async (req, res) => {
 });
 
 // Restart clock dyno (requires admin)
+// Scale clock dyno (enable/disable scheduling)
+app.post('/api/scheduler/scale', requireAdmin, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const herokuToken = process.env.HEROKU_API_TOKEN || process.env.HEROKU_API_KEY;
+    const appName = process.env.HEROKU_APP_NAME || 'herokuusagetracker';
+
+    if (!herokuToken) {
+      return res.status(500).json({
+        success: false,
+        message: 'HEROKU_API_TOKEN or HEROKU_API_KEY not configured.'
+      });
+    }
+
+    const axios = require('axios');
+    const quantity = enabled ? 1 : 0;
+
+    // Scale clock dyno via Heroku Platform API
+    await axios.patch(
+      `https://api.heroku.com/apps/${appName}/formation/clock`,
+      { quantity },
+      {
+        headers: {
+          'Authorization': `Bearer ${herokuToken}`,
+          'Accept': 'application/vnd.heroku+json; version=3',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log(`[Scheduler] Clock dyno scaled to ${quantity} by ${req.session?.user?.username}`);
+
+    res.json({
+      success: true,
+      message: enabled
+        ? 'Scheduling enabled. Clock dyno starting...'
+        : 'Scheduling disabled. Clock dyno stopped.'
+    });
+  } catch (error) {
+    console.error('Error scaling clock dyno:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to scale clock dyno',
+      details: error.message
+    });
+  }
+});
+
+// Restart clock dyno
 app.post('/api/scheduler/restart', requireAdmin, async (req, res) => {
   try {
     const herokuToken = process.env.HEROKU_API_TOKEN || process.env.HEROKU_API_KEY;

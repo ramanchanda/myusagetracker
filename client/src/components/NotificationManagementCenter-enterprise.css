@@ -995,6 +995,60 @@ body {
   font-weight: 400;
 }
 
+/* Master Scheduling Toggle */
+.nmc-schedule-master {
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.15s ease;
+}
+
+.nmc-schedule-master.enabled {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.nmc-schedule-master.disabled {
+  background: #f9fafb;
+  opacity: 0.9;
+}
+
+.nmc-schedule-master-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.nmc-schedule-master-info {
+  flex: 1;
+}
+
+.nmc-schedule-master-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1d29;
+}
+
+.nmc-schedule-master-info p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.nmc-schedule-master-status {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e7eaf3;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
 /* Schedule Notice Banner */
 .nmc-schedule-notice {
   display: flex;
@@ -1049,6 +1103,12 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
+  transition: opacity 0.2s ease;
+}
+
+.nmc-schedule-grid.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* Schedule Policy Cards */
@@ -1182,6 +1242,26 @@ body {
   transform: translateX(20px);
 }
 
+.nmc-schedule-toggle input:disabled + .nmc-schedule-toggle-track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Large Toggle for Master Control */
+.nmc-schedule-toggle-large {
+  width: 52px;
+  height: 28px;
+}
+
+.nmc-schedule-toggle-large .nmc-schedule-toggle-track:before {
+  height: 22px;
+  width: 22px;
+}
+
+.nmc-schedule-toggle-large input:checked + .nmc-schedule-toggle-track:before {
+  transform: translateX(24px);
+}
+
 /* Policy Configuration Fields */
 .nmc-schedule-policy-config {
   display: flex;
@@ -1236,6 +1316,13 @@ body {
 
 .nmc-schedule-input[type="time"] {
   font-variant-numeric: tabular-nums;
+}
+
+.nmc-schedule-input:disabled,
+.nmc-schedule-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
 }
 
 /* ========================================================================

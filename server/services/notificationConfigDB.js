@@ -122,6 +122,7 @@ async function getConfigHistory(configKey = 'main') {
  */
 function getDefaultConfig() {
   return {
+    schedulingEnabled: true, // Master toggle - controls clock dyno scaling
     emailConfig: {
       enabled: false,
       provider: "mailgun",

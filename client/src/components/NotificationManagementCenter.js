@@ -23,6 +23,7 @@ function NotificationManagementCenter() {
   });
   const [lastAuditTime, setLastAuditTime] = useState(null);
   const [restarting, setRestarting] = useState(false);
+  const [scalingScheduler, setScalingScheduler] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -290,6 +291,34 @@ function NotificationManagementCenter() {
     } catch (error) {
       console.error('Error updating schedule:', error);
       showMessage('error', 'Failed to update schedule');
+    }
+  };
+
+  const toggleScheduling = async (enabled) => {
+    try {
+      setScalingScheduler(true);
+
+      // Update config in database
+      const updatedConfig = {
+        ...config,
+        schedulingEnabled: enabled
+      };
+      await axios.put('/api/notifications/config', updatedConfig);
+
+      // Scale clock dyno
+      const response = await axios.post('/api/scheduler/scale', { enabled });
+
+      if (response.data.success) {
+        setConfig(updatedConfig);
+        showMessage('success', response.data.message);
+      } else {
+        showMessage('error', response.data.message || 'Failed to scale scheduler');
+      }
+    } catch (error) {
+      console.error('Error scaling scheduler:', error);
+      showMessage('error', error.response?.data?.error || 'Failed to scale scheduler');
+    } finally {
+      setScalingScheduler(false);
     }
   };
 
@@ -964,21 +993,47 @@ function NotificationManagementCenter() {
             <h2 className="nmc-schedule-section-title">Notification Schedule</h2>
             <p className="nmc-schedule-section-desc">Automated threshold checks and usage reports</p>
 
-            <div className="nmc-schedule-notice">
-              <Info size={16} className="nmc-schedule-notice-icon" />
-              <div className="nmc-schedule-notice-content">
-                After changing schedule settings, restart the clock dyno to apply changes.
+            {/* Master Scheduling Toggle */}
+            <div className={`nmc-schedule-master ${config.schedulingEnabled !== false ? 'enabled' : 'disabled'}`}>
+              <div className="nmc-schedule-master-content">
+                <div className="nmc-schedule-master-info">
+                  <h3>Automated Scheduling</h3>
+                  <p>Enable background scheduler (clock dyno) for automated notifications</p>
+                </div>
+                <label className="nmc-schedule-toggle nmc-schedule-toggle-large">
+                  <input
+                    type="checkbox"
+                    checked={config.schedulingEnabled !== false}
+                    onChange={(e) => toggleScheduling(e.target.checked)}
+                    disabled={scalingScheduler}
+                  />
+                  <span className="nmc-schedule-toggle-track"></span>
+                </label>
               </div>
-              <button
-                onClick={restartClockDyno}
-                disabled={restarting}
-                className="nmc-schedule-notice-btn"
-              >
-                {restarting ? 'Restarting...' : 'Restart Clock Dyno'}
-              </button>
+              {scalingScheduler && (
+                <div className="nmc-schedule-master-status">
+                  Scaling clock dyno...
+                </div>
+              )}
             </div>
 
-            <div className="nmc-schedule-grid">
+            {config.schedulingEnabled !== false && (
+              <div className="nmc-schedule-notice">
+                <Info size={16} className="nmc-schedule-notice-icon" />
+                <div className="nmc-schedule-notice-content">
+                  After changing schedule settings, restart the clock dyno to apply changes.
+                </div>
+                <button
+                  onClick={restartClockDyno}
+                  disabled={restarting}
+                  className="nmc-schedule-notice-btn"
+                >
+                  {restarting ? 'Restarting...' : 'Restart Clock Dyno'}
+                </button>
+              </div>
+            )}
+
+            <div className={`nmc-schedule-grid ${config.schedulingEnabled === false ? 'disabled' : ''}`}>
               {/* Real-time Alerts */}
               <div className={`nmc-schedule-policy ${config.triggerSchedule.realtimeAlerts.enabled ? 'enabled' : 'disabled'}`}>
                 <div className="nmc-schedule-policy-header">
@@ -991,6 +1046,7 @@ function NotificationManagementCenter() {
                       type="checkbox"
                       checked={config.triggerSchedule.realtimeAlerts.enabled}
                       onChange={(e) => handleScheduleToggle('realtimeAlerts', e.target.checked)}
+                      disabled={config.schedulingEnabled === false}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1002,6 +1058,7 @@ function NotificationManagementCenter() {
                     <select
                       value={config.triggerSchedule.realtimeAlerts.checkIntervalMinutes}
                       onChange={(e) => handleScheduleUpdate('realtimeAlerts', 'checkIntervalMinutes', parseInt(e.target.value))}
+                      disabled={config.schedulingEnabled === false}
                       className="nmc-schedule-select"
                     >
                       <option value={15}>15 minutes</option>
@@ -1028,6 +1085,7 @@ function NotificationManagementCenter() {
                       type="checkbox"
                       checked={config.triggerSchedule.dailySummary.enabled}
                       onChange={(e) => handleScheduleToggle('dailySummary', e.target.checked)}
+                      disabled={config.schedulingEnabled === false}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1040,6 +1098,7 @@ function NotificationManagementCenter() {
                       type="time"
                       value={config.triggerSchedule.dailySummary.time}
                       onChange={(e) => handleScheduleUpdate('dailySummary', 'time', e.target.value)}
+                      disabled={config.schedulingEnabled === false}
                       className="nmc-schedule-input"
                     />
                   </div>
@@ -1058,6 +1117,7 @@ function NotificationManagementCenter() {
                       type="checkbox"
                       checked={config.triggerSchedule.weeklySummary.enabled}
                       onChange={(e) => handleScheduleToggle('weeklySummary', e.target.checked)}
+                      disabled={config.schedulingEnabled === false}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1084,6 +1144,7 @@ function NotificationManagementCenter() {
                       type="time"
                       value={config.triggerSchedule.weeklySummary.time}
                       onChange={(e) => handleScheduleUpdate('weeklySummary', 'time', e.target.value)}
+                      disabled={config.schedulingEnabled === false}
                       className="nmc-schedule-input"
                     />
                   </div>
@@ -1102,6 +1163,7 @@ function NotificationManagementCenter() {
                       type="checkbox"
                       checked={config.triggerSchedule.monthlySummary.enabled}
                       onChange={(e) => handleScheduleToggle('monthlySummary', e.target.checked)}
+                      disabled={config.schedulingEnabled === false}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1124,6 +1186,7 @@ function NotificationManagementCenter() {
                       type="time"
                       value={config.triggerSchedule.monthlySummary.time}
                       onChange={(e) => handleScheduleUpdate('monthlySummary', 'time', e.target.value)}
+                      disabled={config.schedulingEnabled === false}
                       className="nmc-schedule-input"
                     />
                   </div>
