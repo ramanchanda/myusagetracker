@@ -1028,7 +1028,7 @@ function NotificationManagementCenter() {
                 {/* API Configuration Section */}
                 <div className="nmc-api-section">
                   <div className="nmc-subsection-header">
-                    <h3 className="nmc-subsection-title">1. API Configuration</h3>
+                    <h3 className="nmc-subsection-title">API Configuration</h3>
                     <p className="nmc-subsection-desc">Primary email delivery via Mailgun API</p>
                   </div>
 
@@ -1133,7 +1133,7 @@ function NotificationManagementCenter() {
                 <div className="nmc-smtp-section">
                   <div className="nmc-subsection-header">
                     <div>
-                      <h3 className="nmc-subsection-title">2. SMTP Configuration</h3>
+                      <h3 className="nmc-subsection-title">SMTP Configuration</h3>
                       <p className="nmc-subsection-desc">Fallback email delivery via SMTP (optional but recommended)</p>
                     </div>
                     <label className="nmc-schedule-toggle">
@@ -1249,7 +1249,7 @@ function NotificationManagementCenter() {
               <>
                 {/* API Configuration Display */}
                 <div className="nmc-api-section-readonly">
-                  <h3 className="nmc-subsection-title">1. API Configuration</h3>
+                  <h3 className="nmc-subsection-title">API Configuration</h3>
                   <p className="nmc-subsection-desc">Primary email delivery via Mailgun API</p>
 
                   <div className="nmc-form-grid">
@@ -1301,7 +1301,7 @@ function NotificationManagementCenter() {
 
                 {/* SMTP Configuration Display */}
                 <div className="nmc-smtp-section-readonly">
-                  <h3 className="nmc-subsection-title">2. SMTP Configuration</h3>
+                  <h3 className="nmc-subsection-title">SMTP Configuration</h3>
                   <p className="nmc-subsection-desc">Fallback email delivery via SMTP</p>
                   <div className="nmc-form-grid">
                     <div className="nmc-field">
