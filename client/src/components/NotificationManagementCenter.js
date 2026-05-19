@@ -3,7 +3,6 @@ import axios from 'axios';
 import './NotificationManagementCenter-enterprise.css';
 import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizationStatus } from '../utils/formatters';
 import EnterpriseLicenseManagement from './EnterpriseLicenseManagement';
-import LoginHistory from './LoginHistory';
 import { BellRing, CalendarDays, CalendarRange, CalendarClock, Info } from 'lucide-react';
 
 function NotificationManagementCenter() {
@@ -12,7 +11,6 @@ function NotificationManagementCenter() {
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [enterpriseAccounts, setEnterpriseAccounts] = useState([]);
@@ -66,18 +64,15 @@ function NotificationManagementCenter() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [configRes, statsRes, historyRes, userRes] = await Promise.all([
+      const [configRes, statsRes, historyRes] = await Promise.all([
         axios.get('/api/notifications/config'),
         axios.get('/api/notifications/stats').catch(() => ({ data: null })),
-        axios.get('/api/notifications/history-v2?limit=5').catch(() => ({ data: [] })),
-        axios.get('/api/auth/user')
+        axios.get('/api/notifications/history-v2?limit=5').catch(() => ({ data: [] }))
       ]);
 
       setConfig(configRes.data);
       setStats(statsRes.data);
       setRecentActivity(historyRes.data);
-      setCurrentUser(userRes.data);
-      console.log('[NotificationManagementCenter] Current user:', userRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       showMessage('error', 'Failed to load notification configuration');
@@ -669,14 +664,6 @@ function NotificationManagementCenter() {
         >
           Schedule
         </button>
-        {currentUser && currentUser.role === 'admin' && (
-          <button
-            className={`nmc-tab ${activeTab === 'security' ? 'active' : ''}`}
-            onClick={() => setActiveTab('security')}
-          >
-            Security
-          </button>
-        )}
       </div>
 
       {/* Tab Content */}
@@ -1368,10 +1355,6 @@ function NotificationManagementCenter() {
               </div>
             </div>
           </div>
-        )}
-
-        {activeTab === 'security' && currentUser && currentUser.role === 'admin' && (
-          <LoginHistory />
         )}
       </div>
     </div>

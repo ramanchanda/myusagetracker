@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import axios from 'axios';
 import EnterpriseView from './components/EnterpriseView';
 import NotificationManagementCenter from './components/NotificationManagementCenter';
+import LoginHistory from './components/LoginHistory';
 import PrintableDashboard from './components/PrintableDashboard';
 import EnterpriseReport from './components/reports/EnterpriseReport';
 import './App.css';
@@ -11,6 +12,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const location = useLocation();
 
   // Month selection - default to current month
@@ -37,6 +39,20 @@ function AppContent() {
   }, [selectedMonth]);
 
   useEffect(() => {
+    // Fetch current user on mount
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get('/api/auth/user');
+        setCurrentUser(response.data);
+        console.log('[App] Current user:', response.data);
+      } catch (error) {
+        console.error('[App] Failed to fetch user:', error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
     if (location.pathname === '/') {
       fetchEnterpriseHealth();
       const interval = setInterval(fetchEnterpriseHealth, 5 * 60 * 1000);
@@ -50,6 +66,8 @@ function AppContent() {
 
   const isHomePage = location.pathname === '/';
   const isNotificationsPage = location.pathname === '/notifications';
+  const isSecurityPage = location.pathname === '/security';
+  const isAdmin = currentUser && currentUser.role === 'admin';
 
   const handlePrint = () => {
     window.print();
@@ -81,6 +99,11 @@ function AppContent() {
           <button onClick={handlePrint} className="btn btn-secondary">
             🖨️ Print
           </button>
+          {isAdmin && (
+            <Link to="/security" className="btn btn-secondary">
+              🔒 Security
+            </Link>
+          )}
           <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
             {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}
           </Link>
@@ -116,6 +139,7 @@ function AppContent() {
           }
         />
         <Route path="/notifications" element={<NotificationManagementCenter />} />
+        <Route path="/security" element={isAdmin ? <LoginHistory /> : <div>Access Denied</div>} />
         <Route path="/report/print/:accountEmail" element={<PrintableDashboard />} />
         <Route path="/report/template/monthly/:accountEmail" element={<EnterpriseReport />} />
       </Routes>
