@@ -3,6 +3,7 @@ import axios from 'axios';
 import './NotificationManagementCenter-enterprise.css';
 import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizationStatus } from '../utils/formatters';
 import EnterpriseLicenseManagement from './EnterpriseLicenseManagement';
+import { BellRing, CalendarDays, CalendarRange, CalendarClock, Info } from 'lucide-react';
 
 function NotificationManagementCenter() {
   const [config, setConfig] = useState(null);
@@ -960,18 +961,18 @@ function NotificationManagementCenter() {
 
         {activeTab === 'schedule' && (
           <div className="nmc-section">
-            <h2 className="nmc-section-title">Notification Schedule</h2>
-            <p className="nmc-section-desc">Automated threshold checks and usage reports</p>
+            <h2 className="nmc-schedule-section-title">Notification Schedule</h2>
+            <p className="nmc-schedule-section-desc">Automated threshold checks and usage reports</p>
 
-            <div className="nmc-info-banner">
-              <span className="nmc-info-icon">ℹ️</span>
-              <div className="nmc-info-content">
-                <strong>Note:</strong> After changing schedule settings, restart the clock dyno to apply changes.
+            <div className="nmc-schedule-notice">
+              <Info size={16} className="nmc-schedule-notice-icon" />
+              <div className="nmc-schedule-notice-content">
+                After changing schedule settings, restart the clock dyno to apply changes.
               </div>
               <button
                 onClick={restartClockDyno}
                 disabled={restarting}
-                className="nmc-btn nmc-btn-secondary nmc-btn-sm"
+                className="nmc-schedule-notice-btn"
               >
                 {restarting ? 'Restarting...' : 'Restart Clock Dyno'}
               </button>
@@ -979,148 +980,152 @@ function NotificationManagementCenter() {
 
             <div className="nmc-schedule-grid">
               {/* Real-time Alerts */}
-              <div className="nmc-schedule-card editable">
-                <div className="nmc-schedule-header">
-                  <h3>Real-time Alerts</h3>
-                  <label className="nmc-toggle">
+              <div className={`nmc-schedule-policy ${config.triggerSchedule.realtimeAlerts.enabled ? 'enabled' : 'disabled'}`}>
+                <div className="nmc-schedule-policy-header">
+                  <div className="nmc-schedule-policy-title">
+                    <BellRing size={18} className="nmc-schedule-policy-icon" />
+                    <h3>Real-time Alerts</h3>
+                  </div>
+                  <label className="nmc-schedule-toggle">
                     <input
                       type="checkbox"
                       checked={config.triggerSchedule.realtimeAlerts.enabled}
                       onChange={(e) => handleScheduleToggle('realtimeAlerts', e.target.checked)}
                     />
-                    <span className="nmc-toggle-slider"></span>
+                    <span className="nmc-schedule-toggle-track"></span>
                   </label>
                 </div>
+                <p className="nmc-schedule-policy-desc">Automated license monitoring</p>
                 {config.triggerSchedule.realtimeAlerts.enabled && (
-                  <div className="nmc-schedule-detail">
-                    <label className="nmc-input-label">
-                      Check every
-                      <select
-                        value={config.triggerSchedule.realtimeAlerts.checkIntervalMinutes}
-                        onChange={(e) => handleScheduleUpdate('realtimeAlerts', 'checkIntervalMinutes', parseInt(e.target.value))}
-                        className="nmc-select"
-                      >
-                        <option value={15}>15 minutes</option>
-                        <option value={30}>30 minutes</option>
-                        <option value={60}>1 hour</option>
-                        <option value={120}>2 hours</option>
-                        <option value={240}>4 hours</option>
-                        <option value={480}>8 hours</option>
-                        <option value={720}>12 hours</option>
-                      </select>
-                    </label>
+                  <div className="nmc-schedule-policy-config">
+                    <label className="nmc-schedule-field-label">Check every</label>
+                    <select
+                      value={config.triggerSchedule.realtimeAlerts.checkIntervalMinutes}
+                      onChange={(e) => handleScheduleUpdate('realtimeAlerts', 'checkIntervalMinutes', parseInt(e.target.value))}
+                      className="nmc-schedule-select"
+                    >
+                      <option value={15}>15 minutes</option>
+                      <option value={30}>30 minutes</option>
+                      <option value={60}>1 hour</option>
+                      <option value={120}>2 hours</option>
+                      <option value={240}>4 hours</option>
+                      <option value={480}>8 hours</option>
+                      <option value={720}>12 hours</option>
+                    </select>
                   </div>
                 )}
               </div>
 
               {/* Daily Summary */}
-              <div className="nmc-schedule-card editable">
-                <div className="nmc-schedule-header">
-                  <h3>Daily Summary</h3>
-                  <label className="nmc-toggle">
+              <div className={`nmc-schedule-policy ${config.triggerSchedule.dailySummary.enabled ? 'enabled' : 'disabled'}`}>
+                <div className="nmc-schedule-policy-header">
+                  <div className="nmc-schedule-policy-title">
+                    <CalendarDays size={18} className="nmc-schedule-policy-icon" />
+                    <h3>Daily Summary</h3>
+                  </div>
+                  <label className="nmc-schedule-toggle">
                     <input
                       type="checkbox"
                       checked={config.triggerSchedule.dailySummary.enabled}
                       onChange={(e) => handleScheduleToggle('dailySummary', e.target.checked)}
                     />
-                    <span className="nmc-toggle-slider"></span>
+                    <span className="nmc-schedule-toggle-track"></span>
                   </label>
                 </div>
+                <p className="nmc-schedule-policy-desc">Daily usage digest</p>
                 {config.triggerSchedule.dailySummary.enabled && (
-                  <div className="nmc-schedule-detail">
-                    <label className="nmc-input-label">
-                      Time (UTC)
-                      <input
-                        type="time"
-                        value={config.triggerSchedule.dailySummary.time}
-                        onChange={(e) => handleScheduleUpdate('dailySummary', 'time', e.target.value)}
-                        className="nmc-input"
-                      />
-                    </label>
+                  <div className="nmc-schedule-policy-config">
+                    <label className="nmc-schedule-field-label">Time (UTC)</label>
+                    <input
+                      type="time"
+                      value={config.triggerSchedule.dailySummary.time}
+                      onChange={(e) => handleScheduleUpdate('dailySummary', 'time', e.target.value)}
+                      className="nmc-schedule-input"
+                    />
                   </div>
                 )}
               </div>
 
               {/* Weekly Summary */}
-              <div className="nmc-schedule-card editable">
-                <div className="nmc-schedule-header">
-                  <h3>Weekly Summary</h3>
-                  <label className="nmc-toggle">
+              <div className={`nmc-schedule-policy ${config.triggerSchedule.weeklySummary.enabled ? 'enabled' : 'disabled'}`}>
+                <div className="nmc-schedule-policy-header">
+                  <div className="nmc-schedule-policy-title">
+                    <CalendarRange size={18} className="nmc-schedule-policy-icon" />
+                    <h3>Weekly Summary</h3>
+                  </div>
+                  <label className="nmc-schedule-toggle">
                     <input
                       type="checkbox"
                       checked={config.triggerSchedule.weeklySummary.enabled}
                       onChange={(e) => handleScheduleToggle('weeklySummary', e.target.checked)}
                     />
-                    <span className="nmc-toggle-slider"></span>
+                    <span className="nmc-schedule-toggle-track"></span>
                   </label>
                 </div>
+                <p className="nmc-schedule-policy-desc">Weekly trend report</p>
                 {config.triggerSchedule.weeklySummary.enabled && (
-                  <div className="nmc-schedule-detail">
-                    <label className="nmc-input-label">
-                      Day of week
-                      <select
-                        value={config.triggerSchedule.weeklySummary.dayOfWeek}
-                        onChange={(e) => handleScheduleUpdate('weeklySummary', 'dayOfWeek', e.target.value)}
-                        className="nmc-select"
-                      >
-                        <option value="Monday">Monday</option>
-                        <option value="Tuesday">Tuesday</option>
-                        <option value="Wednesday">Wednesday</option>
-                        <option value="Thursday">Thursday</option>
-                        <option value="Friday">Friday</option>
-                        <option value="Saturday">Saturday</option>
-                        <option value="Sunday">Sunday</option>
-                      </select>
-                    </label>
-                    <label className="nmc-input-label">
-                      Time (UTC)
-                      <input
-                        type="time"
-                        value={config.triggerSchedule.weeklySummary.time}
-                        onChange={(e) => handleScheduleUpdate('weeklySummary', 'time', e.target.value)}
-                        className="nmc-input"
-                      />
-                    </label>
+                  <div className="nmc-schedule-policy-config">
+                    <label className="nmc-schedule-field-label">Day of week</label>
+                    <select
+                      value={config.triggerSchedule.weeklySummary.dayOfWeek}
+                      onChange={(e) => handleScheduleUpdate('weeklySummary', 'dayOfWeek', e.target.value)}
+                      className="nmc-schedule-select"
+                    >
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                      <option value="Sunday">Sunday</option>
+                    </select>
+                    <label className="nmc-schedule-field-label">Time (UTC)</label>
+                    <input
+                      type="time"
+                      value={config.triggerSchedule.weeklySummary.time}
+                      onChange={(e) => handleScheduleUpdate('weeklySummary', 'time', e.target.value)}
+                      className="nmc-schedule-input"
+                    />
                   </div>
                 )}
               </div>
 
               {/* Monthly Summary */}
-              <div className="nmc-schedule-card editable">
-                <div className="nmc-schedule-header">
-                  <h3>Monthly Summary</h3>
-                  <label className="nmc-toggle">
+              <div className={`nmc-schedule-policy ${config.triggerSchedule.monthlySummary.enabled ? 'enabled' : 'disabled'}`}>
+                <div className="nmc-schedule-policy-header">
+                  <div className="nmc-schedule-policy-title">
+                    <CalendarClock size={18} className="nmc-schedule-policy-icon" />
+                    <h3>Monthly Summary</h3>
+                  </div>
+                  <label className="nmc-schedule-toggle">
                     <input
                       type="checkbox"
                       checked={config.triggerSchedule.monthlySummary.enabled}
                       onChange={(e) => handleScheduleToggle('monthlySummary', e.target.checked)}
                     />
-                    <span className="nmc-toggle-slider"></span>
+                    <span className="nmc-schedule-toggle-track"></span>
                   </label>
                 </div>
+                <p className="nmc-schedule-policy-desc">Executive monthly report</p>
                 {config.triggerSchedule.monthlySummary.enabled && (
-                  <div className="nmc-schedule-detail">
-                    <label className="nmc-input-label">
-                      Day of month
-                      <select
-                        value={config.triggerSchedule.monthlySummary.dayOfMonth}
-                        onChange={(e) => handleScheduleUpdate('monthlySummary', 'dayOfMonth', parseInt(e.target.value))}
-                        className="nmc-select"
-                      >
-                        {[...Array(28)].map((_, i) => (
-                          <option key={i + 1} value={i + 1}>{i + 1}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="nmc-input-label">
-                      Time (UTC)
-                      <input
-                        type="time"
-                        value={config.triggerSchedule.monthlySummary.time}
-                        onChange={(e) => handleScheduleUpdate('monthlySummary', 'time', e.target.value)}
-                        className="nmc-input"
-                      />
-                    </label>
+                  <div className="nmc-schedule-policy-config">
+                    <label className="nmc-schedule-field-label">Day of month</label>
+                    <select
+                      value={config.triggerSchedule.monthlySummary.dayOfMonth}
+                      onChange={(e) => handleScheduleUpdate('monthlySummary', 'dayOfMonth', parseInt(e.target.value))}
+                      className="nmc-schedule-select"
+                    >
+                      {[...Array(28)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>{i + 1}</option>
+                      ))}
+                    </select>
+                    <label className="nmc-schedule-field-label">Time (UTC)</label>
+                    <input
+                      type="time"
+                      value={config.triggerSchedule.monthlySummary.time}
+                      onChange={(e) => handleScheduleUpdate('monthlySummary', 'time', e.target.value)}
+                      className="nmc-schedule-input"
+                    />
                   </div>
                 )}
               </div>

@@ -977,6 +977,268 @@ body {
 }
 
 /* ========================================================================
+   SCHEDULE SECTION - ENTERPRISE AUTOMATION CONSOLE
+   ======================================================================== */
+
+.nmc-schedule-section-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1d29;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.nmc-schedule-section-desc {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  font-weight: 400;
+}
+
+/* Schedule Notice Banner */
+.nmc-schedule-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+}
+
+.nmc-schedule-notice-icon {
+  flex-shrink: 0;
+  color: #1e40af;
+}
+
+.nmc-schedule-notice-content {
+  flex: 1;
+  color: #1e3a8a;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.nmc-schedule-notice-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #1e40af;
+  background: white;
+  border: 1px solid #bfdbfe;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nmc-schedule-notice-btn:hover {
+  background: #f9fafb;
+  border-color: #93c5fd;
+}
+
+.nmc-schedule-notice-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Schedule Policy Grid */
+.nmc-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+/* Schedule Policy Cards */
+.nmc-schedule-policy {
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+  padding: 14px;
+  transition: all 0.15s ease;
+}
+
+.nmc-schedule-policy.enabled {
+  background: white;
+  border-color: #10b981;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+}
+
+.nmc-schedule-policy.disabled {
+  background: #f9fafb;
+  opacity: 0.7;
+}
+
+.nmc-schedule-policy.enabled:hover {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  transform: translateY(-1px);
+}
+
+.nmc-schedule-policy.disabled:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Policy Header */
+.nmc-schedule-policy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.nmc-schedule-policy-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nmc-schedule-policy-icon {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.nmc-schedule-policy.enabled .nmc-schedule-policy-icon {
+  color: #10b981;
+}
+
+.nmc-schedule-policy-header h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1d29;
+  letter-spacing: -0.01em;
+}
+
+.nmc-schedule-policy-desc {
+  margin: 0 0 12px 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Enterprise Toggle Switch */
+.nmc-schedule-toggle {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nmc-schedule-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.nmc-schedule-toggle-track {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e1;
+  transition: 0.2s ease;
+  border-radius: 22px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.nmc-schedule-toggle-track:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  transition: 0.2s ease;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.nmc-schedule-toggle:hover .nmc-schedule-toggle-track {
+  background: #94a3b8;
+}
+
+.nmc-schedule-toggle input:checked + .nmc-schedule-toggle-track {
+  background: #10b981;
+}
+
+.nmc-schedule-toggle input:checked:hover + .nmc-schedule-toggle-track {
+  background: #059669;
+}
+
+.nmc-schedule-toggle input:focus + .nmc-schedule-toggle-track {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.nmc-schedule-toggle input:checked + .nmc-schedule-toggle-track:before {
+  transform: translateX(20px);
+}
+
+/* Policy Configuration Fields */
+.nmc-schedule-policy-config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.nmc-schedule-field-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Enterprise Input & Select Fields */
+.nmc-schedule-input,
+.nmc-schedule-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 0.8125rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1a1d29;
+  background: white;
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.nmc-schedule-input:focus,
+.nmc-schedule-select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.nmc-schedule-input:hover,
+.nmc-schedule-select:hover {
+  border-color: #94a3b8;
+}
+
+.nmc-schedule-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 9L1.5 4.5h9z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.nmc-schedule-input[type="time"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================================================
    RESPONSIVE
    ======================================================================== */
 

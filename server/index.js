@@ -454,13 +454,13 @@ app.put('/api/notifications/config', async (req, res) => {
 // Restart clock dyno (requires admin)
 app.post('/api/scheduler/restart', requireAdmin, async (req, res) => {
   try {
-    const herokuToken = process.env.HEROKU_API_TOKEN;
+    const herokuToken = process.env.HEROKU_API_TOKEN || process.env.HEROKU_API_KEY;
     const appName = process.env.HEROKU_APP_NAME || 'herokuusagetracker';
 
     if (!herokuToken) {
       return res.status(500).json({
         success: false,
-        message: 'HEROKU_API_TOKEN not configured. Please set this environment variable.'
+        message: 'HEROKU_API_TOKEN or HEROKU_API_KEY not configured. Please set this environment variable.'
       });
     }
 
