@@ -928,7 +928,7 @@ body {
 }
 
 /* ========================================================================
-   ACTIVITY LIST (SCHEDULE GREEN THEME)
+   ACTIVITY LIST
    ======================================================================== */
 
 .nmc-activity-list {
@@ -943,15 +943,15 @@ body {
   gap: 11px;
   padding: 9px 11px;
   background: #f9fafb;
-  border: 1px solid #10b981;
+  border: 1px solid #e7eaf3;
   border-radius: 4px;
   transition: all 0.15s ease;
 }
 
 .nmc-activity-item:hover {
   background: white;
-  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
-  border-color: #059669;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-color: #cbd5e1;
 }
 
 .nmc-activity-icon {
