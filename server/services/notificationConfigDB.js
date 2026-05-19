@@ -128,7 +128,8 @@ function getDefaultConfig() {
       provider: "mailgun",
       recipients: [],
       fromName: "Heroku Usage Monitor",
-      fromEmail: ""
+      fromEmail: "",
+      subjectPrefix: "Heroku Usage Monitor"
     },
     triggerSchedule: {
       dailySummary: {

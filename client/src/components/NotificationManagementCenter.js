@@ -3,6 +3,7 @@ import axios from 'axios';
 import './NotificationManagementCenter-enterprise.css';
 import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizationStatus } from '../utils/formatters';
 import EnterpriseLicenseManagement from './EnterpriseLicenseManagement';
+import LoginHistory from './LoginHistory';
 import { BellRing, CalendarDays, CalendarRange, CalendarClock, Info } from 'lucide-react';
 
 function NotificationManagementCenter() {
@@ -11,6 +12,7 @@ function NotificationManagementCenter() {
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [enterpriseAccounts, setEnterpriseAccounts] = useState([]);
@@ -29,6 +31,7 @@ function NotificationManagementCenter() {
     enabled: false,
     fromName: '',
     fromEmail: '',
+    subjectPrefix: '',
     recipients: []
   });
   const [newRecipient, setNewRecipient] = useState('');
@@ -63,15 +66,17 @@ function NotificationManagementCenter() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [configRes, statsRes, historyRes] = await Promise.all([
+      const [configRes, statsRes, historyRes, userRes] = await Promise.all([
         axios.get('/api/notifications/config'),
         axios.get('/api/notifications/stats').catch(() => ({ data: null })),
-        axios.get('/api/notifications/history-v2?limit=5').catch(() => ({ data: [] }))
+        axios.get('/api/notifications/history-v2?limit=5').catch(() => ({ data: [] })),
+        axios.get('/api/auth/user')
       ]);
 
       setConfig(configRes.data);
       setStats(statsRes.data);
       setRecentActivity(historyRes.data);
+      setCurrentUser(userRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       showMessage('error', 'Failed to load notification configuration');
@@ -335,6 +340,7 @@ function NotificationManagementCenter() {
       enabled: config.emailConfig.enabled,
       fromName: config.emailConfig.fromName,
       fromEmail: config.emailConfig.fromEmail,
+      subjectPrefix: config.emailConfig.subjectPrefix || 'Heroku Usage Monitor',
       recipients: [...config.emailConfig.recipients]
     });
     setEditingEmail(true);
@@ -662,6 +668,14 @@ function NotificationManagementCenter() {
         >
           Schedule
         </button>
+        {currentUser?.role === 'admin' && (
+          <button
+            className={`nmc-tab ${activeTab === 'security' ? 'active' : ''}`}
+            onClick={() => setActiveTab('security')}
+          >
+            Security
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -1048,6 +1062,20 @@ function NotificationManagementCenter() {
                   </div>
 
                   <div className="nmc-field nmc-field-full">
+                    <label className="nmc-input-label">
+                      Email Subject Prefix
+                      <input
+                        type="text"
+                        value={emailForm.subjectPrefix}
+                        onChange={(e) => setEmailForm({ ...emailForm, subjectPrefix: e.target.value })}
+                        placeholder="Heroku Usage Monitor"
+                        className="nmc-schedule-input"
+                      />
+                    </label>
+                    <span className="nmc-field-hint">Used as prefix for all notification emails (e.g., "Your Company - Alert")</span>
+                  </div>
+
+                  <div className="nmc-field nmc-field-full">
                     <label className="nmc-input-label">Recipients</label>
                     <div className="nmc-recipients-editor">
                       {emailForm.recipients.map((email, idx) => (
@@ -1102,6 +1130,11 @@ function NotificationManagementCenter() {
                   <div className="nmc-field">
                     <label>From Email</label>
                     <div className="nmc-field-value">{config.emailConfig.fromEmail || '(Mailgun default)'}</div>
+                  </div>
+
+                  <div className="nmc-field">
+                    <label>Subject Prefix</label>
+                    <div className="nmc-field-value">{config.emailConfig.subjectPrefix || 'Heroku Usage Monitor'}</div>
                   </div>
 
                   <div className="nmc-field nmc-field-full">
@@ -1334,6 +1367,10 @@ function NotificationManagementCenter() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'security' && currentUser?.role === 'admin' && (
+          <LoginHistory />
         )}
       </div>
     </div>

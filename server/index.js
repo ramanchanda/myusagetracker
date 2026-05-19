@@ -25,7 +25,8 @@ const db = require('./services/databaseService');
 const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
 const enterpriseLicenseService = require('./services/enterpriseLicenseService');
-const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin } = require('./middleware/authMiddleware');
+const loginHistoryService = require('./services/loginHistoryService');
+const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin, getSessionTimeout } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +35,10 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // Session configuration
+// Get session timeout from environment (default 480 minutes = 8 hours)
+const sessionTimeoutMinutes = parseInt(process.env.SESSION_TIMEOUT_MINUTES) || 480;
+const sessionTimeoutMs = sessionTimeoutMinutes * 60 * 1000;
+
 app.use(session({
   secret: process.env.APP_SESSION_SECRET || 'heroku-usage-tracker-secret-change-in-production',
   resave: false,
@@ -41,10 +46,12 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    maxAge: sessionTimeoutMs,
     sameSite: 'lax'
   }
 }));
+
+console.log(`[Session] Timeout configured: ${sessionTimeoutMinutes} minutes (${sessionTimeoutMs}ms)`);
 
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -57,8 +64,12 @@ app.use(express.json());
 app.use(checkSessionTimeout);
 
 // Authentication routes (public)
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
+
+  // Get client info for audit log
+  const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+  const userAgent = req.get('user-agent') || 'unknown';
 
   const adminUsername = process.env.APP_ADMIN_USERNAME;
   const adminPassword = process.env.APP_ADMIN_PASSWORD;
@@ -74,6 +85,16 @@ app.post('/api/auth/login', (req, res) => {
     };
     req.session.lastActivity = Date.now();
     console.log('[Auth] Admin login successful for user:', username);
+
+    // Log successful login
+    await loginHistoryService.logLoginAttempt({
+      username,
+      role: 'admin',
+      ipAddress,
+      userAgent,
+      success: true
+    });
+
     return res.json({ success: true, role: 'admin' });
   }
 
@@ -86,8 +107,27 @@ app.post('/api/auth/login', (req, res) => {
     };
     req.session.lastActivity = Date.now();
     console.log('[Auth] General user login successful for user:', username);
+
+    // Log successful login
+    await loginHistoryService.logLoginAttempt({
+      username,
+      role: 'general',
+      ipAddress,
+      userAgent,
+      success: true
+    });
+
     return res.json({ success: true, role: 'general' });
   }
+
+  // Log failed login attempt
+  await loginHistoryService.logLoginAttempt({
+    username,
+    ipAddress,
+    userAgent,
+    success: false,
+    failureReason: 'Invalid credentials'
+  });
 
   res.status(401).json({ error: 'Invalid username or password' });
 });
@@ -123,6 +163,43 @@ app.get('/api/auth/status', (req, res) => {
 // Get current user info
 app.get('/api/auth/user', isAuthenticated, (req, res) => {
   res.json(req.session.user);
+});
+
+// Get login history (admin only)
+app.get('/api/auth/login-history', requireAdmin, async (req, res) => {
+  try {
+    const { limit, offset, username, successOnly } = req.query;
+    const history = await loginHistoryService.getLoginHistory({
+      limit: parseInt(limit) || 100,
+      offset: parseInt(offset) || 0,
+      username,
+      successOnly: successOnly === 'true' ? true : successOnly === 'false' ? false : undefined
+    });
+    res.json(history);
+  } catch (error) {
+    console.error('[Auth] Error fetching login history:', error);
+    res.status(500).json({ error: 'Failed to fetch login history' });
+  }
+});
+
+// Get login statistics (admin only)
+app.get('/api/auth/login-stats', requireAdmin, async (req, res) => {
+  try {
+    const stats = await loginHistoryService.getLoginStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('[Auth] Error fetching login stats:', error);
+    res.status(500).json({ error: 'Failed to fetch login statistics' });
+  }
+});
+
+// Get session timeout configuration
+app.get('/api/auth/session-config', isAuthenticated, (req, res) => {
+  const timeoutMs = getSessionTimeout();
+  res.json({
+    timeoutMinutes: timeoutMs / (60 * 1000),
+    timeoutMs
+  });
 });
 
 // Serve login page (public)
@@ -937,6 +1014,10 @@ async function initializeDatabase() {
       // Initialize enterprise license schema
       await enterpriseLicenseService.initializeSchema();
       console.log('[Database] Enterprise license schema initialized');
+
+      // Initialize login history schema
+      await loginHistoryService.initializeSchema();
+      console.log('[Database] Login history schema initialized');
 
       // Health check
       const health = await db.healthCheck();

@@ -38,9 +38,10 @@ async function sendTestNotification() {
   });
 
   try {
+    const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
     const result = await emailService.sendEmail({
       to: emailConfig.recipients,
-      subject: '✅ Heroku Usage Monitor - Test Notification',
+      subject: `✅ ${subjectPrefix} - Test Notification`,
       html
     });
 
@@ -86,7 +87,8 @@ async function sendThresholdAlert(resourceType, currentValue, threshold, severit
     dashboardUrl: process.env.DASHBOARD_URL
   });
 
-  const subject = `${severityIcon} Heroku ${resourceType} Usage Alert - ${severity.toUpperCase()}`;
+  const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
+  const subject = `${severityIcon} ${subjectPrefix} - ${resourceType} Alert (${severity.toUpperCase()})`;
 
   try {
     const result = await emailService.sendEmail({
@@ -147,7 +149,8 @@ async function sendUsageSummary(summaryData, period = 'daily') {
     reportPeriod: summaryData.reportPeriod
   });
 
-  const subject = `${periodIcons[period] || '📊'} Heroku ${period.charAt(0).toUpperCase() + period.slice(1)} Usage Summary`;
+  const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
+  const subject = `${periodIcons[period] || '📊'} ${subjectPrefix} - ${period.charAt(0).toUpperCase() + period.slice(1)} Summary`;
 
   try {
     const result = await emailService.sendEmail({
@@ -279,7 +282,8 @@ async function sendLicenseAuditSummary(auditData) {
     dashboardUrl: process.env.DASHBOARD_URL
   });
 
-  const subject = `[License Audit] ${accountName} - ${criticals.length} Critical, ${warnings.length} Warning(s)`;
+  const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
+  const subject = `${subjectPrefix} - License Audit: ${criticals.length} Critical, ${warnings.length} Warning(s)`;
 
   try {
     const result = await emailService.sendEmail({

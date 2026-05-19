@@ -4,6 +4,15 @@
  */
 
 /**
+ * Get session timeout from environment variable (in minutes)
+ * Default: 480 minutes (8 hours)
+ */
+function getSessionTimeout() {
+  const timeoutMinutes = parseInt(process.env.SESSION_TIMEOUT_MINUTES) || 480;
+  return timeoutMinutes * 60 * 1000; // Convert to milliseconds
+}
+
+/**
  * Check if user is authenticated
  */
 function isAuthenticated(req, res, next) {
@@ -38,10 +47,10 @@ function redirectIfAuthenticated(req, res, next) {
 
 /**
  * Auto-logout middleware - checks for session inactivity
- * Default timeout: 8 hours (same as cookie maxAge)
+ * Timeout configured via SESSION_TIMEOUT_MINUTES env var (default: 480 minutes / 8 hours)
  */
 function checkSessionTimeout(req, res, next) {
-  const TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+  const TIMEOUT_MS = getSessionTimeout();
 
   if (req.session && req.session.authenticated && req.session.lastActivity) {
     const now = Date.now();
@@ -61,7 +70,7 @@ function checkSessionTimeout(req, res, next) {
         }
 
         // For page requests, redirect to login
-        return res.redirect('/login');
+        return res.redirect('/login?expired=true');
       });
     }
   }
@@ -91,5 +100,6 @@ module.exports = {
   isAuthenticated,
   redirectIfAuthenticated,
   checkSessionTimeout,
-  requireAdmin
+  requireAdmin,
+  getSessionTimeout
 };
