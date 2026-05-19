@@ -163,7 +163,7 @@ body {
 }
 
 /* ========================================================================
-   SECTIONS - MINIMAL DEPTH
+   SECTIONS - MINIMAL DEPTH (SCHEDULE-STYLE GREEN THEME)
    ======================================================================== */
 
 .nmc-content {
@@ -172,17 +172,22 @@ body {
 
 .nmc-section {
   background: white;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  transition: all 0.15s ease;
+}
+
+.nmc-section:hover {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
 }
 
 .nmc-section-title {
   margin: 0 0 4px 0;
   color: #1a1d29;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -191,11 +196,11 @@ body {
   margin: 0 0 14px 0;
   color: #6b7280;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* ========================================================================
-   ENTERPRISE ACCOUNT CARDS - DENSE OPERATIONAL LAYOUT
+   ENTERPRISE ACCOUNT CARDS - DENSE OPERATIONAL LAYOUT (SCHEDULE GREEN THEME)
    ======================================================================== */
 
 .nmc-ops-summary {
@@ -205,8 +210,14 @@ body {
   margin-bottom: 14px;
   padding: 10px 12px;
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 5px;
+  transition: all 0.15s ease;
+}
+
+.nmc-ops-summary:hover {
+  background: white;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
 }
 
 .nmc-ops-stat {
@@ -245,16 +256,17 @@ body {
 
 .nmc-enterprise-card {
   background: white;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
   padding: 14px 16px;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
 }
 
 .nmc-enterprise-card:hover {
-  background: rgba(80, 70, 229, 0.005);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  background: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  border-color: #059669;
 }
 
 .nmc-enterprise-card.restricted {
@@ -659,7 +671,7 @@ body {
 }
 
 /* ========================================================================
-   KPI CARDS - MINIMAL (Overview Tab)
+   KPI CARDS - MINIMAL (Overview Tab - SCHEDULE GREEN THEME)
    ======================================================================== */
 
 .nmc-kpi-grid {
@@ -674,15 +686,17 @@ body {
   align-items: center;
   gap: 12px;
   background: white;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 5px;
   padding: 12px 14px;
   transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
 }
 
 .nmc-kpi-card:hover {
-  background: rgba(80, 70, 229, 0.005);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  background: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  border-color: #059669;
 }
 
 .nmc-kpi-icon {
@@ -785,8 +799,14 @@ body {
   font-weight: 500;
   padding: 7px 11px;
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.nmc-field-value:hover {
+  background: white;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
 }
 
 .nmc-field-empty {
@@ -812,7 +832,7 @@ body {
   font-weight: 500;
 }
 
-/* Email Configuration Editor */
+/* Email Configuration Editor (SCHEDULE GREEN THEME) */
 .nmc-section-header {
   display: flex;
   justify-content: space-between;
@@ -822,9 +842,16 @@ body {
 
 .nmc-form-section {
   background: white;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
   padding: 16px;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  transition: all 0.15s ease;
+}
+
+.nmc-form-section:hover {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  border-color: #059669;
 }
 
 .nmc-field-hint {
@@ -841,8 +868,14 @@ body {
   min-height: 32px;
   padding: 8px;
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 5px;
+  transition: all 0.15s ease;
+}
+
+.nmc-recipients-editor:hover {
+  background: white;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
 }
 
 .nmc-recipient-badge.editable {
@@ -895,7 +928,7 @@ body {
 }
 
 /* ========================================================================
-   ACTIVITY LIST
+   ACTIVITY LIST (SCHEDULE GREEN THEME)
    ======================================================================== */
 
 .nmc-activity-list {
@@ -910,13 +943,15 @@ body {
   gap: 11px;
   padding: 9px 11px;
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 4px;
   transition: all 0.15s ease;
 }
 
 .nmc-activity-item:hover {
   background: white;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  border-color: #059669;
 }
 
 .nmc-activity-icon {
@@ -1003,7 +1038,7 @@ body {
 }
 
 /* ========================================================================
-   RESOURCE & THRESHOLD CARDS (Compact)
+   RESOURCE & THRESHOLD CARDS (Compact - SCHEDULE GREEN THEME)
    ======================================================================== */
 
 .nmc-resource-grid,
@@ -1018,7 +1053,7 @@ body {
 .nmc-threshold-card,
 .nmc-schedule-card {
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 5px;
   padding: 10px 12px;
   transition: all 0.15s ease;
@@ -1028,7 +1063,8 @@ body {
 .nmc-threshold-card:hover,
 .nmc-schedule-card:hover {
   background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  border-color: #059669;
 }
 
 .nmc-resource-header {
@@ -1488,23 +1524,37 @@ body {
 }
 
 /* ========================================================================
-   SMTP CONFIGURATION SECTION
+   SMTP CONFIGURATION SECTION (SCHEDULE GREEN THEME)
    ======================================================================== */
 
 .nmc-smtp-section {
   margin-top: 24px;
   padding: 20px;
   background: #f8fafc;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  transition: all 0.15s ease;
+}
+
+.nmc-smtp-section:hover {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  border-color: #059669;
 }
 
 .nmc-smtp-section-readonly {
   margin-top: 24px;
   padding: 20px;
   background: white;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  transition: all 0.15s ease;
+}
+
+.nmc-smtp-section-readonly:hover {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  border-color: #059669;
 }
 
 .nmc-smtp-header {
@@ -1570,22 +1620,29 @@ body {
 .nmc-api-section {
   margin-bottom: 32px;
   padding-bottom: 32px;
-  border-bottom: 1px solid #e7eaf3;
+  border-bottom: 1px solid #10b981;
 }
 
 .nmc-api-section-readonly {
   margin-bottom: 32px;
   padding: 20px;
   background: white;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  transition: all 0.15s ease;
+}
+
+.nmc-api-section-readonly:hover {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  border-color: #059669;
 }
 
 .nmc-smtp-section {
   margin-top: 24px;
   padding: 20px;
   background: #f8fafc;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 6px;
 }
 
