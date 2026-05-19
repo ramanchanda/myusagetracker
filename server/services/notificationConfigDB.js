@@ -164,6 +164,7 @@ module.exports = {
   initializeSchema,
   getConfig,
   saveConfig,
+  updateConfig: saveConfig, // Alias for consistency
   getConfigHistory,
   getDefaultConfig
 };
