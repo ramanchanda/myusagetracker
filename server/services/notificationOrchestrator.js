@@ -482,24 +482,24 @@ async function runThresholdEvaluation(options = {}) {
     let criticalPercentage = 95;
 
     Object.values(licenseConfigs).forEach(config => {
-      aggregatedLimits.dynoUnits.limit += config.dyno_units_limit || 0;
-      aggregatedLimits.connectRows.limit += config.connect_rows_limit || 0;
-      aggregatedLimits.dataAddons.limit += config.data_addons_limit || 0;
-      aggregatedLimits.generalAddons.limit += config.general_addons_limit || 0;
-      aggregatedLimits.privateSpaces.limit += config.private_spaces_limit || 0;
-      aggregatedLimits.shieldSpaces.limit += config.shield_spaces_limit || 0;
+      aggregatedLimits.dynoUnits.limit += parseFloat(config.dyno_units_limit) || 0;
+      aggregatedLimits.connectRows.limit += parseFloat(config.connect_rows_limit) || 0;
+      aggregatedLimits.dataAddons.limit += parseFloat(config.data_addons_limit) || 0;
+      aggregatedLimits.generalAddons.limit += parseFloat(config.general_addons_limit) || 0;
+      aggregatedLimits.privateSpaces.limit += parseFloat(config.private_spaces_limit) || 0;
+      aggregatedLimits.shieldSpaces.limit += parseFloat(config.shield_spaces_limit) || 0;
 
       // Use first account's threshold percentages (assume consistent across accounts)
-      if (config.warning_percentage) warningPercentage = config.warning_percentage;
-      if (config.critical_percentage) criticalPercentage = config.critical_percentage;
+      if (config.warning_percentage) warningPercentage = parseFloat(config.warning_percentage);
+      if (config.critical_percentage) criticalPercentage = parseFloat(config.critical_percentage);
 
       // Enable monitoring if any account has limits > 0
-      if (config.dyno_units_limit > 0) aggregatedLimits.dynoUnits.enabled = true;
-      if (config.connect_rows_limit > 0) aggregatedLimits.connectRows.enabled = true;
-      if (config.data_addons_limit > 0) aggregatedLimits.dataAddons.enabled = true;
-      if (config.general_addons_limit > 0) aggregatedLimits.generalAddons.enabled = true;
-      if (config.private_spaces_limit > 0) aggregatedLimits.privateSpaces.enabled = true;
-      if (config.shield_spaces_limit > 0) aggregatedLimits.shieldSpaces.enabled = true;
+      if (parseFloat(config.dyno_units_limit) > 0) aggregatedLimits.dynoUnits.enabled = true;
+      if (parseFloat(config.connect_rows_limit) > 0) aggregatedLimits.connectRows.enabled = true;
+      if (parseFloat(config.data_addons_limit) > 0) aggregatedLimits.dataAddons.enabled = true;
+      if (parseFloat(config.general_addons_limit) > 0) aggregatedLimits.generalAddons.enabled = true;
+      if (parseFloat(config.private_spaces_limit) > 0) aggregatedLimits.privateSpaces.enabled = true;
+      if (parseFloat(config.shield_spaces_limit) > 0) aggregatedLimits.shieldSpaces.enabled = true;
     });
 
     const thresholds = {
