@@ -38,7 +38,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState('all');
   const [selectedBreakdownTeam, setSelectedBreakdownTeam] = useState('all');
   const [selectedBreakdownApp, setSelectedBreakdownApp] = useState('all');
-  const [exportingPDF, setExportingPDF] = useState(false);
 
   // Fetch available enterprise accounts
   const fetchAccounts = useCallback(async () => {
@@ -194,68 +193,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBreakdownTeam]);
-
-  // PDF Export function
-  const handleExportPDF = async () => {
-    try {
-      setExportingPDF(true);
-
-      const selectedAccount = accounts.find(acc => acc.id === selectedAccountId);
-      const enterpriseEmail = selectedAccount?.email || selectedAccount?.name || 'unknown';
-
-      // Build query parameters
-      const params = new URLSearchParams();
-      params.append('monthForMonthly', selectedMonth);
-
-      if (dailyStartDate && dailyEndDate) {
-        params.append('startDateForDaily', dailyStartDate);
-        params.append('endDateForDaily', dailyEndDate);
-      }
-
-      // Make request to download PDF
-      const response = await axios.get(`/api/pdf/export/${encodeURIComponent(enterpriseEmail)}?${params.toString()}`, {
-        responseType: 'blob'
-      });
-
-      // Create download link
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Heroku_Usage_Report_${enterpriseEmail.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-
-      // Extract detailed error message
-      let errorMessage = 'Failed to export PDF report. ';
-
-      if (error.response) {
-        // Server responded with error
-        console.error('Server error response:', error.response.data);
-        if (error.response.data?.details) {
-          errorMessage += `\n\nDetails: ${error.response.data.details}`;
-        } else if (error.response.data?.error) {
-          errorMessage += `\n\nError: ${error.response.data.error}`;
-        }
-        errorMessage += `\n\nStatus: ${error.response.status}`;
-      } else if (error.request) {
-        // Request made but no response
-        errorMessage += '\n\nNo response from server. Please check your connection.';
-      } else {
-        // Error setting up request
-        errorMessage += `\n\nError: ${error.message}`;
-      }
-
-      alert(errorMessage);
-    } finally {
-      setExportingPDF(false);
-    }
-  };
 
   // Removed local formatUsage and formatNumber - now using imported formatters
 
@@ -480,15 +417,6 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
           >
             Daily - Datewise Report
           </button>
-          {/* PDF Export button hidden - use Print button in navbar instead */}
-          {/* <button
-            type="button"
-            className="report-option-btn export-pdf-btn"
-            onClick={handleExportPDF}
-            disabled={exportingPDF}
-          >
-            {exportingPDF ? '📄 Generating PDF...' : '📥 Export PDF Report'}
-          </button> */}
         </div>
       )}
 

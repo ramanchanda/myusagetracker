@@ -21,7 +21,6 @@ const autoThresholdMonitor = require('./services/autoThresholdMonitor');
 const notificationOrchestrator = require('./services/notificationOrchestrator');
 const notificationHistory = require('./services/notificationHistoryDB');
 const db = require('./services/databaseService');
-const pdfExportRouter = require('./routes/pdfExport');
 const reportsRouter = require('./routes/reports');
 const enterpriseLicenseService = require('./services/enterpriseLicenseService');
 const loginHistoryService = require('./services/loginHistoryService');
@@ -259,7 +258,6 @@ app.use('/api', (req, res, next) => {
 });
 
 // Protected API routes
-app.use('/api/pdf', pdfExportRouter);
 app.use('/api/reports', reportsRouter);
 
 app.get('/api/usage/dynos', async (req, res) => {
