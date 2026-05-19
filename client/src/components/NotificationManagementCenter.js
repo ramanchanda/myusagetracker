@@ -434,7 +434,6 @@ function NotificationManagementCenter() {
     );
   }
 
-  const enabledCount = Object.values(config.thresholds).filter(t => t.enabled).length;
   const activeSchedules = Object.values(config.triggerSchedule).filter(s => s.enabled).length;
 
   return (
@@ -506,8 +505,8 @@ function NotificationManagementCenter() {
           <div className="nmc-kpi-card">
             <div className="nmc-kpi-icon nmc-kpi-icon-threshold">📋</div>
             <div className="nmc-kpi-content">
-              <div className="nmc-kpi-label">Monitored Licenses</div>
-              <div className="nmc-kpi-value">{enabledCount} / {Object.keys(config.thresholds).length}</div>
+              <div className="nmc-kpi-label">Enterprise Accounts</div>
+              <div className="nmc-kpi-value">{enterpriseAccounts.length}</div>
             </div>
           </div>
 
