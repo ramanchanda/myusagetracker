@@ -145,7 +145,7 @@ function AppContent() {
             />
           }
         />
-        <Route path="/notifications" element={<NotificationManagementCenter />} />
+        <Route path="/notifications" element={<NotificationManagementCenter currentUser={currentUser} />} />
         <Route path="/security" element={isAdmin ? <LoginHistory /> : <div>Access Denied</div>} />
         <Route path="/report/print/:accountEmail" element={<PrintableDashboard />} />
         <Route path="/report/template/monthly/:accountEmail" element={<EnterpriseReport />} />

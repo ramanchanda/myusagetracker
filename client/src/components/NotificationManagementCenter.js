@@ -5,7 +5,7 @@ import { formatNumber, formatUsage, calculateUtilizationPercentage, getUtilizati
 import EnterpriseLicenseManagement from './EnterpriseLicenseManagement';
 import { BellRing, CalendarDays, CalendarRange, CalendarClock, Info } from 'lucide-react';
 
-function NotificationManagementCenter() {
+function NotificationManagementCenter({ currentUser }) {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -1015,7 +1015,7 @@ function NotificationManagementCenter() {
               <div>
                 <h2 className="nmc-section-title">Email Configuration</h2>
               </div>
-              {!editingEmail && (
+              {!editingEmail && currentUser && currentUser.role === 'admin' && (
                 <button onClick={startEditingEmail} className="nmc-btn nmc-btn-primary">
                   Edit Configuration
                 </button>
