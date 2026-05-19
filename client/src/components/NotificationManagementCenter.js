@@ -21,6 +21,7 @@ function NotificationManagementCenter() {
     remainingSeconds: 0
   });
   const [lastAuditTime, setLastAuditTime] = useState(null);
+  const [restarting, setRestarting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -288,6 +289,24 @@ function NotificationManagementCenter() {
     } catch (error) {
       console.error('Error updating schedule:', error);
       showMessage('error', 'Failed to update schedule');
+    }
+  };
+
+  const restartClockDyno = async () => {
+    try {
+      setRestarting(true);
+      const response = await axios.post('/api/scheduler/restart');
+
+      if (response.data.success) {
+        showMessage('success', 'Clock dyno restarted successfully! New schedule will be applied.');
+      } else {
+        showMessage('error', response.data.message || 'Failed to restart clock dyno');
+      }
+    } catch (error) {
+      console.error('Error restarting clock dyno:', error);
+      showMessage('error', error.response?.data?.error || 'Failed to restart clock dyno');
+    } finally {
+      setRestarting(false);
     }
   };
 
@@ -947,9 +966,15 @@ function NotificationManagementCenter() {
             <div className="nmc-info-banner">
               <span className="nmc-info-icon">ℹ️</span>
               <div className="nmc-info-content">
-                <strong>Note:</strong> After changing schedule settings, restart the clock dyno to apply changes:
-                <code>heroku ps:restart clock</code>
+                <strong>Note:</strong> After changing schedule settings, restart the clock dyno to apply changes.
               </div>
+              <button
+                onClick={restartClockDyno}
+                disabled={restarting}
+                className="nmc-btn nmc-btn-secondary nmc-btn-sm"
+              >
+                {restarting ? 'Restarting...' : 'Restart Clock Dyno'}
+              </button>
             </div>
 
             <div className="nmc-schedule-grid">

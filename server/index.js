@@ -442,11 +442,54 @@ app.get('/api/notifications/config', async (req, res) => {
 // Update full notification configuration
 app.put('/api/notifications/config', async (req, res) => {
   try {
-    const config = await configService.updateConfig(req.body);
+    const updatedBy = req.session?.user?.username || 'anonymous';
+    const config = await configService.updateConfig(req.body, updatedBy);
     res.json(config);
   } catch (error) {
     console.error('Error updating notification config:', error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Restart clock dyno (requires admin)
+app.post('/api/scheduler/restart', requireAdmin, async (req, res) => {
+  try {
+    const herokuToken = process.env.HEROKU_API_TOKEN;
+    const appName = process.env.HEROKU_APP_NAME || 'herokuusagetracker';
+
+    if (!herokuToken) {
+      return res.status(500).json({
+        success: false,
+        message: 'HEROKU_API_TOKEN not configured. Please set this environment variable.'
+      });
+    }
+
+    // Call Heroku Platform API to restart clock dyno
+    const axios = require('axios');
+    const response = await axios.delete(
+      `https://api.heroku.com/apps/${appName}/dynos/clock.1`,
+      {
+        headers: {
+          'Authorization': `Bearer ${herokuToken}`,
+          'Accept': 'application/vnd.heroku+json; version=3',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log(`[Scheduler] Clock dyno restart triggered by ${req.session?.user?.username}`);
+
+    res.json({
+      success: true,
+      message: 'Clock dyno restarted successfully. New schedule will be applied in ~30 seconds.'
+    });
+  } catch (error) {
+    console.error('Error restarting clock dyno:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to restart clock dyno',
+      details: error.message
+    });
   }
 });
 

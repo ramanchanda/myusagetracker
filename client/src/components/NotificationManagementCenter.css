@@ -770,7 +770,7 @@
 
 .nmc-info-banner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   padding: 14px 16px;
   background: #eff6ff;
@@ -787,6 +787,7 @@
 }
 
 .nmc-info-content {
+  flex: 1;
   color: #1e40af;
   line-height: 1.5;
 }
@@ -796,17 +797,9 @@
   color: #1e3a8a;
 }
 
-.nmc-info-content code {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 4px 8px;
-  background: #dbeafe;
-  border: 1px solid #93c5fd;
-  border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.8125rem;
-  color: #1e3a8a;
-  font-weight: 500;
+.nmc-info-banner .nmc-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .nmc-schedule-grid {
