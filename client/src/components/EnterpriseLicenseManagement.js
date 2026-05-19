@@ -22,46 +22,44 @@ function EnterpriseLicenseManagement() {
       setLoading(true);
       setError(null);
 
-      // Fetch current user and enterprise accounts in parallel
-      const [userResponse, accountsResponse] = await Promise.all([
+      // Fetch user, accounts, and ALL license configs in parallel (3 requests total)
+      const [userResponse, accountsResponse, licenseConfigsResponse] = await Promise.all([
         axios.get('/api/auth/user'),
-        axios.get('/api/enterprise/accounts')
+        axios.get('/api/enterprise/accounts'),
+        axios.get('/api/licenses/enterprise')
       ]);
 
       setCurrentUser(userResponse.data);
       const accountsList = accountsResponse.data || [];
       setAccounts(accountsList);
 
-      // Fetch license configs for all accounts in parallel
-      const configPromises = accountsList.map(account =>
-        axios.get(`/api/licenses/enterprise/${account.id}`)
-          .then(response => ({ accountId: account.id, data: response.data }))
-          .catch(err => {
-            console.error(`Error fetching config for ${account.id}:`, err);
-            // Use defaults if no config exists
-            return {
-              accountId: account.id,
-              data: {
-                account_id: account.id,
-                account_name: account.name,
-                dyno_units_limit: 0,
-                connect_rows_limit: 0,
-                data_addons_limit: 0,
-                general_addons_limit: 0,
-                private_spaces_limit: 0,
-                shield_spaces_limit: 0,
-                warning_percentage: 80,
-                critical_percentage: 95
-              }
-            };
-          })
-      );
-
-      const configResults = await Promise.all(configPromises);
+      // Build configs map from bulk response
+      const allConfigs = licenseConfigsResponse.data || [];
       const configs = {};
-      configResults.forEach(result => {
-        configs[result.accountId] = result.data;
+
+      // Map configs by account_id
+      allConfigs.forEach(config => {
+        configs[config.account_id] = config;
       });
+
+      // Fill in defaults for accounts without config
+      accountsList.forEach(account => {
+        if (!configs[account.id]) {
+          configs[account.id] = {
+            account_id: account.id,
+            account_name: account.name,
+            dyno_units_limit: 0,
+            connect_rows_limit: 0,
+            data_addons_limit: 0,
+            general_addons_limit: 0,
+            private_spaces_limit: 0,
+            shield_spaces_limit: 0,
+            warning_percentage: 80,
+            critical_percentage: 95
+          };
+        }
+      });
+
       setLicenseConfigs(configs);
       setLoading(false);
     } catch (err) {
