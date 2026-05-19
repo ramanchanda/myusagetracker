@@ -801,13 +801,97 @@ body {
 }
 
 .nmc-recipient-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 9px;
   background: #dbeafe;
   color: #075985;
   border-radius: 3px;
   font-size: 0.8125rem;
   font-weight: 500;
+}
+
+/* Email Configuration Editor */
+.nmc-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.nmc-form-section {
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.nmc-field-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.nmc-recipients-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  min-height: 32px;
+  padding: 8px;
+  background: #f9fafb;
+  border: 1px solid #e7eaf3;
+  border-radius: 5px;
+}
+
+.nmc-recipient-badge.editable {
+  background: #dbeafe;
+  color: #075985;
+  padding: 4px 8px 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nmc-recipient-remove {
+  background: none;
+  border: none;
+  color: #075985;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.nmc-recipient-remove:hover {
+  background: rgba(7, 89, 133, 0.15);
+}
+
+.nmc-recipient-add {
+  display: flex;
+  gap: 8px;
+}
+
+.nmc-recipient-add input {
+  flex: 1;
+}
+
+.nmc-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e7eaf3;
 }
 
 /* ========================================================================
