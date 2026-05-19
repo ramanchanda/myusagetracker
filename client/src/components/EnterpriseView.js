@@ -1139,6 +1139,25 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
             <div className="teams-grid">
               {displayedTeams.map((team, index) => {
                 const resources = team.resources;
+
+                // Sort apps within this team based on the same sort criteria
+                const sortedApps = resources.appsUsage ? [...resources.appsUsage].sort((a, b) => {
+                  switch (teamSortBy) {
+                    case 'dynoUnits':
+                      return (b.dynos || 0) - (a.dynos || 0);
+                    case 'connectRows':
+                      return (b.connect || 0) - (a.connect || 0);
+                    case 'dataAddons':
+                      return (b.dataAddons || 0) - (a.dataAddons || 0);
+                    case 'generalAddons':
+                      return (b.generalAddons || 0) - (a.generalAddons || 0);
+                    case 'teamName':
+                      return (a.name || '').localeCompare(b.name || '');
+                    default:
+                      return (b.dynos || 0) - (a.dynos || 0);
+                  }
+                }) : [];
+
                 const teamKey = `${team.accountName || 'single'}-${team.name}-${index}`;
                 const isExpanded = Boolean(expandedTeams[teamKey]);
                 return (
@@ -1227,9 +1246,9 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
                           {loadingTeamApps[team.id] && (
                             <p className="no-app-breakdown">Loading space information...</p>
                           )}
-                          {!loadingTeamApps[team.id] && resources.appsUsage && resources.appsUsage.length > 0 ? (
+                          {!loadingTeamApps[team.id] && sortedApps && sortedApps.length > 0 ? (
                             <div className="apps-usage-table">
-                              {resources.appsUsage.map((app, appIdx) => {
+                              {sortedApps.map((app, appIdx) => {
                                 const spaceInfo = teamAppsCache[team.id]?.[app.name] || {};
                                 return (
                                   <div key={appIdx} className="apps-usage-row">
