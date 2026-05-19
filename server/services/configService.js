@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const notificationConfigDB = require('./notificationConfigDB');
 
 const CONFIG_FILE = path.join(__dirname, '../config/notificationConfig.json');
 
@@ -116,9 +117,20 @@ function getConfigFromEnv() {
 
 // Read configuration (prioritize environment variables)
 async function getConfig() {
-  // Always read from environment variables on Heroku
+  try {
+    // Try to read from database first (primary source)
+    const dbConfig = await notificationConfigDB.getConfig();
+    if (dbConfig) {
+      console.log('[ConfigService] Reading notification config from database');
+      return dbConfig;
+    }
+  } catch (dbError) {
+    console.warn('[ConfigService] Database read failed, falling back to environment variables:', dbError.message);
+  }
+
+  // Fallback to environment variables
   if (process.env.DYNO || process.env.USE_ENV_CONFIG === 'true') {
-    console.log('Reading notification config from environment variables (Heroku Config Vars)');
+    console.log('[ConfigService] Reading notification config from environment variables');
     return getConfigFromEnv();
   }
 
@@ -126,11 +138,11 @@ async function getConfig() {
   try {
     const data = await fs.readFile(CONFIG_FILE, 'utf8');
     const fileConfig = JSON.parse(data);
-    console.log('Reading notification config from file (local development)');
+    console.log('[ConfigService] Reading notification config from file (local development)');
     return fileConfig;
   } catch (error) {
-    console.log('Config file not found, using defaults from environment or defaults');
-    return getConfigFromEnv();
+    console.log('[ConfigService] Config file not found, using defaults');
+    return getDefaultConfig();
   }
 }
 
@@ -170,21 +182,26 @@ function generateEnvCommands(config) {
 }
 
 // Update configuration
-async function updateConfig(newConfig) {
-  // On Heroku, just return the config
-  // Configuration must be set via Heroku Config Vars to persist
-  if (process.env.DYNO || process.env.USE_ENV_CONFIG === 'true') {
-    console.log('Heroku environment detected - configuration is read from Config Vars');
-    console.log('To persist changes, set Config Vars via Heroku Dashboard or CLI');
-    return newConfig;
-  }
-
-  // For local development, write to file
+async function updateConfig(newConfig, updatedBy = 'system') {
   try {
-    await fs.writeFile(CONFIG_FILE, JSON.stringify(newConfig, null, 2), 'utf8');
-    return newConfig;
-  } catch (error) {
-    console.error('Error updating config:', error);
+    // Save to database (primary storage)
+    const savedConfig = await notificationConfigDB.updateConfig(newConfig, updatedBy);
+    console.log(`[ConfigService] Config updated in database by ${updatedBy}`);
+    return savedConfig;
+  } catch (dbError) {
+    console.error('[ConfigService] Database update failed:', dbError.message);
+
+    // Fallback: For local development, write to file
+    if (!process.env.DYNO) {
+      try {
+        await fs.writeFile(CONFIG_FILE, JSON.stringify(newConfig, null, 2), 'utf8');
+        console.log('[ConfigService] Config written to file (local development)');
+        return newConfig;
+      } catch (fileError) {
+        console.error('[ConfigService] File write failed:', fileError.message);
+      }
+    }
+
     throw new Error('Failed to update notification configuration');
   }
 }
