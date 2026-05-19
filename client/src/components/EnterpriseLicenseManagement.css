@@ -1,12 +1,12 @@
 /* ========================================================================
-   ENTERPRISE LICENSE MANAGEMENT - ALIGNED WITH SCHEDULE TAB STYLING
+   ENTERPRISE LICENSE MANAGEMENT - EXACT MATCH WITH SCHEDULE TAB
    ======================================================================== */
 
 .enterprise-license-management {
   width: 100%;
 }
 
-/* Header Section */
+/* Header Section - Matches Schedule */
 .elm-header {
   margin-bottom: 20px;
 }
@@ -22,26 +22,25 @@
 .elm-section-desc {
   font-size: 0.8125rem;
   color: #6b7280;
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
   font-weight: 400;
 }
 
 .elm-readonly-notice {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   padding: 10px 12px;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 6px;
   font-size: 0.8125rem;
-  color: #92400e;
-  margin-top: 12px;
+  color: #1e3a8a;
 }
 
 .elm-icon {
-  font-size: 1rem;
   flex-shrink: 0;
+  color: #1e40af;
 }
 
 /* Loading & Error States */
@@ -80,7 +79,7 @@
 
 .elm-retry-btn {
   padding: 6px 12px;
-  background: #dc2626;
+  background: #10b981;
   color: white;
   border: none;
   border-radius: 5px;
@@ -91,7 +90,7 @@
 }
 
 .elm-retry-btn:hover {
-  background: #b91c1c;
+  background: #059669;
 }
 
 .elm-empty {
@@ -100,8 +99,11 @@
   border-radius: 6px;
 }
 
-/* Message Banner */
+/* Message Banner - Matches Schedule Notice */
 .elm-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
   border-radius: 6px;
   font-size: 0.8125rem;
@@ -120,31 +122,32 @@
   color: #991b1b;
 }
 
-/* Account Sections */
+/* Account Sections - Like Schedule Policy Cards */
 .elm-accounts {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .elm-account-section {
   background: white;
   border: 1px solid #e7eaf3;
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 14px;
   transition: all 0.15s ease;
 }
 
 .elm-account-section:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  transform: translateY(-1px);
 }
 
 .elm-account-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -155,7 +158,7 @@
 }
 
 .elm-account-name {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #1a1d29;
   margin: 0;
@@ -178,6 +181,7 @@
   gap: 8px;
 }
 
+/* Buttons - Match Schedule Buttons */
 .elm-btn {
   padding: 6px 12px;
   font-size: 0.8125rem;
@@ -233,78 +237,81 @@
 .elm-account-meta {
   font-size: 0.75rem;
   color: #9ca3af;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   font-style: italic;
 }
 
-/* Restricted Notice */
+/* Restricted Notice - Matches Schedule Notice */
 .elm-restricted-notice {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px;
+  padding: 10px 12px;
   background: #fef3c7;
   border: 1px solid #fcd34d;
   border-radius: 6px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .elm-restricted-icon {
-  font-size: 1.25rem;
   flex-shrink: 0;
+  font-size: 1rem;
+  color: #92400e;
 }
 
 .elm-restricted-message strong {
   display: block;
   color: #92400e;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   margin-bottom: 4px;
+  font-weight: 600;
 }
 
 .elm-restricted-message p {
   color: #78350f;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   margin: 0;
   line-height: 1.4;
 }
 
-/* License Cards Grid */
+/* License Cards Grid - Match Schedule Grid */
 .elm-license-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .elm-license-card {
   background: #f9fafb;
   border: 1px solid #e7eaf3;
-  border-radius: 6px;
-  padding: 12px;
+  border-radius: 5px;
+  padding: 10px 12px;
   transition: all 0.15s ease;
 }
 
 .elm-license-card:hover {
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .elm-card-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .elm-card-icon {
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: #6b7280;
 }
 
 .elm-card-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: #4b5563;
+  line-height: 1.2;
 }
 
 .elm-card-value {
@@ -333,13 +340,13 @@
 
 /* Thresholds Section */
 .elm-thresholds {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid #f1f5f9;
 }
 
 .elm-thresholds h4 {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1d29;
   margin: 0 0 10px 0;
@@ -347,41 +354,42 @@
 
 .elm-threshold-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 .elm-threshold-card {
   background: #f9fafb;
   border: 1px solid #e7eaf3;
-  border-radius: 6px;
-  padding: 12px;
+  border-radius: 5px;
+  padding: 10px 12px;
   transition: all 0.15s ease;
 }
 
 .elm-threshold-card:hover {
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .elm-threshold-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: #4b5563;
   margin-bottom: 6px;
   display: flex;
   align-items: center;
   gap: 6px;
+  line-height: 1.2;
 }
 
 .elm-threshold-indicator {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
 .elm-threshold-value {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #1a1d29;
 }
@@ -421,16 +429,20 @@
   }
 
   .elm-license-cards {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   }
 
   .elm-threshold-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 480px) {
   .elm-license-cards {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .elm-threshold-cards {
+    grid-template-columns: 1fr;
   }
 }
