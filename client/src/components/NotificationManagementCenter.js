@@ -1025,106 +1025,117 @@ function NotificationManagementCenter() {
 
             {editingEmail ? (
               <div className="nmc-form-section">
-                <div className="nmc-form-grid">
-                  <div className="nmc-field">
-                    <label className="nmc-input-label">
-                      Status
-                      <label className="nmc-schedule-toggle">
-                        <input
-                          type="checkbox"
-                          checked={emailForm.enabled}
-                          onChange={(e) => setEmailForm({ ...emailForm, enabled: e.target.checked })}
-                        />
-                        <span className="nmc-schedule-toggle-track"></span>
+                {/* API Configuration Section */}
+                <div className="nmc-api-section">
+                  <div className="nmc-subsection-header">
+                    <h3 className="nmc-subsection-title">1. API Configuration</h3>
+                    <p className="nmc-subsection-desc">Primary email delivery via Mailgun API</p>
+                  </div>
+
+                  <div className="nmc-form-grid">
+                    <div className="nmc-field">
+                      <label className="nmc-input-label">
+                        Status
+                        <label className="nmc-schedule-toggle">
+                          <input
+                            type="checkbox"
+                            checked={emailForm.enabled}
+                            onChange={(e) => setEmailForm({ ...emailForm, enabled: e.target.checked })}
+                          />
+                          <span className="nmc-schedule-toggle-track"></span>
+                        </label>
                       </label>
-                    </label>
-                  </div>
-
-                  <div className="nmc-field">
-                    <label className="nmc-input-label">
-                      From Name
-                      <input
-                        type="text"
-                        value={emailForm.fromName}
-                        onChange={(e) => setEmailForm({ ...emailForm, fromName: e.target.value })}
-                        placeholder="Heroku Usage Monitor"
-                        className="nmc-schedule-input"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="nmc-field nmc-field-full">
-                    <label className="nmc-input-label">
-                      From Email
-                      <input
-                        type="email"
-                        value={emailForm.fromEmail}
-                        onChange={(e) => setEmailForm({ ...emailForm, fromEmail: e.target.value })}
-                        placeholder="postmaster@yourdomain.mailgun.org"
-                        className="nmc-schedule-input"
-                      />
-                    </label>
-                    <span className="nmc-field-hint">Leave empty to use Mailgun default</span>
-                  </div>
-
-                  <div className="nmc-field nmc-field-full">
-                    <label className="nmc-input-label">
-                      Email Subject Prefix
-                      <input
-                        type="text"
-                        value={emailForm.subjectPrefix}
-                        onChange={(e) => setEmailForm({ ...emailForm, subjectPrefix: e.target.value })}
-                        placeholder="Heroku Usage Monitor"
-                        className="nmc-schedule-input"
-                      />
-                    </label>
-                    <span className="nmc-field-hint">Company/brand name prefix (e.g., "Heroku Usage Monitor")</span>
-                  </div>
-
-                  <div className="nmc-field nmc-field-full">
-                    <label className="nmc-input-label">
-                      Email Subject
-                      <input
-                        type="text"
-                        value={emailForm.subject}
-                        onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                        placeholder="License Alert"
-                        className="nmc-schedule-input"
-                      />
-                    </label>
-                    <span className="nmc-field-hint">Main email subject (combined with prefix: "Prefix - Subject - Details")</span>
-                  </div>
-
-                  <div className="nmc-field nmc-field-full">
-                    <label className="nmc-input-label">Recipients</label>
-                    <div className="nmc-recipients-editor">
-                      {emailForm.recipients.map((email, idx) => (
-                        <div key={idx} className="nmc-recipient-badge editable">
-                          {email}
-                          <button onClick={() => removeRecipient(idx)} className="nmc-recipient-remove">×</button>
-                        </div>
-                      ))}
                     </div>
-                    <div className="nmc-recipient-add">
-                      <input
-                        type="email"
-                        value={newRecipient}
-                        onChange={(e) => setNewRecipient(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && addRecipient()}
-                        placeholder="email@example.com"
-                        className="nmc-schedule-input"
-                      />
-                      <button onClick={addRecipient} className="nmc-btn nmc-btn-secondary">
-                        Add Recipient
-                      </button>
+
+                    <div className="nmc-field">
+                      <label className="nmc-input-label">
+                        From Name
+                        <input
+                          type="text"
+                          value={emailForm.fromName}
+                          onChange={(e) => setEmailForm({ ...emailForm, fromName: e.target.value })}
+                          placeholder="Heroku Usage Monitor"
+                          className="nmc-schedule-input"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="nmc-field nmc-field-full">
+                      <label className="nmc-input-label">
+                        From Email
+                        <input
+                          type="email"
+                          value={emailForm.fromEmail}
+                          onChange={(e) => setEmailForm({ ...emailForm, fromEmail: e.target.value })}
+                          placeholder="postmaster@yourdomain.mailgun.org"
+                          className="nmc-schedule-input"
+                        />
+                      </label>
+                      <span className="nmc-field-hint">Leave empty to use Mailgun default</span>
+                    </div>
+
+                    <div className="nmc-field nmc-field-full">
+                      <label className="nmc-input-label">
+                        Email Subject Prefix
+                        <input
+                          type="text"
+                          value={emailForm.subjectPrefix}
+                          onChange={(e) => setEmailForm({ ...emailForm, subjectPrefix: e.target.value })}
+                          placeholder="Heroku Usage Monitor"
+                          className="nmc-schedule-input"
+                        />
+                      </label>
+                      <span className="nmc-field-hint">Company/brand name prefix (e.g., "Heroku Usage Monitor")</span>
+                    </div>
+
+                    <div className="nmc-field nmc-field-full">
+                      <label className="nmc-input-label">
+                        Email Subject
+                        <input
+                          type="text"
+                          value={emailForm.subject}
+                          onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                          placeholder="License Alert"
+                          className="nmc-schedule-input"
+                        />
+                      </label>
+                      <span className="nmc-field-hint">Main email subject (combined with prefix: "Prefix - Subject - Details")</span>
+                    </div>
+
+                    <div className="nmc-field nmc-field-full">
+                      <label className="nmc-input-label">Recipients</label>
+                      <div className="nmc-recipients-editor">
+                        {emailForm.recipients.map((email, idx) => (
+                          <div key={idx} className="nmc-recipient-badge editable">
+                            {email}
+                            <button onClick={() => removeRecipient(idx)} className="nmc-recipient-remove">×</button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="nmc-recipient-add">
+                        <input
+                          type="email"
+                          value={newRecipient}
+                          onChange={(e) => setNewRecipient(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && addRecipient()}
+                          placeholder="email@example.com"
+                          className="nmc-schedule-input"
+                        />
+                        <button onClick={addRecipient} className="nmc-btn nmc-btn-secondary">
+                          Add Recipient
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* SMTP Configuration Section */}
                 <div className="nmc-smtp-section">
-                  <div className="nmc-smtp-header">
-                    <h3 className="nmc-smtp-title">SMTP Fallback Configuration</h3>
+                  <div className="nmc-subsection-header">
+                    <div>
+                      <h3 className="nmc-subsection-title">2. SMTP Configuration</h3>
+                      <p className="nmc-subsection-desc">Fallback email delivery via SMTP (optional but recommended)</p>
+                    </div>
                     <label className="nmc-schedule-toggle">
                       <input
                         type="checkbox"
@@ -1137,7 +1148,6 @@ function NotificationManagementCenter() {
                       <span className="nmc-schedule-toggle-track"></span>
                     </label>
                   </div>
-                  <p className="nmc-smtp-desc">Configure SMTP server for email delivery fallback (optional but recommended)</p>
 
                   {emailForm.smtpConfig.enabled && (
                     <div className="nmc-form-grid">
@@ -1237,55 +1247,62 @@ function NotificationManagementCenter() {
               </div>
             ) : (
               <>
-                <div className="nmc-form-grid">
-                  <div className="nmc-field">
-                    <label>Status</label>
-                    <div className="nmc-field-value">
-                      <span className={`nmc-badge ${config.emailConfig.enabled ? 'active' : 'inactive'}`}>
-                        {config.emailConfig.enabled ? 'Enabled' : 'Disabled'}
-                      </span>
+                {/* API Configuration Display */}
+                <div className="nmc-api-section-readonly">
+                  <h3 className="nmc-subsection-title">1. API Configuration</h3>
+                  <p className="nmc-subsection-desc">Primary email delivery via Mailgun API</p>
+
+                  <div className="nmc-form-grid">
+                    <div className="nmc-field">
+                      <label>Status</label>
+                      <div className="nmc-field-value">
+                        <span className={`nmc-badge ${config.emailConfig.enabled ? 'active' : 'inactive'}`}>
+                          {config.emailConfig.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="nmc-field">
-                    <label>From Name</label>
-                    <div className="nmc-field-value">{config.emailConfig.fromName || '(Default)'}</div>
-                  </div>
+                    <div className="nmc-field">
+                      <label>From Name</label>
+                      <div className="nmc-field-value">{config.emailConfig.fromName || '(Default)'}</div>
+                    </div>
 
-                  <div className="nmc-field">
-                    <label>From Email</label>
-                    <div className="nmc-field-value">{config.emailConfig.fromEmail || '(Mailgun default)'}</div>
-                  </div>
+                    <div className="nmc-field">
+                      <label>From Email</label>
+                      <div className="nmc-field-value">{config.emailConfig.fromEmail || '(Mailgun default)'}</div>
+                    </div>
 
-                  <div className="nmc-field">
-                    <label>Subject Prefix</label>
-                    <div className="nmc-field-value">{config.emailConfig.subjectPrefix || 'Heroku Usage Monitor'}</div>
-                  </div>
+                    <div className="nmc-field">
+                      <label>Subject Prefix</label>
+                      <div className="nmc-field-value">{config.emailConfig.subjectPrefix || 'Heroku Usage Monitor'}</div>
+                    </div>
 
-                  <div className="nmc-field">
-                    <label>Subject</label>
-                    <div className="nmc-field-value">{config.emailConfig.subject || '(Not set)'}</div>
-                  </div>
+                    <div className="nmc-field">
+                      <label>Subject</label>
+                      <div className="nmc-field-value">{config.emailConfig.subject || '(Not set)'}</div>
+                    </div>
 
-                  <div className="nmc-field nmc-field-full">
-                    <label>Recipients</label>
-                    <div className="nmc-field-value">
-                      {config.emailConfig.recipients && config.emailConfig.recipients.length > 0 ? (
-                        <div className="nmc-recipients">
-                          {config.emailConfig.recipients.map((email, idx) => (
-                            <span key={idx} className="nmc-recipient-badge">{email}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="nmc-field-empty">No recipients configured</span>
-                      )}
+                    <div className="nmc-field nmc-field-full">
+                      <label>Recipients</label>
+                      <div className="nmc-field-value">
+                        {config.emailConfig.recipients && config.emailConfig.recipients.length > 0 ? (
+                          <div className="nmc-recipients">
+                            {config.emailConfig.recipients.map((email, idx) => (
+                              <span key={idx} className="nmc-recipient-badge">{email}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="nmc-field-empty">No recipients configured</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* SMTP Configuration Display */}
                 <div className="nmc-smtp-section-readonly">
-                  <h3 className="nmc-smtp-title">SMTP Fallback Configuration</h3>
+                  <h3 className="nmc-subsection-title">2. SMTP Configuration</h3>
+                  <p className="nmc-subsection-desc">Fallback email delivery via SMTP</p>
                   <div className="nmc-form-grid">
                     <div className="nmc-field">
                       <label>Status</label>

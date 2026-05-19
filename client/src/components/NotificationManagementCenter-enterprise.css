@@ -1537,3 +1537,59 @@ body {
   font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
   letter-spacing: 0.05em;
 }
+
+/* ========================================================================
+   API & SMTP SUBSECTION HEADERS
+   ======================================================================== */
+
+.nmc-subsection-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e7eaf3;
+}
+
+.nmc-subsection-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1a1d29;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.nmc-subsection-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.nmc-api-section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e7eaf3;
+}
+
+.nmc-api-section-readonly {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+}
+
+.nmc-smtp-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+}
+
+.nmc-smtp-section .nmc-subsection-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
