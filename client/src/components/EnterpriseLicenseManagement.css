@@ -1,14 +1,14 @@
 /* ========================================================================
-   ENTERPRISE LICENSE MANAGEMENT - EXACT MATCH WITH SCHEDULE TAB
+   ENTERPRISE LICENSE MANAGEMENT - MATCHES SCHEDULE DESIGN SYSTEM
    ======================================================================== */
 
 .enterprise-license-management {
   width: 100%;
 }
 
-/* Header Section - Matches Schedule */
+/* Header - Exact Match with Schedule */
 .elm-header {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .elm-section-title {
@@ -24,8 +24,10 @@
   color: #6b7280;
   margin: 0 0 16px 0;
   font-weight: 400;
+  line-height: 1.4;
 }
 
+/* Read-only Notice - Matches Schedule Notice Banner */
 .elm-readonly-notice {
   display: flex;
   align-items: center;
@@ -36,11 +38,14 @@
   border-radius: 6px;
   font-size: 0.8125rem;
   color: #1e3a8a;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 
 .elm-icon {
   flex-shrink: 0;
   color: #1e40af;
+  font-size: 1rem;
 }
 
 /* Loading & Error States */
@@ -53,14 +58,14 @@
   justify-content: center;
   padding: 32px 20px;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   gap: 12px;
 }
 
 .elm-spinner {
-  width: 36px;
-  height: 36px;
-  border: 2px solid #e5e7eb;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e7eaf3;
   border-top-color: #10b981;
   border-radius: 50%;
   animation: elm-spin 0.7s linear infinite;
@@ -99,7 +104,7 @@
   border-radius: 6px;
 }
 
-/* Message Banner - Matches Schedule Notice */
+/* Success/Error Messages - Matches Schedule Notice */
 .elm-message {
   display: flex;
   align-items: center;
@@ -108,6 +113,7 @@
   border-radius: 6px;
   font-size: 0.8125rem;
   margin-bottom: 16px;
+  line-height: 1.5;
 }
 
 .elm-message-success {
@@ -122,11 +128,11 @@
   color: #991b1b;
 }
 
-/* Account Sections - Like Schedule Policy Cards */
+/* Account Sections - Matches Schedule Policy Cards */
 .elm-accounts {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .elm-account-section {
@@ -138,23 +144,25 @@
 }
 
 .elm-account-section:hover {
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
-  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  border-color: #cbd5e1;
 }
 
+/* Account Header - Compact & Operational */
 .elm-account-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .elm-account-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
 }
 
 .elm-account-name {
@@ -165,23 +173,33 @@
   letter-spacing: -0.01em;
 }
 
+/* Status Badges - Subtle Enterprise Pills */
 .elm-account-status {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
+/* Account Meta - Muted Operational Info */
+.elm-account-meta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+
+/* Action Buttons - Match Schedule Buttons */
 .elm-account-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-/* Buttons - Match Schedule Buttons */
 .elm-btn {
   padding: 6px 12px;
   font-size: 0.8125rem;
@@ -191,6 +209,7 @@
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .elm-btn-edit {
@@ -201,11 +220,13 @@
 
 .elm-btn-edit:hover {
   background: #f0fdf4;
+  border-color: #059669;
 }
 
 .elm-btn-save {
   background: #10b981;
   color: white;
+  border: 1px solid #10b981;
 }
 
 .elm-btn-save:hover {
@@ -213,7 +234,7 @@
 }
 
 .elm-btn-save:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -226,22 +247,15 @@
 .elm-btn-cancel:hover {
   background: #f9fafb;
   border-color: #94a3b8;
+  color: #475569;
 }
 
 .elm-btn-cancel:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Account Meta */
-.elm-account-meta {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-bottom: 8px;
-  font-style: italic;
-}
-
-/* Restricted Notice - Matches Schedule Notice */
+/* Restricted Notice - Matches Schedule Warning Banner */
 .elm-restricted-notice {
   display: flex;
   align-items: flex-start;
@@ -251,6 +265,7 @@
   border: 1px solid #fcd34d;
   border-radius: 6px;
   margin-top: 8px;
+  font-size: 0.8125rem;
 }
 
 .elm-restricted-icon {
@@ -259,11 +274,15 @@
   color: #92400e;
 }
 
+.elm-restricted-message {
+  flex: 1;
+}
+
 .elm-restricted-message strong {
   display: block;
   color: #92400e;
   font-size: 0.8125rem;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   font-weight: 600;
 }
 
@@ -274,11 +293,11 @@
   line-height: 1.4;
 }
 
-/* License Cards Grid - Match Schedule Grid */
+/* License Cards Grid - Compact Operational Tiles */
 .elm-license-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
   margin-bottom: 12px;
 }
 
@@ -286,25 +305,27 @@
   background: #f9fafb;
   border: 1px solid #e7eaf3;
   border-radius: 5px;
-  padding: 10px 12px;
+  padding: 10px;
   transition: all 0.15s ease;
 }
 
 .elm-license-card:hover {
   background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-color: #cbd5e1;
 }
 
 .elm-card-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .elm-card-icon {
   font-size: 0.875rem;
   color: #6b7280;
+  flex-shrink: 0;
 }
 
 .elm-card-title {
@@ -315,9 +336,16 @@
 }
 
 .elm-card-value {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #1a1d29;
+  margin-bottom: 2px;
+}
+
+.elm-card-meta {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 .elm-card-input {
@@ -325,7 +353,7 @@
   padding: 6px 8px;
   border: 1px solid #cbd5e1;
   border-radius: 5px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1d29;
   background: white;
@@ -338,7 +366,11 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
 }
 
-/* Thresholds Section */
+.elm-card-input:hover {
+  border-color: #94a3b8;
+}
+
+/* Thresholds Section - Operational Config Tiles */
 .elm-thresholds {
   margin-top: 12px;
   padding-top: 12px;
@@ -349,33 +381,35 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1d29;
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.01em;
 }
 
 .elm-threshold-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
 }
 
 .elm-threshold-card {
   background: #f9fafb;
   border: 1px solid #e7eaf3;
   border-radius: 5px;
-  padding: 10px 12px;
+  padding: 10px;
   transition: all 0.15s ease;
 }
 
 .elm-threshold-card:hover {
   background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-color: #cbd5e1;
 }
 
 .elm-threshold-label {
   font-size: 0.75rem;
   font-weight: 600;
   color: #4b5563;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -386,10 +420,11 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .elm-threshold-value {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #1a1d29;
 }
@@ -399,7 +434,7 @@
   padding: 6px 8px;
   border: 1px solid #cbd5e1;
   border-radius: 5px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1d29;
   background: white;
@@ -412,12 +447,16 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
 }
 
+.elm-threshold-input:hover {
+  border-color: #94a3b8;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .elm-account-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
   }
 
   .elm-account-actions {
@@ -428,21 +467,15 @@
     flex: 1;
   }
 
-  .elm-license-cards {
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  }
-
+  .elm-license-cards,
   .elm-threshold-cards {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 }
 
 @media (max-width: 480px) {
-  .elm-license-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
+  .elm-license-cards,
   .elm-threshold-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
