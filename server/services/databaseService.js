@@ -7,15 +7,24 @@ const { Pool } = require('pg');
 
 const LOG_PREFIX = '[Database Service]';
 
-// Create PostgreSQL connection pool
+// Validate DATABASE_URL is set
+if (!process.env.DATABASE_URL) {
+  console.error(`${LOG_PREFIX} CRITICAL: DATABASE_URL environment variable is required`);
+  process.exit(1);
+}
+
+// Create PostgreSQL connection pool with optimized settings
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? {
     rejectUnauthorized: false
   } : false,
-  max: 10, // Maximum pool connections
+  max: 10, // Maximum pool connections (adjust based on Postgres plan)
+  min: 2, // Minimum idle connections
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000
+  connectionTimeoutMillis: 5000, // Increased from 2s for reliability
+  statement_timeout: 30000, // 30 second query timeout
+  query_timeout: 30000
 });
 
 // Handle pool errors
@@ -86,17 +95,19 @@ async function initializeSchema() {
 async function query(text, params) {
   const start = Date.now();
   try {
-    // Log query execution (truncate long queries)
-    const queryPreview = text.trim().replace(/\s+/g, ' ').substring(0, 100);
-    console.log(`${LOG_PREFIX} Executing query: ${queryPreview}...`);
-
     const result = await pool.query(text, params);
     const duration = Date.now() - start;
 
-    console.log(`${LOG_PREFIX} Query executed in ${duration}ms - ${result.rowCount} row(s) affected`);
+    // Only log slow queries (>1 second) in production to reduce noise
+    if (duration > 1000 || process.env.LOG_ALL_QUERIES === 'true') {
+      const queryPreview = text.trim().replace(/\s+/g, ' ').substring(0, 100);
+      console.log(`${LOG_PREFIX} Query executed in ${duration}ms - ${result.rowCount} row(s) affected`);
+      console.log(`${LOG_PREFIX} Query: ${queryPreview}...`);
+    }
 
     return result;
   } catch (error) {
+    // Always log query errors with context
     console.error(`${LOG_PREFIX} Query error:`, error.message);
     console.error(`${LOG_PREFIX} Error code:`, error.code);
     console.error(`${LOG_PREFIX} Query preview:`, text.trim().substring(0, 200));
@@ -112,16 +123,27 @@ async function getClient() {
 }
 
 /**
- * Check database connection health
+ * Check database connection health with detailed metrics
  */
 async function healthCheck() {
   try {
-    const result = await pool.query('SELECT NOW()');
+    const start = Date.now();
+    const result = await pool.query('SELECT NOW(), version()');
+    const responseTime = Date.now() - start;
+
     return {
       healthy: true,
-      timestamp: result.rows[0].now
+      timestamp: result.rows[0].now,
+      version: result.rows[0].version.split(' ')[0] + ' ' + result.rows[0].version.split(' ')[1],
+      responseTime: `${responseTime}ms`,
+      poolStats: {
+        totalCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      }
     };
   } catch (error) {
+    console.error(`${LOG_PREFIX} Health check failed:`, error);
     return {
       healthy: false,
       error: error.message

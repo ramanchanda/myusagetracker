@@ -38,8 +38,14 @@ app.set('trust proxy', 1);
 const sessionTimeoutMinutes = parseInt(process.env.SESSION_TIMEOUT_MINUTES) || 480;
 const sessionTimeoutMs = sessionTimeoutMinutes * 60 * 1000;
 
+// Security: Ensure session secret is set in production
+if (process.env.NODE_ENV === 'production' && !process.env.APP_SESSION_SECRET) {
+  console.error('[Security] CRITICAL: APP_SESSION_SECRET must be set in production!');
+  process.exit(1);
+}
+
 app.use(session({
-  secret: process.env.APP_SESSION_SECRET || 'heroku-usage-tracker-secret-change-in-production',
+  secret: process.env.APP_SESSION_SECRET || 'heroku-usage-tracker-secret-dev-only',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -56,8 +62,18 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(compression());
-app.use(cors());
-app.use(express.json());
+
+// CORS configuration - allow same origin and localhost for development
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || true,
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+// Body parser with size limits for security
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Check for session timeout on every request
 app.use(checkSessionTimeout);
