@@ -378,17 +378,17 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const displayedTeams = [...filteredTeams].sort((a, b) => {
     switch (teamSortBy) {
       case 'dynoUnits':
-        return (b.totalDynos || 0) - (a.totalDynos || 0);
+        return (b.resources?.dynos?.count || 0) - (a.resources?.dynos?.count || 0);
       case 'connectRows':
-        return (b.totalConnect || 0) - (a.totalConnect || 0);
+        return (b.resources?.connect?.used || 0) - (a.resources?.connect?.used || 0);
       case 'dataAddons':
-        return (b.totalDataAddons || 0) - (a.totalDataAddons || 0);
+        return (b.resources?.dataAddons?.count || 0) - (a.resources?.dataAddons?.count || 0);
       case 'generalAddons':
-        return (b.totalOtherAddons || 0) - (a.totalOtherAddons || 0);
+        return (b.resources?.generalAddons?.count || 0) - (a.resources?.generalAddons?.count || 0);
       case 'teamName':
         return (a.name || '').localeCompare(b.name || '');
       default:
-        return (b.totalDynos || 0) - (a.totalDynos || 0);
+        return (b.resources?.dynos?.count || 0) - (a.resources?.dynos?.count || 0);
     }
   });
 
