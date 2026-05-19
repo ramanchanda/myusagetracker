@@ -86,13 +86,12 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.lastActivity = Date.now();
     console.log('[Auth] Admin login successful for user:', username);
 
-    // Log successful login
+    // Log successful login (admin)
     await loginHistoryService.logLoginAttempt({
       username,
       role: 'admin',
       ipAddress,
-      userAgent,
-      success: true
+      userAgent
     });
 
     return res.json({ success: true, role: 'admin' });
@@ -108,27 +107,19 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.lastActivity = Date.now();
     console.log('[Auth] General user login successful for user:', username);
 
-    // Log successful login
+    // Log successful login (general)
     await loginHistoryService.logLoginAttempt({
       username,
       role: 'general',
       ipAddress,
-      userAgent,
-      success: true
+      userAgent
     });
 
     return res.json({ success: true, role: 'general' });
   }
 
-  // Log failed login attempt
-  await loginHistoryService.logLoginAttempt({
-    username,
-    ipAddress,
-    userAgent,
-    success: false,
-    failureReason: 'Invalid credentials'
-  });
-
+  // Failed login - do NOT log to database (only successful logins are tracked)
+  console.log(`[Auth] Failed login attempt for: ${username} from ${ipAddress}`);
   res.status(401).json({ error: 'Invalid username or password' });
 });
 
@@ -165,15 +156,14 @@ app.get('/api/auth/user', isAuthenticated, (req, res) => {
   res.json(req.session.user);
 });
 
-// Get login history (admin only)
+// Get login history (admin only) - successful logins only
 app.get('/api/auth/login-history', requireAdmin, async (req, res) => {
   try {
-    const { limit, offset, username, successOnly } = req.query;
+    const { limit, offset, username } = req.query;
     const history = await loginHistoryService.getLoginHistory({
       limit: parseInt(limit) || 100,
       offset: parseInt(offset) || 0,
-      username,
-      successOnly: successOnly === 'true' ? true : successOnly === 'false' ? false : undefined
+      username
     });
     res.json(history);
   } catch (error) {

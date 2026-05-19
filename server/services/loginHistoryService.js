@@ -1,9 +1,41 @@
 /**
  * Login History Service
- * Tracks and manages login attempts for security auditing
+ * Tracks and manages successful login attempts for security auditing
  */
 
 const db = require('./databaseService');
+const crypto = require('crypto');
+
+/**
+ * Parse browser name from user agent string
+ * @param {string} userAgent - Full user agent string
+ * @returns {string} Browser name (e.g., "Chrome", "Firefox", "Safari")
+ */
+function parseBrowserName(userAgent) {
+  if (!userAgent) return 'Unknown';
+
+  // Check in order of specificity
+  if (userAgent.includes('Edg/')) return 'Edge';
+  if (userAgent.includes('OPR/') || userAgent.includes('Opera/')) return 'Opera';
+  if (userAgent.includes('Chrome/')) return 'Chrome';
+  if (userAgent.includes('Safari/') && !userAgent.includes('Chrome')) return 'Safari';
+  if (userAgent.includes('Firefox/')) return 'Firefox';
+  if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) return 'Internet Explorer';
+
+  return 'Other';
+}
+
+/**
+ * Generate system identifier from IP and User Agent
+ * @param {string} ipAddress - Client IP address
+ * @param {string} userAgent - User agent string
+ * @returns {string} Hashed system identifier (first 12 chars)
+ */
+function generateSystemId(ipAddress, userAgent) {
+  const combined = `${ipAddress}|${userAgent}`;
+  const hash = crypto.createHash('sha256').update(combined).digest('hex');
+  return hash.substring(0, 12); // Short system ID
+}
 
 /**
  * Initialize login history table
@@ -23,23 +55,24 @@ async function initializeSchema() {
 }
 
 /**
- * Log a login attempt
+ * Log a successful login attempt
  * @param {Object} params - Login attempt details
- * @param {string} params.username - Username attempted
- * @param {string} params.role - User role (if successful)
+ * @param {string} params.username - Username
+ * @param {string} params.role - User role
  * @param {string} params.ipAddress - IP address of request
  * @param {string} params.userAgent - User agent string
- * @param {boolean} params.success - Whether login succeeded
- * @param {string} params.failureReason - Reason for failure (if unsuccessful)
  */
-async function logLoginAttempt({ username, role, ipAddress, userAgent, success, failureReason }) {
+async function logLoginAttempt({ username, role, ipAddress, userAgent }) {
   try {
-    await db.query(`
-      INSERT INTO login_history (username, role, ip_address, user_agent, success, failure_reason)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [username, role || null, ipAddress, userAgent, success, failureReason || null]);
+    const browser = parseBrowserName(userAgent);
+    const systemId = generateSystemId(ipAddress, userAgent);
 
-    console.log(`[LoginHistory] Logged ${success ? 'successful' : 'failed'} login for: ${username}`);
+    await db.query(`
+      INSERT INTO login_history (username, role, ip_address, user_agent, browser, system_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [username, role, ipAddress, userAgent, browser, systemId]);
+
+    console.log(`[LoginHistory] Logged successful login for: ${username} from ${browser} (${systemId})`);
   } catch (error) {
     console.error('[LoginHistory] Error logging attempt:', error);
     // Don't throw - login should still work even if logging fails
@@ -52,10 +85,9 @@ async function logLoginAttempt({ username, role, ipAddress, userAgent, success, 
  * @param {number} options.limit - Max records to return (default 100)
  * @param {number} options.offset - Offset for pagination (default 0)
  * @param {string} options.username - Filter by username (optional)
- * @param {boolean} options.successOnly - Only successful logins (optional)
- * @returns {Promise<Array>} Login history records
+ * @returns {Promise<Array>} Login history records (successful logins only)
  */
-async function getLoginHistory({ limit = 100, offset = 0, username, successOnly } = {}) {
+async function getLoginHistory({ limit = 100, offset = 0, username } = {}) {
   try {
     let query = 'SELECT * FROM login_history WHERE 1=1';
     const params = [];
@@ -64,11 +96,6 @@ async function getLoginHistory({ limit = 100, offset = 0, username, successOnly 
     if (username) {
       query += ` AND username = $${paramCount++}`;
       params.push(username);
-    }
-
-    if (successOnly !== undefined) {
-      query += ` AND success = $${paramCount++}`;
-      params.push(successOnly);
     }
 
     query += ` ORDER BY login_time DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
@@ -84,18 +111,17 @@ async function getLoginHistory({ limit = 100, offset = 0, username, successOnly 
 
 /**
  * Get login statistics
- * @returns {Promise<Object>} Statistics about logins
+ * @returns {Promise<Object>} Statistics about logins (successful only)
  */
 async function getLoginStats() {
   try {
     const result = await db.query(`
       SELECT
-        COUNT(*) as total_attempts,
-        COUNT(*) FILTER (WHERE success = true) as successful_logins,
-        COUNT(*) FILTER (WHERE success = false) as failed_logins,
+        COUNT(*) as total_logins,
         COUNT(DISTINCT username) as unique_users,
         COUNT(DISTINCT ip_address) as unique_ips,
-        MAX(login_time) FILTER (WHERE success = true) as last_successful_login
+        COUNT(DISTINCT system_id) as unique_systems,
+        MAX(login_time) as last_login
       FROM login_history
       WHERE login_time > NOW() - INTERVAL '30 days'
     `);

@@ -264,19 +264,19 @@
   color: #6b7280;
 }
 
-.lh-cell-ua {
-  color: #6b7280;
-  font-size: 0.75rem;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.lh-cell-browser {
+  font-weight: 600;
+  color: #430098;
+  font-size: 0.8125rem;
 }
 
-.lh-cell-reason {
-  color: #ef4444;
-  font-weight: 500;
+.lh-cell-system-id code {
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
   font-size: 0.75rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 
 .lh-no-data {

@@ -99,14 +99,21 @@ function AppContent() {
           <button onClick={handlePrint} className="btn btn-secondary">
             🖨️ Print
           </button>
-          {isAdmin && (
+          {isAdmin && !isSecurityPage && (
             <Link to="/security" className="btn btn-secondary">
               🔒 Security
             </Link>
           )}
-          <Link to={isNotificationsPage ? "/" : "/notifications"} className="btn btn-notification">
-            {isNotificationsPage ? '🏠 Back to Dashboard' : '📧 Notification Settings'}
-          </Link>
+          {(isNotificationsPage || isSecurityPage) && (
+            <Link to="/" className="btn btn-notification">
+              🏠 Back to Dashboard
+            </Link>
+          )}
+          {!isNotificationsPage && !isSecurityPage && (
+            <Link to="/notifications" className="btn btn-notification">
+              📧 Notification Settings
+            </Link>
+          )}
           <button onClick={handleLogout} className="btn btn-secondary" title="Logout">
             🚪 Logout
           </button>

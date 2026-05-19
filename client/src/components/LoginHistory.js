@@ -8,8 +8,7 @@ function LoginHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState({
-    username: '',
-    successOnly: ''
+    username: ''
   });
   const [pagination, setPagination] = useState({
     limit: 50,
@@ -30,8 +29,7 @@ function LoginHistory() {
           params: {
             limit: pagination.limit,
             offset: pagination.offset,
-            username: filter.username || undefined,
-            successOnly: filter.successOnly || undefined
+            username: filter.username || undefined
           }
         }),
         axios.get('/api/auth/login-stats')
@@ -89,32 +87,16 @@ function LoginHistory() {
     <div className="login-history">
       <div className="lh-header">
         <h2 className="lh-title">Login History & Security Audit</h2>
-        <p className="lh-subtitle">Track authentication attempts and monitor account security</p>
+        <p className="lh-subtitle">Track successful logins and monitor account security</p>
       </div>
 
       {stats && (
         <div className="lh-stats-grid">
           <div className="lh-stat-card">
-            <div className="lh-stat-icon" style={{ color: '#10b981' }}>📊</div>
-            <div className="lh-stat-content">
-              <div className="lh-stat-value">{formatNumber(stats.total_attempts)}</div>
-              <div className="lh-stat-label">Total Attempts (30d)</div>
-            </div>
-          </div>
-
-          <div className="lh-stat-card">
             <div className="lh-stat-icon" style={{ color: '#10b981' }}>✅</div>
             <div className="lh-stat-content">
-              <div className="lh-stat-value">{formatNumber(stats.successful_logins)}</div>
-              <div className="lh-stat-label">Successful Logins</div>
-            </div>
-          </div>
-
-          <div className="lh-stat-card">
-            <div className="lh-stat-icon" style={{ color: '#ef4444' }}>❌</div>
-            <div className="lh-stat-content">
-              <div className="lh-stat-value">{formatNumber(stats.failed_logins)}</div>
-              <div className="lh-stat-label">Failed Attempts</div>
+              <div className="lh-stat-value">{formatNumber(stats.total_logins)}</div>
+              <div className="lh-stat-label">Total Logins (30d)</div>
             </div>
           </div>
 
@@ -135,12 +117,20 @@ function LoginHistory() {
           </div>
 
           <div className="lh-stat-card">
-            <div className="lh-stat-icon" style={{ color: '#8b5cf6' }}>🕐</div>
+            <div className="lh-stat-icon" style={{ color: '#8b5cf6' }}>💻</div>
+            <div className="lh-stat-content">
+              <div className="lh-stat-value">{formatNumber(stats.unique_systems)}</div>
+              <div className="lh-stat-label">Unique Systems</div>
+            </div>
+          </div>
+
+          <div className="lh-stat-card">
+            <div className="lh-stat-icon" style={{ color: '#10b981' }}>🕐</div>
             <div className="lh-stat-content">
               <div className="lh-stat-value" style={{ fontSize: '0.75rem' }}>
-                {stats.last_successful_login ? formatDate(stats.last_successful_login) : 'N/A'}
+                {stats.last_login ? formatDate(stats.last_login) : 'N/A'}
               </div>
-              <div className="lh-stat-label">Last Successful Login</div>
+              <div className="lh-stat-label">Last Login</div>
             </div>
           </div>
         </div>
@@ -158,19 +148,6 @@ function LoginHistory() {
           />
         </div>
 
-        <div className="lh-filter-group">
-          <label className="lh-filter-label">Status:</label>
-          <select
-            className="lh-filter-select"
-            value={filter.successOnly}
-            onChange={(e) => handleFilterChange('successOnly', e.target.value)}
-          >
-            <option value="">All Attempts</option>
-            <option value="true">Successful Only</option>
-            <option value="false">Failed Only</option>
-          </select>
-        </div>
-
         <button onClick={fetchData} className="lh-refresh-btn" disabled={loading}>
           🔄 Refresh
         </button>
@@ -183,20 +160,19 @@ function LoginHistory() {
               <th>Timestamp</th>
               <th>Username</th>
               <th>Role</th>
+              <th>Browser</th>
               <th>IP Address</th>
-              <th>User Agent</th>
-              <th>Status</th>
-              <th>Failure Reason</th>
+              <th>System ID</th>
             </tr>
           </thead>
           <tbody>
             {history.length === 0 ? (
               <tr>
-                <td colSpan="7" className="lh-no-data">No login attempts found</td>
+                <td colSpan="6" className="lh-no-data">No login history found</td>
               </tr>
             ) : (
               history.map((entry) => (
-                <tr key={entry.id} className={entry.success ? 'lh-row-success' : 'lh-row-failed'}>
+                <tr key={entry.id} className="lh-row-success">
                   <td className="lh-cell-time">{formatDate(entry.login_time)}</td>
                   <td className="lh-cell-username">{entry.username}</td>
                   <td className="lh-cell-role">
@@ -206,16 +182,11 @@ function LoginHistory() {
                       </span>
                     )}
                   </td>
+                  <td className="lh-cell-browser">{entry.browser || 'Unknown'}</td>
                   <td className="lh-cell-ip">{entry.ip_address}</td>
-                  <td className="lh-cell-ua" title={entry.user_agent}>
-                    {entry.user_agent ? entry.user_agent.substring(0, 50) + '...' : 'N/A'}
+                  <td className="lh-cell-system-id">
+                    <code>{entry.system_id}</code>
                   </td>
-                  <td className="lh-cell-status">
-                    <span className={`lh-status-badge ${entry.success ? 'lh-status-success' : 'lh-status-failed'}`}>
-                      {entry.success ? '✅ Success' : '❌ Failed'}
-                    </span>
-                  </td>
-                  <td className="lh-cell-reason">{entry.failure_reason || '-'}</td>
                 </tr>
               ))
             )}
