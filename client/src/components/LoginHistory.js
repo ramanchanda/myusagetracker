@@ -164,7 +164,7 @@ function LoginHistory() {
               <th>Timestamp</th>
               <th>Username</th>
               <th>Role</th>
-              <th>Browser</th>
+              <th>User Agent</th>
               <th>IP Hash</th>
               <th>System ID</th>
             </tr>
@@ -186,7 +186,7 @@ function LoginHistory() {
                       </span>
                     )}
                   </td>
-                  <td className="lh-cell-browser">{entry.browser || 'Unknown'}</td>
+                  <td className="lh-cell-user-agent">{entry.user_agent || 'Unknown'}</td>
                   <td className="lh-cell-ip">{entry.ip_address}</td>
                   <td className="lh-cell-system-id">
                     <code>{entry.system_id}</code>

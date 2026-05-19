@@ -434,3 +434,14 @@
   flex-shrink: 0;
   font-size: 0.875rem;
 }
+
+/* User Agent Cell */
+.lh-cell-user-agent {
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+  font-size: 0.6875rem;
+  color: #6b7280;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
