@@ -969,9 +969,11 @@ function NotificationManagementCenter() {
                       >
                         <option value={15}>15 minutes</option>
                         <option value={30}>30 minutes</option>
-                        <option value={60}>60 minutes</option>
+                        <option value={60}>1 hour</option>
                         <option value={120}>2 hours</option>
                         <option value={240}>4 hours</option>
+                        <option value={480}>8 hours</option>
+                        <option value={720}>12 hours</option>
                       </select>
                     </label>
                   </div>
