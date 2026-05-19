@@ -196,8 +196,8 @@ function EnterpriseLicenseManagement() {
   return (
     <div className="enterprise-license-management">
       <div className="elm-header">
-        <h2>Enterprise Licenses</h2>
-        <p className="elm-description">
+        <h2 className="elm-section-title">Enterprise Licenses</h2>
+        <p className="elm-section-desc">
           Configure license capacity limits and monitoring thresholds for each Enterprise Account
         </p>
         {!isAdmin && (
