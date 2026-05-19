@@ -247,6 +247,50 @@ function NotificationManagementCenter() {
     }
   };
 
+  const handleScheduleToggle = async (scheduleType, enabled) => {
+    try {
+      const updatedConfig = {
+        ...config,
+        triggerSchedule: {
+          ...config.triggerSchedule,
+          [scheduleType]: {
+            ...config.triggerSchedule[scheduleType],
+            enabled
+          }
+        }
+      };
+
+      const response = await axios.put('/api/notifications/config', updatedConfig);
+      setConfig(response.data);
+      showMessage('success', `${scheduleType} ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      showMessage('error', 'Failed to update schedule');
+    }
+  };
+
+  const handleScheduleUpdate = async (scheduleType, field, value) => {
+    try {
+      const updatedConfig = {
+        ...config,
+        triggerSchedule: {
+          ...config.triggerSchedule,
+          [scheduleType]: {
+            ...config.triggerSchedule[scheduleType],
+            [field]: value
+          }
+        }
+      };
+
+      const response = await axios.put('/api/notifications/config', updatedConfig);
+      setConfig(response.data);
+      showMessage('success', 'Schedule updated');
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      showMessage('error', 'Failed to update schedule');
+    }
+  };
+
   const formatCooldownTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -902,58 +946,147 @@ function NotificationManagementCenter() {
             <p className="nmc-section-desc">Automated threshold checks and usage reports</p>
 
             <div className="nmc-schedule-grid">
-              <div className="nmc-schedule-card">
+              {/* Real-time Alerts */}
+              <div className="nmc-schedule-card editable">
                 <div className="nmc-schedule-header">
                   <h3>Real-time Alerts</h3>
-                  <span className={`nmc-badge ${config.triggerSchedule.realtimeAlerts.enabled ? 'active' : 'inactive'}`}>
-                    {config.triggerSchedule.realtimeAlerts.enabled ? 'Active' : 'Off'}
-                  </span>
+                  <label className="nmc-toggle">
+                    <input
+                      type="checkbox"
+                      checked={config.triggerSchedule.realtimeAlerts.enabled}
+                      onChange={(e) => handleScheduleToggle('realtimeAlerts', e.target.checked)}
+                    />
+                    <span className="nmc-toggle-slider"></span>
+                  </label>
                 </div>
                 {config.triggerSchedule.realtimeAlerts.enabled && (
                   <div className="nmc-schedule-detail">
-                    Every {config.triggerSchedule.realtimeAlerts.checkIntervalMinutes} minutes
+                    <label className="nmc-input-label">
+                      Check every
+                      <select
+                        value={config.triggerSchedule.realtimeAlerts.checkIntervalMinutes}
+                        onChange={(e) => handleScheduleUpdate('realtimeAlerts', 'checkIntervalMinutes', parseInt(e.target.value))}
+                        className="nmc-select"
+                      >
+                        <option value={15}>15 minutes</option>
+                        <option value={30}>30 minutes</option>
+                        <option value={60}>60 minutes</option>
+                        <option value={120}>2 hours</option>
+                        <option value={240}>4 hours</option>
+                      </select>
+                    </label>
                   </div>
                 )}
               </div>
 
-              <div className="nmc-schedule-card">
+              {/* Daily Summary */}
+              <div className="nmc-schedule-card editable">
                 <div className="nmc-schedule-header">
                   <h3>Daily Summary</h3>
-                  <span className={`nmc-badge ${config.triggerSchedule.dailySummary.enabled ? 'active' : 'inactive'}`}>
-                    {config.triggerSchedule.dailySummary.enabled ? 'Active' : 'Off'}
-                  </span>
+                  <label className="nmc-toggle">
+                    <input
+                      type="checkbox"
+                      checked={config.triggerSchedule.dailySummary.enabled}
+                      onChange={(e) => handleScheduleToggle('dailySummary', e.target.checked)}
+                    />
+                    <span className="nmc-toggle-slider"></span>
+                  </label>
                 </div>
                 {config.triggerSchedule.dailySummary.enabled && (
                   <div className="nmc-schedule-detail">
-                    {config.triggerSchedule.dailySummary.time} UTC
+                    <label className="nmc-input-label">
+                      Time (UTC)
+                      <input
+                        type="time"
+                        value={config.triggerSchedule.dailySummary.time}
+                        onChange={(e) => handleScheduleUpdate('dailySummary', 'time', e.target.value)}
+                        className="nmc-input"
+                      />
+                    </label>
                   </div>
                 )}
               </div>
 
-              <div className="nmc-schedule-card">
+              {/* Weekly Summary */}
+              <div className="nmc-schedule-card editable">
                 <div className="nmc-schedule-header">
                   <h3>Weekly Summary</h3>
-                  <span className={`nmc-badge ${config.triggerSchedule.weeklySummary.enabled ? 'active' : 'inactive'}`}>
-                    {config.triggerSchedule.weeklySummary.enabled ? 'Active' : 'Off'}
-                  </span>
+                  <label className="nmc-toggle">
+                    <input
+                      type="checkbox"
+                      checked={config.triggerSchedule.weeklySummary.enabled}
+                      onChange={(e) => handleScheduleToggle('weeklySummary', e.target.checked)}
+                    />
+                    <span className="nmc-toggle-slider"></span>
+                  </label>
                 </div>
                 {config.triggerSchedule.weeklySummary.enabled && (
                   <div className="nmc-schedule-detail">
-                    {config.triggerSchedule.weeklySummary.dayOfWeek} at {config.triggerSchedule.weeklySummary.time} UTC
+                    <label className="nmc-input-label">
+                      Day of week
+                      <select
+                        value={config.triggerSchedule.weeklySummary.dayOfWeek}
+                        onChange={(e) => handleScheduleUpdate('weeklySummary', 'dayOfWeek', e.target.value)}
+                        className="nmc-select"
+                      >
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                      </select>
+                    </label>
+                    <label className="nmc-input-label">
+                      Time (UTC)
+                      <input
+                        type="time"
+                        value={config.triggerSchedule.weeklySummary.time}
+                        onChange={(e) => handleScheduleUpdate('weeklySummary', 'time', e.target.value)}
+                        className="nmc-input"
+                      />
+                    </label>
                   </div>
                 )}
               </div>
 
-              <div className="nmc-schedule-card">
+              {/* Monthly Summary */}
+              <div className="nmc-schedule-card editable">
                 <div className="nmc-schedule-header">
                   <h3>Monthly Summary</h3>
-                  <span className={`nmc-badge ${config.triggerSchedule.monthlySummary.enabled ? 'active' : 'inactive'}`}>
-                    {config.triggerSchedule.monthlySummary.enabled ? 'Active' : 'Off'}
-                  </span>
+                  <label className="nmc-toggle">
+                    <input
+                      type="checkbox"
+                      checked={config.triggerSchedule.monthlySummary.enabled}
+                      onChange={(e) => handleScheduleToggle('monthlySummary', e.target.checked)}
+                    />
+                    <span className="nmc-toggle-slider"></span>
+                  </label>
                 </div>
                 {config.triggerSchedule.monthlySummary.enabled && (
                   <div className="nmc-schedule-detail">
-                    Day {config.triggerSchedule.monthlySummary.dayOfMonth} at {config.triggerSchedule.monthlySummary.time} UTC
+                    <label className="nmc-input-label">
+                      Day of month
+                      <select
+                        value={config.triggerSchedule.monthlySummary.dayOfMonth}
+                        onChange={(e) => handleScheduleUpdate('monthlySummary', 'dayOfMonth', parseInt(e.target.value))}
+                        className="nmc-select"
+                      >
+                        {[...Array(28)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="nmc-input-label">
+                      Time (UTC)
+                      <input
+                        type="time"
+                        value={config.triggerSchedule.monthlySummary.time}
+                        onChange={(e) => handleScheduleUpdate('monthlySummary', 'time', e.target.value)}
+                        className="nmc-input"
+                      />
+                    </label>
                   </div>
                 )}
               </div>
