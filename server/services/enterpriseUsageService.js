@@ -1,6 +1,5 @@
 const axios = require('axios');
-
-const HEROKU_API_BASE = 'https://api.heroku.com';
+const { createHerokuClient, HEROKU_API_BASE } = require('./herokuClient');
 
 // Simple in-memory cache
 const cache = new Map();
@@ -47,23 +46,6 @@ function getPastMonths(endMonth, count) {
 // Add delay between API calls to avoid rate limiting
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Create Heroku client
-function createHerokuClient(apiKey) {
-  const resolvedApiKey = apiKey || process.env.HEROKU_API_KEY;
-  if (!resolvedApiKey || resolvedApiKey === 'your_heroku_api_key_here') {
-    throw new Error('HEROKU_API_KEY is not configured. Update your .env with a valid Heroku API key.');
-  }
-
-  return axios.create({
-    baseURL: HEROKU_API_BASE,
-    headers: {
-      'Accept': 'application/vnd.heroku+json; version=3',
-      'Authorization': `Bearer ${resolvedApiKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
 }
 
 // Get account information

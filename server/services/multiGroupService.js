@@ -1,6 +1,5 @@
 const axios = require('axios');
-
-const HEROKU_API_BASE = 'https://api.heroku.com';
+const { createHerokuClient, HEROKU_API_BASE } = require('./herokuClient');
 
 /**
  * Multi-Group Service
@@ -29,18 +28,6 @@ function getGroupsConfig() {
     console.error('Error parsing HEROKU_GROUPS:', error.message);
     return [];
   }
-}
-
-// Create Heroku client for specific group
-function createHerokuClient(apiKey) {
-  return axios.create({
-    baseURL: HEROKU_API_BASE,
-    headers: {
-      'Accept': 'application/vnd.heroku+json; version=3',
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
 }
 
 // Get account info for a group

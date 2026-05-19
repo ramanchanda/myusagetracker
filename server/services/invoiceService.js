@@ -1,18 +1,5 @@
 const axios = require('axios');
-
-const HEROKU_API_BASE = 'https://api.heroku.com';
-
-// Create Heroku client
-function createHerokuClient(apiKey) {
-  return axios.create({
-    baseURL: HEROKU_API_BASE,
-    headers: {
-      'Accept': 'application/vnd.heroku+json; version=3',
-      'Authorization': `Bearer ${apiKey || process.env.HEROKU_API_KEY}`,
-      'Content-Type': 'application/json'
-    }
-  });
-}
+const { createHerokuClient, HEROKU_API_BASE } = require('./herokuClient');
 
 // Get account invoices
 async function getInvoices(client) {

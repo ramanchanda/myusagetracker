@@ -1,24 +1,11 @@
 const axios = require('axios');
 const { calculateMonthlyCost } = require('./herokuService');
-
-const HEROKU_API_BASE = 'https://api.heroku.com';
+const { createHerokuClient, HEROKU_API_BASE } = require('./herokuClient');
 
 // Helper to get current month in YYYY-MM format
 function getCurrentMonth() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-// Create Heroku client
-function createHerokuClient(apiKey) {
-  return axios.create({
-    baseURL: HEROKU_API_BASE,
-    headers: {
-      'Accept': 'application/vnd.heroku+json; version=3',
-      'Authorization': `Bearer ${apiKey || process.env.HEROKU_API_KEY}`,
-      'Content-Type': 'application/json'
-    }
-  });
 }
 
 // Get account information
