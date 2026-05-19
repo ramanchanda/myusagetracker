@@ -30,7 +30,16 @@ function NotificationManagementCenter() {
     fromName: '',
     fromEmail: '',
     subjectPrefix: '',
-    recipients: []
+    subject: '',
+    recipients: [],
+    smtpConfig: {
+      enabled: false,
+      host: '',
+      port: 587,
+      user: '',
+      password: '',
+      secure: false
+    }
   });
   const [newRecipient, setNewRecipient] = useState('');
 
@@ -337,7 +346,16 @@ function NotificationManagementCenter() {
       fromName: config.emailConfig.fromName,
       fromEmail: config.emailConfig.fromEmail,
       subjectPrefix: config.emailConfig.subjectPrefix || 'Heroku Usage Monitor',
-      recipients: [...config.emailConfig.recipients]
+      subject: config.emailConfig.subject || '',
+      recipients: [...config.emailConfig.recipients],
+      smtpConfig: config.emailConfig.smtpConfig || {
+        enabled: false,
+        host: '',
+        port: 587,
+        user: '',
+        password: '',
+        secure: false
+      }
     });
     setEditingEmail(true);
   };
@@ -1060,7 +1078,21 @@ function NotificationManagementCenter() {
                         className="nmc-schedule-input"
                       />
                     </label>
-                    <span className="nmc-field-hint">Used as prefix for all notification emails (e.g., "Your Company - Alert")</span>
+                    <span className="nmc-field-hint">Company/brand name prefix (e.g., "Heroku Usage Monitor")</span>
+                  </div>
+
+                  <div className="nmc-field nmc-field-full">
+                    <label className="nmc-input-label">
+                      Email Subject
+                      <input
+                        type="text"
+                        value={emailForm.subject}
+                        onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                        placeholder="License Alert"
+                        className="nmc-schedule-input"
+                      />
+                    </label>
+                    <span className="nmc-field-hint">Main email subject (combined with prefix: "Prefix - Subject - Details")</span>
                   </div>
 
                   <div className="nmc-field nmc-field-full">
@@ -1087,6 +1119,111 @@ function NotificationManagementCenter() {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* SMTP Configuration Section */}
+                <div className="nmc-smtp-section">
+                  <div className="nmc-smtp-header">
+                    <h3 className="nmc-smtp-title">SMTP Fallback Configuration</h3>
+                    <label className="nmc-schedule-toggle">
+                      <input
+                        type="checkbox"
+                        checked={emailForm.smtpConfig.enabled}
+                        onChange={(e) => setEmailForm({
+                          ...emailForm,
+                          smtpConfig: { ...emailForm.smtpConfig, enabled: e.target.checked }
+                        })}
+                      />
+                      <span className="nmc-schedule-toggle-track"></span>
+                    </label>
+                  </div>
+                  <p className="nmc-smtp-desc">Configure SMTP server for email delivery fallback (optional but recommended)</p>
+
+                  {emailForm.smtpConfig.enabled && (
+                    <div className="nmc-form-grid">
+                      <div className="nmc-field">
+                        <label className="nmc-input-label">
+                          SMTP Host
+                          <input
+                            type="text"
+                            value={emailForm.smtpConfig.host}
+                            onChange={(e) => setEmailForm({
+                              ...emailForm,
+                              smtpConfig: { ...emailForm.smtpConfig, host: e.target.value }
+                            })}
+                            placeholder="smtp.example.com"
+                            className="nmc-schedule-input"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="nmc-field">
+                        <label className="nmc-input-label">
+                          SMTP Port
+                          <input
+                            type="number"
+                            value={emailForm.smtpConfig.port}
+                            onChange={(e) => setEmailForm({
+                              ...emailForm,
+                              smtpConfig: { ...emailForm.smtpConfig, port: parseInt(e.target.value) || 587 }
+                            })}
+                            placeholder="587"
+                            className="nmc-schedule-input"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="nmc-field">
+                        <label className="nmc-input-label">
+                          SMTP Username
+                          <input
+                            type="text"
+                            value={emailForm.smtpConfig.user}
+                            onChange={(e) => setEmailForm({
+                              ...emailForm,
+                              smtpConfig: { ...emailForm.smtpConfig, user: e.target.value }
+                            })}
+                            placeholder="username"
+                            className="nmc-schedule-input"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="nmc-field">
+                        <label className="nmc-input-label">
+                          SMTP Password
+                          <input
+                            type="password"
+                            value={emailForm.smtpConfig.password}
+                            onChange={(e) => setEmailForm({
+                              ...emailForm,
+                              smtpConfig: { ...emailForm.smtpConfig, password: e.target.value }
+                            })}
+                            placeholder="••••••••"
+                            className="nmc-schedule-input"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="nmc-field nmc-field-full">
+                        <label className="nmc-input-label">
+                          Use SSL/TLS
+                          <label className="nmc-schedule-toggle">
+                            <input
+                              type="checkbox"
+                              checked={emailForm.smtpConfig.secure}
+                              onChange={(e) => setEmailForm({
+                                ...emailForm,
+                                smtpConfig: { ...emailForm.smtpConfig, secure: e.target.checked }
+                              })}
+                            />
+                            <span className="nmc-schedule-toggle-track"></span>
+                          </label>
+                        </label>
+                        <span className="nmc-field-hint">Enable for port 465, disable for port 587 (STARTTLS)</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="nmc-form-actions">
@@ -1125,6 +1262,11 @@ function NotificationManagementCenter() {
                     <div className="nmc-field-value">{config.emailConfig.subjectPrefix || 'Heroku Usage Monitor'}</div>
                   </div>
 
+                  <div className="nmc-field">
+                    <label>Subject</label>
+                    <div className="nmc-field-value">{config.emailConfig.subject || '(Not set)'}</div>
+                  </div>
+
                   <div className="nmc-field nmc-field-full">
                     <label>Recipients</label>
                     <div className="nmc-field-value">
@@ -1138,6 +1280,45 @@ function NotificationManagementCenter() {
                         <span className="nmc-field-empty">No recipients configured</span>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* SMTP Configuration Display */}
+                <div className="nmc-smtp-section-readonly">
+                  <h3 className="nmc-smtp-title">SMTP Fallback Configuration</h3>
+                  <div className="nmc-form-grid">
+                    <div className="nmc-field">
+                      <label>Status</label>
+                      <div className="nmc-field-value">
+                        <span className={`nmc-badge ${config.emailConfig.smtpConfig?.enabled ? 'active' : 'inactive'}`}>
+                          {config.emailConfig.smtpConfig?.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {config.emailConfig.smtpConfig?.enabled && (
+                      <>
+                        <div className="nmc-field">
+                          <label>SMTP Host</label>
+                          <div className="nmc-field-value">{config.emailConfig.smtpConfig.host || '(Not set)'}</div>
+                        </div>
+
+                        <div className="nmc-field">
+                          <label>SMTP Port</label>
+                          <div className="nmc-field-value">{config.emailConfig.smtpConfig.port || 587}</div>
+                        </div>
+
+                        <div className="nmc-field">
+                          <label>SMTP Username</label>
+                          <div className="nmc-field-value">{config.emailConfig.smtpConfig.user || '(Not set)'}</div>
+                        </div>
+
+                        <div className="nmc-field">
+                          <label>SSL/TLS</label>
+                          <div className="nmc-field-value">{config.emailConfig.smtpConfig.secure ? 'Enabled' : 'Disabled'}</div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </>

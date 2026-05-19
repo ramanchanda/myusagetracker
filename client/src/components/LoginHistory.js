@@ -88,6 +88,10 @@ function LoginHistory() {
       <div className="lh-header">
         <h2 className="lh-title">Login History & Security Audit</h2>
         <p className="lh-subtitle">Track successful logins and monitor account security</p>
+        <div className="lh-privacy-note">
+          <span className="lh-privacy-icon">🔒</span>
+          <strong>Privacy:</strong> IP addresses are hashed (SHA256) for privacy. System IDs are device fingerprints for security monitoring.
+        </div>
       </div>
 
       {stats && (
@@ -161,7 +165,7 @@ function LoginHistory() {
               <th>Username</th>
               <th>Role</th>
               <th>Browser</th>
-              <th>IP Address</th>
+              <th>IP Hash</th>
               <th>System ID</th>
             </tr>
           </thead>

@@ -1486,3 +1486,54 @@ body {
     display: none !important;
   }
 }
+
+/* ========================================================================
+   SMTP CONFIGURATION SECTION
+   ======================================================================== */
+
+.nmc-smtp-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+}
+
+.nmc-smtp-section-readonly {
+  margin-top: 24px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e7eaf3;
+  border-radius: 6px;
+}
+
+.nmc-smtp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nmc-smtp-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1d29;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.nmc-smtp-desc {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.nmc-smtp-section .nmc-form-grid {
+  margin-top: 16px;
+}
+
+.nmc-smtp-section .nmc-field input[type="password"] {
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+  letter-spacing: 0.05em;
+}

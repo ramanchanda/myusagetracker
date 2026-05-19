@@ -129,7 +129,16 @@ function getDefaultConfig() {
       recipients: [],
       fromName: "Heroku Usage Monitor",
       fromEmail: "",
-      subjectPrefix: "Heroku Usage Monitor"
+      subjectPrefix: "Heroku Usage Monitor",
+      subject: "",
+      smtpConfig: {
+        enabled: false,
+        host: "",
+        port: 587,
+        user: "",
+        password: "",
+        secure: false
+      }
     },
     triggerSchedule: {
       dailySummary: {

@@ -413,3 +413,24 @@
     margin-left: 0;
   }
 }
+
+/* Privacy Notice */
+.lh-privacy-note {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-left: 3px solid #10b981;
+  padding: 12px 16px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  color: #065f46;
+  margin-top: 12px;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.lh-privacy-icon {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}

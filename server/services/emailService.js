@@ -115,18 +115,34 @@ function loadNodemailer() {
   return null;
 }
 
-function getSMTPTransporter() {
-  if (transporter) {
-    return transporter;
-  }
-
+async function getSMTPTransporter(smtpConfig = null) {
   const nm = loadNodemailer();
   if (!nm) {
     return null;
   }
 
   try {
-    // Try Mailgun SMTP first
+    // Priority 1: Use provided SMTP config from database (if enabled)
+    if (smtpConfig && smtpConfig.enabled && smtpConfig.host) {
+      const newTransporter = nm.createTransporter({
+        host: smtpConfig.host,
+        port: parseInt(smtpConfig.port || '587'),
+        secure: smtpConfig.secure || false,
+        auth: {
+          user: smtpConfig.user,
+          pass: smtpConfig.password
+        }
+      });
+      console.log('[Email Service] Database SMTP transporter created:', smtpConfig.host);
+      return newTransporter;
+    }
+
+    // Priority 2: Cached transporter from env vars
+    if (transporter) {
+      return transporter;
+    }
+
+    // Priority 3: Try Mailgun SMTP from env vars
     if (process.env.MAILGUN_SMTP_SERVER) {
       transporter = nm.createTransporter({
         host: process.env.MAILGUN_SMTP_SERVER,
@@ -137,10 +153,12 @@ function getSMTPTransporter() {
           pass: process.env.MAILGUN_SMTP_PASSWORD
         }
       });
-      console.log('[Email Service] Mailgun SMTP transporter initialized');
+      console.log('[Email Service] Mailgun SMTP transporter initialized from env');
+      return transporter;
     }
-    // Try custom SMTP
-    else if (process.env.SMTP_HOST) {
+
+    // Priority 4: Try custom SMTP from env vars
+    if (process.env.SMTP_HOST) {
       transporter = nm.createTransporter({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
@@ -150,10 +168,11 @@ function getSMTPTransporter() {
           pass: process.env.SMTP_PASS
         }
       });
-      console.log('[Email Service] Custom SMTP transporter initialized');
+      console.log('[Email Service] Custom SMTP transporter initialized from env');
+      return transporter;
     }
 
-    return transporter;
+    return null;
   } catch (error) {
     console.error('[Email Service] Failed to initialize SMTP transporter:', error.message);
     return null;
@@ -170,6 +189,7 @@ function getSMTPTransporter() {
  * @param {string} options.text - Plain text body (optional)
  * @param {Array} options.attachments - Attachments (optional)
  * @param {number} options.retries - Number of retries (default: 2)
+ * @param {Object} options.smtpConfig - SMTP config from database (optional)
  * @returns {Promise<Object>} Send result
  */
 async function sendEmail(options) {
@@ -179,7 +199,8 @@ async function sendEmail(options) {
     html,
     text,
     attachments = [],
-    retries = 2
+    retries = 2,
+    smtpConfig = null
   } = options;
 
   // Validate inputs
@@ -263,7 +284,7 @@ async function sendEmail(options) {
 
   // Fallback to SMTP
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const smtp = getSMTPTransporter();
+    const smtp = await getSMTPTransporter(smtpConfig);
 
     if (smtp) {
       try {

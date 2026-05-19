@@ -54,13 +54,11 @@ function getDefaultConfig() {
 }
 
 // Read configuration from environment variables (Heroku Config Vars)
+// NOTE: Email enabled status is ONLY read from database, not from env vars
 function getConfigFromEnv() {
   const config = getDefaultConfig();
 
-  // Email Configuration
-  if (process.env.NOTIFICATION_EMAIL_ENABLED) {
-    config.emailConfig.enabled = process.env.NOTIFICATION_EMAIL_ENABLED === 'true';
-  }
+  // Email Configuration (recipients and sender info only - enabled status from DB)
   if (process.env.NOTIFICATION_RECIPIENTS) {
     config.emailConfig.recipients = process.env.NOTIFICATION_RECIPIENTS.split(',').map(e => e.trim());
   }
@@ -147,11 +145,11 @@ async function getConfig() {
 }
 
 // Generate environment variable commands from config
+// NOTE: Email enabled status is stored in database only, not as config var
 function generateEnvCommands(config) {
   const commands = [];
 
-  // Email Configuration
-  commands.push(`heroku config:set NOTIFICATION_EMAIL_ENABLED=${config.emailConfig.enabled}`);
+  // Email Configuration (no NOTIFICATION_EMAIL_ENABLED - that's in database only)
   commands.push(`heroku config:set NOTIFICATION_RECIPIENTS="${config.emailConfig.recipients.join(',')}"`);
   commands.push(`heroku config:set NOTIFICATION_FROM_NAME="${config.emailConfig.fromName}"`);
   if (config.emailConfig.fromEmail) {

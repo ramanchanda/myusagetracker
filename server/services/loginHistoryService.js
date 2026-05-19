@@ -38,6 +38,16 @@ function generateSystemId(ipAddress, userAgent) {
 }
 
 /**
+ * Hash IP address for privacy (GDPR compliance)
+ * @param {string} ipAddress - Client IP address
+ * @returns {string} Hashed IP (first 12 chars)
+ */
+function hashIpAddress(ipAddress) {
+  const hash = crypto.createHash('sha256').update(ipAddress).digest('hex');
+  return hash.substring(0, 12); // Short hash for privacy
+}
+
+/**
  * Initialize login history table
  */
 async function initializeSchema() {
@@ -66,11 +76,13 @@ async function logLoginAttempt({ username, role, ipAddress, userAgent }) {
   try {
     const browser = parseBrowserName(userAgent);
     const systemId = generateSystemId(ipAddress, userAgent);
+    const ipHash = hashIpAddress(ipAddress);
 
+    // Store hashed IP for privacy, full user agent for debugging
     await db.query(`
       INSERT INTO login_history (username, role, ip_address, user_agent, browser, system_id)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, [username, role, ipAddress, userAgent, browser, systemId]);
+    `, [username, role, ipHash, userAgent, browser, systemId]); // Storing full user agent
 
     console.log(`[LoginHistory] Logged successful login for: ${username} from ${browser} (${systemId})`);
   } catch (error) {
@@ -151,10 +163,31 @@ async function cleanupOldHistory() {
   }
 }
 
+/**
+ * Delete all login history for a specific user (GDPR: Right to Deletion)
+ * @param {string} username - Username to delete history for
+ * @returns {Promise<Object>} Deletion result
+ */
+async function deleteUserHistory(username) {
+  try {
+    const result = await db.query(`
+      DELETE FROM login_history
+      WHERE username = $1
+    `, [username]);
+
+    console.log(`[LoginHistory] Deleted ${result.rowCount} records for user: ${username}`);
+    return { success: true, deletedCount: result.rowCount };
+  } catch (error) {
+    console.error('[LoginHistory] Error deleting user history:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   initializeSchema,
   logLoginAttempt,
   getLoginHistory,
   getLoginStats,
-  cleanupOldHistory
+  cleanupOldHistory,
+  deleteUserHistory
 };

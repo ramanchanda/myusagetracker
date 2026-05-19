@@ -123,7 +123,7 @@ function NotificationConfig() {
                   {config.emailConfig.enabled ? '✓ Enabled' : '✗ Disabled'}
                 </span>
               </div>
-              <small>Config Var: <code>NOTIFICATION_EMAIL_ENABLED</code></small>
+              <small>Stored in database (toggle via Notification Settings)</small>
             </div>
 
             <div className="readonly-field">

@@ -39,10 +39,12 @@ async function sendTestNotification() {
 
   try {
     const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
+    const subjectMain = emailConfig.subject ? ` - ${emailConfig.subject}` : '';
     const result = await emailService.sendEmail({
       to: emailConfig.recipients,
-      subject: `✅ ${subjectPrefix} - Test Notification`,
-      html
+      subject: `✅ ${subjectPrefix}${subjectMain} - Test Notification`,
+      html,
+      smtpConfig: emailConfig.smtpConfig
     });
 
     return {
@@ -88,13 +90,15 @@ async function sendThresholdAlert(resourceType, currentValue, threshold, severit
   });
 
   const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
-  const subject = `${severityIcon} ${subjectPrefix} - ${resourceType} Alert (${severity.toUpperCase()})`;
+  const subjectMain = emailConfig.subject ? ` - ${emailConfig.subject}` : '';
+  const subject = `${severityIcon} ${subjectPrefix}${subjectMain} - ${resourceType} Alert (${severity.toUpperCase()})`;
 
   try {
     const result = await emailService.sendEmail({
       to: emailConfig.recipients,
       subject,
-      html
+      html,
+      smtpConfig: emailConfig.smtpConfig
     });
 
     // Log to history
@@ -150,13 +154,15 @@ async function sendUsageSummary(summaryData, period = 'daily') {
   });
 
   const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
-  const subject = `${periodIcons[period] || '📊'} ${subjectPrefix} - ${period.charAt(0).toUpperCase() + period.slice(1)} Summary`;
+  const subjectMain = emailConfig.subject ? ` - ${emailConfig.subject}` : '';
+  const subject = `${periodIcons[period] || '📊'} ${subjectPrefix}${subjectMain} - ${period.charAt(0).toUpperCase() + period.slice(1)} Summary`;
 
   try {
     const result = await emailService.sendEmail({
       to: emailConfig.recipients,
       subject,
-      html
+      html,
+      smtpConfig: emailConfig.smtpConfig
     });
 
     // Log to history
@@ -283,13 +289,15 @@ async function sendLicenseAuditSummary(auditData) {
   });
 
   const subjectPrefix = emailConfig.subjectPrefix || 'Heroku Usage Monitor';
-  const subject = `${subjectPrefix} - License Audit: ${criticals.length} Critical, ${warnings.length} Warning(s)`;
+  const subjectMain = emailConfig.subject ? ` - ${emailConfig.subject}` : '';
+  const subject = `${subjectPrefix}${subjectMain} - License Audit: ${criticals.length} Critical, ${warnings.length} Warning(s)`;
 
   try {
     const result = await emailService.sendEmail({
       to: emailConfig.recipients,
       subject,
-      html
+      html,
+      smtpConfig: emailConfig.smtpConfig
     });
 
     return {

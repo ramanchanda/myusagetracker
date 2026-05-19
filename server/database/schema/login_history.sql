@@ -1,15 +1,16 @@
 -- Login History Table
 -- Tracks successful login attempts for security auditing
+-- PRIVACY: Stores hashed IP (not plain text) for privacy
 
 CREATE TABLE IF NOT EXISTS login_history (
   id SERIAL PRIMARY KEY,
   username VARCHAR(255) NOT NULL,
   role VARCHAR(50),
   login_time TIMESTAMP DEFAULT NOW(),
-  ip_address VARCHAR(45),
-  user_agent TEXT,
-  browser VARCHAR(100),
-  system_id VARCHAR(255)
+  ip_address VARCHAR(45),        -- Stores SHA256 hash (12 chars) for privacy
+  user_agent TEXT,               -- Stores full user agent string for debugging
+  browser VARCHAR(100),          -- Browser name (parsed from user agent)
+  system_id VARCHAR(255)         -- SHA256 hash of IP+UserAgent (12 chars) for device tracking
 );
 
 -- Index for faster queries

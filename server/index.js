@@ -183,6 +183,36 @@ app.get('/api/auth/login-stats', requireAdmin, async (req, res) => {
   }
 });
 
+// Get MY login history (GDPR: Right to Access)
+app.get('/api/auth/my-login-history', isAuthenticated, async (req, res) => {
+  try {
+    const username = req.session.user.username;
+    const { limit } = req.query;
+    const history = await loginHistoryService.getLoginHistory({
+      limit: parseInt(limit) || 50,
+      offset: 0,
+      username
+    });
+    res.json(history);
+  } catch (error) {
+    console.error('[Auth] Error fetching user login history:', error);
+    res.status(500).json({ error: 'Failed to fetch your login history' });
+  }
+});
+
+// Delete MY login history (GDPR: Right to Deletion)
+app.delete('/api/auth/my-login-history', isAuthenticated, async (req, res) => {
+  try {
+    const username = req.session.user.username;
+    const result = await loginHistoryService.deleteUserHistory(username);
+    console.log(`[Auth] User ${username} deleted their login history`);
+    res.json({ success: true, deleted: result.deletedCount });
+  } catch (error) {
+    console.error('[Auth] Error deleting user login history:', error);
+    res.status(500).json({ error: 'Failed to delete your login history' });
+  }
+});
+
 // Get session timeout configuration
 app.get('/api/auth/session-config', isAuthenticated, (req, res) => {
   const timeoutMs = getSessionTimeout();

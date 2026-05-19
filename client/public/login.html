@@ -209,6 +209,24 @@
       border: 1px solid #86efac;
     }
 
+    .privacy-notice {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #6762a6;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #475569;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .privacy-notice-icon {
+      display: inline-block;
+      margin-right: 6px;
+    }
+
     @media (max-width: 480px) {
       .login-card {
         padding: 32px 24px;
@@ -230,6 +248,11 @@
     <div class="login-card">
       <div id="infoMessage" class="info-message"></div>
       <div id="errorMessage" class="error-message"></div>
+
+      <div class="privacy-notice">
+        <span class="privacy-notice-icon">🔒</span>
+        <strong>Privacy Notice:</strong> Login attempts are logged for security monitoring. We store your username, login time, browser type, and hashed identifiers (not your IP address in plain text).
+      </div>
 
       <form id="loginForm">
         <div class="form-group">
