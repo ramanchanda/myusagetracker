@@ -77,6 +77,7 @@ function NotificationManagementCenter() {
       setStats(statsRes.data);
       setRecentActivity(historyRes.data);
       setCurrentUser(userRes.data);
+      console.log('[NotificationManagementCenter] Current user:', userRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       showMessage('error', 'Failed to load notification configuration');
@@ -668,7 +669,7 @@ function NotificationManagementCenter() {
         >
           Schedule
         </button>
-        {currentUser?.role === 'admin' && (
+        {currentUser && currentUser.role === 'admin' && (
           <button
             className={`nmc-tab ${activeTab === 'security' ? 'active' : ''}`}
             onClick={() => setActiveTab('security')}
@@ -1369,7 +1370,7 @@ function NotificationManagementCenter() {
           </div>
         )}
 
-        {activeTab === 'security' && currentUser?.role === 'admin' && (
+        {activeTab === 'security' && currentUser && currentUser.role === 'admin' && (
           <LoginHistory />
         )}
       </div>
