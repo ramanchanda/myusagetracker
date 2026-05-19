@@ -495,39 +495,8 @@ app.post('/api/notifications/send-test', async (req, res) => {
   }
 });
 
-// Get thresholds
-app.get('/api/notifications/thresholds', async (req, res) => {
-  try {
-    const thresholds = await configService.getThresholds();
-    res.json(thresholds);
-  } catch (error) {
-    console.error('Error fetching thresholds:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update thresholds
-app.put('/api/notifications/thresholds', async (req, res) => {
-  try {
-    const thresholds = await configService.updateThresholds(req.body);
-    res.json(thresholds);
-  } catch (error) {
-    console.error('Error updating thresholds:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update single threshold
-app.put('/api/notifications/thresholds/:resourceType', async (req, res) => {
-  try {
-    const { resourceType } = req.params;
-    const threshold = await configService.updateThreshold(resourceType, req.body);
-    res.json(threshold);
-  } catch (error) {
-    console.error('Error updating threshold:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
+// Note: Threshold endpoints removed - license limits are now managed per-account
+// via /api/licenses/enterprise/:accountId endpoints using enterprise_license_config table
 
 // Get trigger schedule
 app.get('/api/notifications/schedule', async (req, res) => {

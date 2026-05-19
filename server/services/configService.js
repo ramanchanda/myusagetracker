@@ -11,6 +11,7 @@ function getEnvWithFallback(newKey, oldKey) {
 }
 
 // Get default configuration
+// Note: License thresholds are stored in enterprise_license_config table, not here
 function getDefaultConfig() {
   return {
     emailConfig: {
@@ -19,44 +20,6 @@ function getDefaultConfig() {
       recipients: [],
       fromName: "Heroku Usage Monitor",
       fromEmail: ""
-    },
-    thresholds: {
-      dynoUnits: {
-        enabled: true,
-        limit: 1000,
-        warningPercentage: 80,
-        criticalPercentage: 95
-      },
-      connectRows: {
-        enabled: true,
-        limit: 10000,
-        warningPercentage: 80,
-        criticalPercentage: 95
-      },
-      dataAddons: {
-        enabled: true,
-        limit: 500,
-        warningPercentage: 80,
-        criticalPercentage: 95
-      },
-      generalAddons: {
-        enabled: true,
-        limit: 300,
-        warningPercentage: 80,
-        criticalPercentage: 95
-      },
-      privateSpaces: {
-        enabled: true,
-        limit: 5,
-        warningPercentage: 80,
-        criticalPercentage: 100
-      },
-      shieldSpaces: {
-        enabled: true,
-        limit: 3,
-        warningPercentage: 80,
-        criticalPercentage: 100
-      }
     },
     triggerSchedule: {
       dailySummary: {
@@ -81,6 +44,10 @@ function getDefaultConfig() {
         checkIntervalMinutes: 60
       }
     },
+    cooldownPeriod: {
+      enabled: true,
+      durationMinutes: 60
+    },
     alertHistory: []
   };
 }
@@ -103,80 +70,8 @@ function getConfigFromEnv() {
     config.emailConfig.fromEmail = process.env.NOTIFICATION_FROM_EMAIL;
   }
 
-  // Global License Utilization Percentages (apply to all resources)
-  // Support both LICENSE_* (new) and THRESHOLD_* (legacy) prefixes
-  const globalWarning = getEnvWithFallback('LICENSE_WARNING_PERCENTAGE', 'THRESHOLD_WARNING_PERCENTAGE')
-    ? parseInt(getEnvWithFallback('LICENSE_WARNING_PERCENTAGE', 'THRESHOLD_WARNING_PERCENTAGE'))
-    : 80;
-  const globalCritical = getEnvWithFallback('LICENSE_CRITICAL_PERCENTAGE', 'THRESHOLD_CRITICAL_PERCENTAGE')
-    ? parseInt(getEnvWithFallback('LICENSE_CRITICAL_PERCENTAGE', 'THRESHOLD_CRITICAL_PERCENTAGE'))
-    : 95;
-
-  // Apply global percentages to all resources
-  Object.keys(config.thresholds).forEach(resource => {
-    config.thresholds[resource].warningPercentage = globalWarning;
-    config.thresholds[resource].criticalPercentage = globalCritical;
-  });
-
-  // License Limits - Dyno Units (with backward compatibility)
-  const dynoEnabled = getEnvWithFallback('LICENSE_DYNO_UNITS_ENABLED', 'THRESHOLD_DYNO_ENABLED');
-  if (dynoEnabled) {
-    config.thresholds.dynoUnits.enabled = dynoEnabled === 'true';
-  }
-  const dynoLimit = getEnvWithFallback('LICENSE_DYNO_UNITS_LIMIT', 'THRESHOLD_DYNO_LIMIT');
-  if (dynoLimit) {
-    config.thresholds.dynoUnits.limit = parseInt(dynoLimit);
-  }
-
-  // License Limits - Connect Rows
-  const connectEnabled = getEnvWithFallback('LICENSE_CONNECT_ROWS_ENABLED', 'THRESHOLD_CONNECT_ENABLED');
-  if (connectEnabled) {
-    config.thresholds.connectRows.enabled = connectEnabled === 'true';
-  }
-  const connectLimit = getEnvWithFallback('LICENSE_CONNECT_ROWS_LIMIT', 'THRESHOLD_CONNECT_LIMIT');
-  if (connectLimit) {
-    config.thresholds.connectRows.limit = parseInt(connectLimit);
-  }
-
-  // License Limits - Data Addons
-  const dataAddonsEnabled = getEnvWithFallback('LICENSE_DATA_ADDONS_ENABLED', 'THRESHOLD_DATA_ADDONS_ENABLED');
-  if (dataAddonsEnabled) {
-    config.thresholds.dataAddons.enabled = dataAddonsEnabled === 'true';
-  }
-  const dataAddonsLimit = getEnvWithFallback('LICENSE_DATA_ADDONS_LIMIT', 'THRESHOLD_DATA_ADDONS_LIMIT');
-  if (dataAddonsLimit) {
-    config.thresholds.dataAddons.limit = parseInt(dataAddonsLimit);
-  }
-
-  // License Limits - General Addons
-  const generalAddonsEnabled = getEnvWithFallback('LICENSE_GENERAL_ADDONS_ENABLED', 'THRESHOLD_GENERAL_ADDONS_ENABLED');
-  if (generalAddonsEnabled) {
-    config.thresholds.generalAddons.enabled = generalAddonsEnabled === 'true';
-  }
-  const generalAddonsLimit = getEnvWithFallback('LICENSE_GENERAL_ADDONS_LIMIT', 'THRESHOLD_GENERAL_ADDONS_LIMIT');
-  if (generalAddonsLimit) {
-    config.thresholds.generalAddons.limit = parseInt(generalAddonsLimit);
-  }
-
-  // License Limits - Private Spaces
-  const privateSpacesEnabled = getEnvWithFallback('LICENSE_PRIVATE_SPACES_ENABLED', 'THRESHOLD_PRIVATE_SPACES_ENABLED');
-  if (privateSpacesEnabled) {
-    config.thresholds.privateSpaces.enabled = privateSpacesEnabled === 'true';
-  }
-  const privateSpacesLimit = getEnvWithFallback('LICENSE_PRIVATE_SPACES_LIMIT', 'THRESHOLD_PRIVATE_SPACES_LIMIT');
-  if (privateSpacesLimit) {
-    config.thresholds.privateSpaces.limit = parseInt(privateSpacesLimit);
-  }
-
-  // License Limits - Shield Spaces
-  const shieldSpacesEnabled = getEnvWithFallback('LICENSE_SHIELD_SPACES_ENABLED', 'THRESHOLD_SHIELD_SPACES_ENABLED');
-  if (shieldSpacesEnabled) {
-    config.thresholds.shieldSpaces.enabled = shieldSpacesEnabled === 'true';
-  }
-  const shieldSpacesLimit = getEnvWithFallback('LICENSE_SHIELD_SPACES_LIMIT', 'THRESHOLD_SHIELD_SPACES_LIMIT');
-  if (shieldSpacesLimit) {
-    config.thresholds.shieldSpaces.limit = parseInt(shieldSpacesLimit);
-  }
+  // Note: License thresholds are now stored in enterprise_license_config table
+  // This config only stores notification schedule and email settings
 
   // Trigger Schedule - Realtime Alerts
   if (process.env.SCHEDULE_REALTIME_ENABLED) {
@@ -251,41 +146,7 @@ function generateEnvCommands(config) {
     commands.push(`heroku config:set NOTIFICATION_FROM_EMAIL="${config.emailConfig.fromEmail}"`);
   }
 
-  // Thresholds - Dyno Units
-  commands.push(`heroku config:set THRESHOLD_DYNO_ENABLED=${config.thresholds.dynoUnits.enabled}`);
-  commands.push(`heroku config:set THRESHOLD_DYNO_LIMIT=${config.thresholds.dynoUnits.limit}`);
-  commands.push(`heroku config:set THRESHOLD_DYNO_WARNING=${config.thresholds.dynoUnits.warningPercentage}`);
-  commands.push(`heroku config:set THRESHOLD_DYNO_CRITICAL=${config.thresholds.dynoUnits.criticalPercentage}`);
-
-  // Thresholds - Connect Rows
-  commands.push(`heroku config:set THRESHOLD_CONNECT_ENABLED=${config.thresholds.connectRows.enabled}`);
-  commands.push(`heroku config:set THRESHOLD_CONNECT_LIMIT=${config.thresholds.connectRows.limit}`);
-  commands.push(`heroku config:set THRESHOLD_CONNECT_WARNING=${config.thresholds.connectRows.warningPercentage}`);
-  commands.push(`heroku config:set THRESHOLD_CONNECT_CRITICAL=${config.thresholds.connectRows.criticalPercentage}`);
-
-  // Thresholds - Data Addons
-  commands.push(`heroku config:set THRESHOLD_DATA_ADDONS_ENABLED=${config.thresholds.dataAddons.enabled}`);
-  commands.push(`heroku config:set THRESHOLD_DATA_ADDONS_LIMIT=${config.thresholds.dataAddons.limit}`);
-  commands.push(`heroku config:set THRESHOLD_DATA_ADDONS_WARNING=${config.thresholds.dataAddons.warningPercentage}`);
-  commands.push(`heroku config:set THRESHOLD_DATA_ADDONS_CRITICAL=${config.thresholds.dataAddons.criticalPercentage}`);
-
-  // Thresholds - General Addons
-  commands.push(`heroku config:set THRESHOLD_GENERAL_ADDONS_ENABLED=${config.thresholds.generalAddons.enabled}`);
-  commands.push(`heroku config:set THRESHOLD_GENERAL_ADDONS_LIMIT=${config.thresholds.generalAddons.limit}`);
-  commands.push(`heroku config:set THRESHOLD_GENERAL_ADDONS_WARNING=${config.thresholds.generalAddons.warningPercentage}`);
-  commands.push(`heroku config:set THRESHOLD_GENERAL_ADDONS_CRITICAL=${config.thresholds.generalAddons.criticalPercentage}`);
-
-  // Thresholds - Private Spaces
-  commands.push(`heroku config:set THRESHOLD_PRIVATE_SPACES_ENABLED=${config.thresholds.privateSpaces.enabled}`);
-  commands.push(`heroku config:set THRESHOLD_PRIVATE_SPACES_LIMIT=${config.thresholds.privateSpaces.limit}`);
-  commands.push(`heroku config:set THRESHOLD_PRIVATE_SPACES_WARNING=${config.thresholds.privateSpaces.warningPercentage}`);
-  commands.push(`heroku config:set THRESHOLD_PRIVATE_SPACES_CRITICAL=${config.thresholds.privateSpaces.criticalPercentage}`);
-
-  // Thresholds - Shield Spaces
-  commands.push(`heroku config:set THRESHOLD_SHIELD_SPACES_ENABLED=${config.thresholds.shieldSpaces.enabled}`);
-  commands.push(`heroku config:set THRESHOLD_SHIELD_SPACES_LIMIT=${config.thresholds.shieldSpaces.limit}`);
-  commands.push(`heroku config:set THRESHOLD_SHIELD_SPACES_WARNING=${config.thresholds.shieldSpaces.warningPercentage}`);
-  commands.push(`heroku config:set THRESHOLD_SHIELD_SPACES_CRITICAL=${config.thresholds.shieldSpaces.criticalPercentage}`);
+  // Note: Thresholds are now managed in enterprise_license_config table via separate API
 
   // Trigger Schedule - Realtime
   commands.push(`heroku config:set SCHEDULE_REALTIME_ENABLED=${config.triggerSchedule.realtimeAlerts.enabled}`);
@@ -342,30 +203,8 @@ async function updateEmailConfig(emailConfig) {
   return config.emailConfig;
 }
 
-// Get thresholds
-async function getThresholds() {
-  const config = await getConfig();
-  return config.thresholds;
-}
-
-// Update thresholds
-async function updateThresholds(thresholds) {
-  const config = await getConfig();
-  config.thresholds = { ...config.thresholds, ...thresholds };
-  await updateConfig(config);
-  return config.thresholds;
-}
-
-// Update single threshold
-async function updateThreshold(resourceType, thresholdConfig) {
-  const config = await getConfig();
-  if (!config.thresholds[resourceType]) {
-    throw new Error(`Invalid resource type: ${resourceType}`);
-  }
-  config.thresholds[resourceType] = { ...config.thresholds[resourceType], ...thresholdConfig };
-  await updateConfig(config);
-  return config.thresholds[resourceType];
-}
+// Note: Threshold functions removed - use enterprise_license_config table instead
+// See enterpriseLicenseService.js for license limit management
 
 // Get trigger schedule
 async function getTriggerSchedule() {
@@ -421,9 +260,6 @@ module.exports = {
   updateConfig,
   getEmailConfig,
   updateEmailConfig,
-  getThresholds,
-  updateThresholds,
-  updateThreshold,
   getTriggerSchedule,
   updateTriggerSchedule,
   addAlertToHistory,
