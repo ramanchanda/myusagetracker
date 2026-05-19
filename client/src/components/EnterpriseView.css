@@ -606,6 +606,13 @@
   flex-wrap: wrap;
 }
 
+.team-filters-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .team-filter-dropdown {
   display: flex;
   align-items: center;

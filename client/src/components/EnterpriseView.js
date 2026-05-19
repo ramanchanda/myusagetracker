@@ -23,6 +23,7 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState('all');
+  const [teamSortBy, setTeamSortBy] = useState('dynoUnits');
   const [expandedTeams, setExpandedTeams] = useState({});
   const [teamAppsCache, setTeamAppsCache] = useState({});
   const [loadingTeamApps, setLoadingTeamApps] = useState({});
@@ -368,9 +369,28 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
     }
   }
 
-  const displayedTeams = selectedTeamFilter === 'all'
+  // Filter teams
+  const filteredTeams = selectedTeamFilter === 'all'
     ? enterpriseTeams
     : enterpriseTeams.filter(team => team.id === selectedTeamFilter);
+
+  // Sort teams
+  const displayedTeams = [...filteredTeams].sort((a, b) => {
+    switch (teamSortBy) {
+      case 'dynoUnits':
+        return (b.totalDynos || 0) - (a.totalDynos || 0);
+      case 'connectRows':
+        return (b.totalConnect || 0) - (a.totalConnect || 0);
+      case 'dataAddons':
+        return (b.totalDataAddons || 0) - (a.totalDataAddons || 0);
+      case 'generalAddons':
+        return (b.totalOtherAddons || 0) - (a.totalOtherAddons || 0);
+      case 'teamName':
+        return (a.name || '').localeCompare(b.name || '');
+      default:
+        return (b.totalDynos || 0) - (a.totalDynos || 0);
+    }
+  });
 
   const fetchTeamApps = async (teamId) => {
     if (teamAppsCache[teamId]) {
@@ -1071,21 +1091,38 @@ function EnterpriseView({ selectedMonth, onMonthChange, reportView, onReportView
           <div className="teams-section">
             <div className="teams-section-header">
               <h2>Enterprise Teams {showAllAccounts ? '(All Accounts)' : ''}</h2>
-              <div className="team-filter-dropdown">
-                <label htmlFor="teamFilter">Filter Team: </label>
-                <select
-                  id="teamFilter"
-                  value={selectedTeamFilter}
-                  onChange={(e) => setSelectedTeamFilter(e.target.value)}
-                  className="team-filter-select"
-                >
-                  <option value="all">All Teams ({enterpriseTeams.length})</option>
-                  {enterpriseTeams.map((team, idx) => (
-                    <option key={idx} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="team-filters-container">
+                <div className="team-filter-dropdown">
+                  <label htmlFor="teamFilter">Filter Team: </label>
+                  <select
+                    id="teamFilter"
+                    value={selectedTeamFilter}
+                    onChange={(e) => setSelectedTeamFilter(e.target.value)}
+                    className="team-filter-select"
+                  >
+                    <option value="all">All Teams ({enterpriseTeams.length})</option>
+                    {enterpriseTeams.map((team, idx) => (
+                      <option key={idx} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="team-filter-dropdown">
+                  <label htmlFor="teamSort">Sort by: </label>
+                  <select
+                    id="teamSort"
+                    value={teamSortBy}
+                    onChange={(e) => setTeamSortBy(e.target.value)}
+                    className="team-filter-select"
+                  >
+                    <option value="dynoUnits">Dyno Units (High to Low)</option>
+                    <option value="connectRows">Connect Rows (High to Low)</option>
+                    <option value="dataAddons">Data Add-ons (High to Low)</option>
+                    <option value="generalAddons">General Add-ons (High to Low)</option>
+                    <option value="teamName">Team Name (A-Z)</option>
+                  </select>
+                </div>
               </div>
             </div>
             <p className="usage-note">
