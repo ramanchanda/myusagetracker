@@ -285,6 +285,7 @@ function EnterpriseLicenseManagement() {
                       </div>
                     )}
 
+                    <div className="elm-license-capacity-header">Licensed Capacity</div>
                     <div className="elm-license-cards">
                   <LicenseCard
                     title="Dyno Units"
@@ -363,23 +364,22 @@ function EnterpriseLicenseManagement() {
 function LicenseCard({ title, value, isEditing, onChange, icon }) {
   return (
     <div className="elm-license-card">
-      <div className="elm-card-icon">{icon}</div>
-      <div className="elm-card-content">
+      <div className="elm-card-header">
+        <div className="elm-card-icon">{icon}</div>
         <div className="elm-card-title">{title}</div>
-        <div className="elm-card-value">
-          {isEditing ? (
-            <input
-              type="number"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="elm-input"
-              min="0"
-            />
-          ) : (
-            <span className="elm-value-display">{Math.round(value).toLocaleString()}</span>
-          )}
-        </div>
-        <div className="elm-card-label">Licensed Capacity</div>
+      </div>
+      <div className="elm-card-value">
+        {isEditing ? (
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="elm-input"
+            min="0"
+          />
+        ) : (
+          <span className="elm-value-display">{Math.round(value).toLocaleString()}</span>
+        )}
       </div>
     </div>
   );

@@ -293,6 +293,16 @@
   line-height: 1.4;
 }
 
+/* License Capacity Header */
+.elm-license-capacity-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 12px;
+  padding-left: 2px;
+  letter-spacing: 0.02em;
+}
+
 /* License Cards Grid - Compact Operational Tiles */
 .elm-license-cards {
   display: grid;
@@ -303,7 +313,7 @@
 
 .elm-license-card {
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 5px;
   padding: 10px;
   transition: all 0.15s ease;
@@ -311,8 +321,8 @@
 
 .elm-license-card:hover {
   background: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  border-color: #059669;
 }
 
 .elm-card-header {
@@ -324,14 +334,14 @@
 
 .elm-card-icon {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #430098;
   flex-shrink: 0;
 }
 
 .elm-card-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #4b5563;
+  color: #430098;
   line-height: 1.2;
 }
 
@@ -393,7 +403,7 @@
 
 .elm-threshold-card {
   background: #f9fafb;
-  border: 1px solid #e7eaf3;
+  border: 1px solid #10b981;
   border-radius: 5px;
   padding: 10px;
   transition: all 0.15s ease;
@@ -401,8 +411,8 @@
 
 .elm-threshold-card:hover {
   background: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+  border-color: #059669;
 }
 
 .elm-threshold-label {
