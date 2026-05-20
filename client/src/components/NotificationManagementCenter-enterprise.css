@@ -1883,3 +1883,24 @@ body {
   background: #f9fafb;
   border-color: #9ca3af;
 }
+
+/* Read-only Notice for Viewer Users */
+.nmc-readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: #1e3a8a;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.nmc-icon {
+  flex-shrink: 0;
+  color: #1e40af;
+  font-size: 1rem;
+}

@@ -561,6 +561,7 @@ function NotificationManagementCenter({ currentUser }) {
   }
 
   const activeSchedules = Object.values(config.triggerSchedule).filter(s => s.enabled).length;
+  const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'editor');
 
   return (
     <div className="nmc-container">
@@ -1014,6 +1015,11 @@ function NotificationManagementCenter({ currentUser }) {
             <div className="nmc-section-header">
               <div>
                 <h2 className="nmc-section-title">Email Configuration</h2>
+                {currentUser && currentUser.role === 'viewer' && (
+                  <div className="nmc-readonly-notice">
+                    <span className="nmc-icon">👁️</span> Read-only mode - Editor or Admin access required to edit email configuration
+                  </div>
+                )}
               </div>
               {!editingEmail && currentUser && (currentUser.role === 'admin' || currentUser.role === 'editor') && (
                 <button onClick={startEditingEmail} className="nmc-btn nmc-btn-primary">
@@ -1348,8 +1354,18 @@ function NotificationManagementCenter({ currentUser }) {
 
         {activeTab === 'schedule' && (
           <div className="nmc-section">
-            <h2 className="nmc-schedule-section-title">Notification Schedule</h2>
-            <p className="nmc-schedule-section-desc">Automated threshold checks and usage reports</p>
+            <div className="nmc-section-header">
+              <div>
+                <h2 className="nmc-schedule-section-title">Notification Schedule</h2>
+                <p className="nmc-schedule-section-desc">Automated threshold checks and usage reports</p>
+              </div>
+            </div>
+
+            {currentUser && currentUser.role === 'viewer' && (
+              <div className="nmc-readonly-notice" style={{ marginBottom: '1.5rem' }}>
+                <span className="nmc-icon">👁️</span> Read-only mode - Editor or Admin access required to edit schedules
+              </div>
+            )}
 
             {/* Master Scheduling Toggle */}
             <div className={`nmc-schedule-master ${config.schedulingEnabled !== false ? 'enabled' : 'disabled'}`}>
@@ -1363,7 +1379,7 @@ function NotificationManagementCenter({ currentUser }) {
                     type="checkbox"
                     checked={config.schedulingEnabled !== false}
                     onChange={(e) => toggleScheduling(e.target.checked)}
-                    disabled={scalingScheduler}
+                    disabled={scalingScheduler || !canEdit}
                   />
                   <span className="nmc-schedule-toggle-track"></span>
                 </label>
@@ -1375,7 +1391,7 @@ function NotificationManagementCenter({ currentUser }) {
               )}
             </div>
 
-            {config.schedulingEnabled !== false && (
+            {config.schedulingEnabled !== false && currentUser && currentUser.role === 'admin' && (
               <div className="nmc-schedule-notice">
                 <Info size={16} className="nmc-schedule-notice-icon" />
                 <div className="nmc-schedule-notice-content">
@@ -1404,7 +1420,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="checkbox"
                       checked={config.triggerSchedule.realtimeAlerts.enabled}
                       onChange={(e) => handleScheduleToggle('realtimeAlerts', e.target.checked)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1416,7 +1432,7 @@ function NotificationManagementCenter({ currentUser }) {
                     <select
                       value={config.triggerSchedule.realtimeAlerts.checkIntervalMinutes}
                       onChange={(e) => handleScheduleUpdate('realtimeAlerts', 'checkIntervalMinutes', parseInt(e.target.value))}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                       className="nmc-schedule-select"
                     >
                       <option value={15}>15 minutes</option>
@@ -1443,7 +1459,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="checkbox"
                       checked={config.triggerSchedule.dailySummary.enabled}
                       onChange={(e) => handleScheduleToggle('dailySummary', e.target.checked)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1456,7 +1472,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="time"
                       value={config.triggerSchedule.dailySummary.time}
                       onChange={(e) => handleScheduleUpdate('dailySummary', 'time', e.target.value)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                       className="nmc-schedule-input"
                     />
                   </div>
@@ -1475,7 +1491,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="checkbox"
                       checked={config.triggerSchedule.weeklySummary.enabled}
                       onChange={(e) => handleScheduleToggle('weeklySummary', e.target.checked)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1502,7 +1518,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="time"
                       value={config.triggerSchedule.weeklySummary.time}
                       onChange={(e) => handleScheduleUpdate('weeklySummary', 'time', e.target.value)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                       className="nmc-schedule-input"
                     />
                   </div>
@@ -1521,7 +1537,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="checkbox"
                       checked={config.triggerSchedule.monthlySummary.enabled}
                       onChange={(e) => handleScheduleToggle('monthlySummary', e.target.checked)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                     />
                     <span className="nmc-schedule-toggle-track"></span>
                   </label>
@@ -1544,7 +1560,7 @@ function NotificationManagementCenter({ currentUser }) {
                       type="time"
                       value={config.triggerSchedule.monthlySummary.time}
                       onChange={(e) => handleScheduleUpdate('monthlySummary', 'time', e.target.value)}
-                      disabled={config.schedulingEnabled === false}
+                      disabled={config.schedulingEnabled === false || !canEdit}
                       className="nmc-schedule-input"
                     />
                   </div>

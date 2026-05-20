@@ -47,6 +47,12 @@ function LoginHistory({ currentUser }) {
   }, [pagination.offset, filter]);
 
   const fetchData = async () => {
+    // Only fetch login history if user is admin
+    if (!currentUser || currentUser.role !== 'admin') {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -437,20 +443,22 @@ function LoginHistory({ currentUser }) {
         </div>
       )}
 
-      {/* Login History Section */}
-      <div className="lh-section">
-        <div className="lh-section-header">
-          <div>
-            <h3 className="lh-section-title">Login History & Audit</h3>
-            <p className="lh-section-desc">Track successful logins and monitor account security</p>
-          </div>
-        </div>
+      {/* Login History Section (Admin Only) */}
+      {currentUser && currentUser.role === 'admin' && (
+        <>
+          <div className="lh-section">
+            <div className="lh-section-header">
+              <div>
+                <h3 className="lh-section-title">Login History & Audit</h3>
+                <p className="lh-section-desc">Track successful logins and monitor account security</p>
+              </div>
+            </div>
 
-        <div className="lh-privacy-note">
-          <span className="lh-privacy-icon">🔒</span>
-          <strong>Privacy:</strong> IP addresses are hashed (SHA256) for privacy. System IDs are device fingerprints for security monitoring.
-        </div>
-      </div>
+            <div className="lh-privacy-note">
+              <span className="lh-privacy-icon">🔒</span>
+              <strong>Privacy:</strong> IP addresses are hashed (SHA256) for privacy. System IDs are device fingerprints for security monitoring.
+            </div>
+          </div>
 
       {stats && (
         <div className="lh-stats-grid">
@@ -556,25 +564,27 @@ function LoginHistory({ currentUser }) {
         </table>
       </div>
 
-      <div className="lh-pagination">
-        <button
-          onClick={handlePrevPage}
-          disabled={pagination.offset === 0 || loading}
-          className="lh-page-btn"
-        >
-          ← Previous
-        </button>
-        <span className="lh-page-info">
-          Showing {pagination.offset + 1} - {pagination.offset + history.length}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={history.length < pagination.limit || loading}
-          className="lh-page-btn"
-        >
-          Next →
-        </button>
-      </div>
+          <div className="lh-pagination">
+            <button
+              onClick={handlePrevPage}
+              disabled={pagination.offset === 0 || loading}
+              className="lh-page-btn"
+            >
+              ← Previous
+            </button>
+            <span className="lh-page-info">
+              Showing {pagination.offset + 1} - {pagination.offset + history.length}
+            </span>
+            <button
+              onClick={handleNextPage}
+              disabled={history.length < pagination.limit || loading}
+              className="lh-page-btn"
+            >
+              Next →
+            </button>
+          </div>
+        </>
+      )}
 
       {/* User Modal */}
       {showUserModal && (
