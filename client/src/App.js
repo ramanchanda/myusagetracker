@@ -99,7 +99,7 @@ function AppContent() {
           <button onClick={handlePrint} className="btn btn-secondary">
             🖨️ Print
           </button>
-          {isAdmin && !isSecurityPage && (
+          {!isSecurityPage && (
             <Link to="/security" className="btn btn-secondary">
               🔒 Security
             </Link>
@@ -146,7 +146,7 @@ function AppContent() {
           }
         />
         <Route path="/notifications" element={<NotificationManagementCenter currentUser={currentUser} />} />
-        <Route path="/security" element={isAdmin ? <LoginHistory /> : <div>Access Denied</div>} />
+        <Route path="/security" element={<LoginHistory currentUser={currentUser} />} />
         <Route path="/report/print/:accountEmail" element={<PrintableDashboard />} />
         <Route path="/report/template/monthly/:accountEmail" element={<EnterpriseReport />} />
       </Routes>
