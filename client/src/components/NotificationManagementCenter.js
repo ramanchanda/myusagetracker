@@ -286,7 +286,8 @@ function NotificationManagementCenter({ currentUser }) {
       showMessage('success', `${scheduleType} ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
       console.error('Error updating schedule:', error);
-      showMessage('error', 'Failed to update schedule');
+      const errorMessage = error.response?.data?.error || 'Failed to update schedule';
+      showMessage('error', errorMessage);
     }
   };
 
@@ -308,7 +309,8 @@ function NotificationManagementCenter({ currentUser }) {
       showMessage('success', 'Schedule updated');
     } catch (error) {
       console.error('Error updating schedule:', error);
-      showMessage('error', 'Failed to update schedule');
+      const errorMessage = error.response?.data?.error || 'Failed to update schedule';
+      showMessage('error', errorMessage);
     }
   };
 
