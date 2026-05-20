@@ -23,12 +23,15 @@ function AppContent() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [reportView, setReportView] = useState('summary12');
 
-  const fetchEnterpriseHealth = useCallback(async () => {
+  const fetchEnterpriseHealth = useCallback(async (bustCache = false) => {
     try {
       setLoading(true);
       setError(null);
       await axios.get('/api/enterprise/structure', {
-        params: { month: selectedMonth }
+        params: {
+          month: selectedMonth,
+          nocache: bustCache ? 'true' : 'false'
+        }
       });
       setLastUpdate(new Date());
     } catch (err) {
@@ -61,7 +64,7 @@ function AppContent() {
   }, [fetchEnterpriseHealth, location.pathname]);
 
   const handleRefresh = () => {
-    fetchEnterpriseHealth();
+    fetchEnterpriseHealth(true); // Bust cache on manual refresh
   };
 
   const isHomePage = location.pathname === '/';

@@ -23,6 +23,7 @@ const reportsRouter = require('./routes/reports');
 const enterpriseLicenseService = require('./services/enterpriseLicenseService');
 const loginHistoryService = require('./services/loginHistoryService');
 const userService = require('./services/userService');
+const cacheService = require('./services/cacheService');
 const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin, requireEditor, getSessionTimeout } = require('./middleware/authMiddleware');
 
 const app = express();
@@ -253,6 +254,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
+// Cache statistics endpoint (admin only, added after auth middleware)
+// Will be protected by the middleware below
+
 // Protect all API routes except auth and health
 app.use('/api', (req, res, next) => {
   // Allow auth and health endpoints
@@ -265,6 +269,36 @@ app.use('/api', (req, res, next) => {
 
 // Protected API routes
 app.use('/api/reports', reportsRouter);
+
+// Cache management endpoints (admin only)
+app.get('/api/cache/stats', requireAdmin, (req, res) => {
+  try {
+    const stats = cacheService.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching cache stats:', error);
+    res.status(500).json({ error: 'Failed to fetch cache statistics' });
+  }
+});
+
+app.post('/api/cache/clear', requireAdmin, (req, res) => {
+  try {
+    const { pattern } = req.body;
+
+    if (pattern) {
+      const cleared = cacheService.clearPattern(pattern);
+      console.log(`[Cache] Admin cleared ${cleared} entries matching pattern: ${pattern}`);
+      res.json({ success: true, cleared, pattern });
+    } else {
+      const cleared = cacheService.clearAll();
+      console.log(`[Cache] Admin cleared all cache (${cleared} entries)`);
+      res.json({ success: true, cleared, message: 'All cache cleared' });
+    }
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+    res.status(500).json({ error: 'Failed to clear cache' });
+  }
+});
 
 app.get('/api/usage/dynos', async (req, res) => {
   try {
@@ -404,7 +438,25 @@ app.get('/api/enterprise/structure', async (req, res) => {
   try {
     const month = req.query.month;
     const enterpriseAccountId = req.query.accountId; // Optional: specific account
+    const nocache = req.query.nocache === 'true'; // Cache busting flag
+
+    // Build cache key
+    const cacheKey = `enterprise_structure_${month || 'current'}_${enterpriseAccountId || 'all'}`;
+
+    // Check cache first (unless nocache flag is set)
+    if (!nocache) {
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        console.log('[Cache] HIT - enterprise structure');
+        return res.json(cached);
+      }
+    }
+
+    console.log('[Cache] MISS - enterprise structure, fetching from API...');
     const structure = await enterpriseUsageService.getEnterpriseStructure(month, enterpriseAccountId);
+
+    // Cache for 5 minutes (300000ms)
+    cacheService.set(cacheKey, structure, 300000);
 
     // Dashboard refresh no longer triggers notifications
     // Notifications are now handled by scheduled orchestrator
@@ -421,7 +473,25 @@ app.get('/api/enterprise/structure', async (req, res) => {
 app.get('/api/enterprise/all-accounts', async (req, res) => {
   try {
     const month = req.query.month;
+    const nocache = req.query.nocache === 'true'; // Cache busting flag
+
+    // Build cache key
+    const cacheKey = `enterprise_all_accounts_${month || 'current'}`;
+
+    // Check cache first (unless nocache flag is set)
+    if (!nocache) {
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        console.log('[Cache] HIT - all enterprise accounts');
+        return res.json(cached);
+      }
+    }
+
+    console.log('[Cache] MISS - all enterprise accounts, fetching from API...');
     const structure = await enterpriseUsageService.getAllEnterpriseAccountsStructure(month);
+
+    // Cache for 5 minutes (300000ms)
+    cacheService.set(cacheKey, structure, 300000);
 
     // Dashboard refresh no longer triggers notifications
     // Notifications are now handled by scheduled orchestrator
@@ -438,11 +508,30 @@ app.get('/api/enterprise/trend-summary', async (req, res) => {
     const month = req.query.month;
     const enterpriseAccountId = req.query.accountId;
     const includeAllAccounts = req.query.allAccounts === 'true';
+    const nocache = req.query.nocache === 'true'; // Cache busting flag
+
+    // Build cache key
+    const cacheKey = `enterprise_trend_${month || 'current'}_${enterpriseAccountId || 'all'}_${includeAllAccounts}`;
+
+    // Check cache first (unless nocache flag is set)
+    if (!nocache) {
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        console.log('[Cache] HIT - enterprise trend summary');
+        return res.json(cached);
+      }
+    }
+
+    console.log('[Cache] MISS - enterprise trend summary, fetching from API...');
     const trend = await enterpriseUsageService.getEnterpriseTrendSummary(
       month,
       enterpriseAccountId,
       includeAllAccounts
     );
+
+    // Cache for 5 minutes (300000ms)
+    cacheService.set(cacheKey, trend, 300000);
+
     res.json(trend);
   } catch (error) {
     console.error('Error fetching enterprise trend summary:', error.message);
@@ -453,6 +542,19 @@ app.get('/api/enterprise/trend-summary', async (req, res) => {
 // List enterprise accounts with billing access check
 app.get('/api/enterprise/accounts', async (req, res) => {
   try {
+    const nocache = req.query.nocache === 'true'; // Cache busting flag
+    const cacheKey = 'enterprise_accounts_list';
+
+    // Check cache first (unless nocache flag is set)
+    if (!nocache) {
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        console.log('[Cache] HIT - enterprise accounts list');
+        return res.json(cached);
+      }
+    }
+
+    console.log('[Cache] MISS - enterprise accounts list, fetching from API...');
     const client = enterpriseUsageService.createHerokuClient();
     const accounts = await enterpriseUsageService.getAllEnterpriseAccounts(client);
 
@@ -472,6 +574,9 @@ app.get('/api/enterprise/accounts', async (req, res) => {
         };
       })
     );
+
+    // Cache for 5 minutes (300000ms)
+    cacheService.set(cacheKey, accountsWithAccess, 300000);
 
     res.json(accountsWithAccess);
   } catch (error) {
