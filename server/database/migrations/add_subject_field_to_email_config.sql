@@ -8,7 +8,7 @@ BEGIN
   SET config_value = jsonb_set(
     config_value,
     '{emailConfig,subject}',
-    '""\',
+    '""',
     true
   )
   WHERE config_value->'emailConfig' IS NOT NULL
