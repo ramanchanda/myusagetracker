@@ -22,6 +22,7 @@ const db = require('./services/databaseService');
 const reportsRouter = require('./routes/reports');
 const enterpriseLicenseService = require('./services/enterpriseLicenseService');
 const loginHistoryService = require('./services/loginHistoryService');
+const userService = require('./services/userService');
 const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin, getSessionTimeout } = require('./middleware/authMiddleware');
 
 const app = express();
@@ -85,10 +86,8 @@ app.post('/api/auth/login', async (req, res) => {
 
   const adminUsername = process.env.APP_ADMIN_USERNAME;
   const adminPassword = process.env.APP_ADMIN_PASSWORD;
-  const generalUsername = process.env.APP_GENERAL_USERNAME;
-  const generalPassword = process.env.APP_GENERAL_PASSWORD;
 
-  // Validate admin credentials
+  // Check 1: Validate admin credentials (config vars - highest priority)
   if (username === adminUsername && password === adminPassword && adminUsername && adminPassword) {
     req.session.authenticated = true;
     req.session.user = {
@@ -109,25 +108,34 @@ app.post('/api/auth/login', async (req, res) => {
     return res.json({ success: true, role: 'admin' });
   }
 
-  // Validate general user credentials
-  if (username === generalUsername && password === generalPassword && generalUsername && generalPassword) {
-    req.session.authenticated = true;
-    req.session.user = {
-      username: username,
-      role: 'general'
-    };
-    req.session.lastActivity = Date.now();
-    console.log('[Auth] General user login successful for user:', username);
+  // Check 2: Validate database users (viewer/editor roles)
+  try {
+    const dbUser = await userService.authenticateUser(username, password);
 
-    // Log successful login (general)
-    await loginHistoryService.logLoginAttempt({
-      username,
-      role: 'general',
-      ipAddress,
-      userAgent
-    });
+    if (dbUser) {
+      req.session.authenticated = true;
+      req.session.user = {
+        username: dbUser.username,
+        role: dbUser.role,
+        fullName: dbUser.full_name,
+        email: dbUser.email
+      };
+      req.session.lastActivity = Date.now();
+      console.log(`[Auth] Database user login successful: ${username} (${dbUser.role})`);
 
-    return res.json({ success: true, role: 'general' });
+      // Log successful login
+      await loginHistoryService.logLoginAttempt({
+        username,
+        role: dbUser.role,
+        ipAddress,
+        userAgent
+      });
+
+      return res.json({ success: true, role: dbUser.role, user: req.session.user });
+    }
+  } catch (error) {
+    console.error('[Auth] Error checking database user:', error);
+    // Continue to failed login below
   }
 
   // Failed login - do NOT log to database (only successful logins are tracked)
@@ -1010,6 +1018,80 @@ app.get('/api/debug/addons', async (req, res) => {
     res.json(debugInfo);
   } catch (error) {
     console.error('Error in debug endpoint:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========================================
+// User Management API (Admin Only)
+// ========================================
+
+// Get all users
+app.get('/api/users', requireAdmin, async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new user
+app.post('/api/users', requireAdmin, async (req, res) => {
+  try {
+    const { username, password, fullName, email, role } = req.body;
+
+    // Validation
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    if (!['viewer', 'editor'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be viewer or editor' });
+    }
+
+    const createdBy = req.session.user.username;
+    const user = await userService.createUser(
+      { username, password, fullName, email, role },
+      createdBy
+    );
+
+    res.status(201).json(user);
+  } catch (error) {
+    console.error('Error creating user:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user
+app.put('/api/users/:username', requireAdmin, async (req, res) => {
+  try {
+    const { username } = req.params;
+    const updates = req.body;
+
+    const user = await userService.updateUser(username, updates);
+    res.json(user);
+  } catch (error) {
+    console.error(`Error updating user ${req.params.username}:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete user
+app.delete('/api/users/:username', requireAdmin, async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Prevent deleting own account
+    if (username === req.session.user.username) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    await userService.deleteUser(username);
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error(`Error deleting user ${req.params.username}:`, error.message);
     res.status(500).json({ error: error.message });
   }
 });

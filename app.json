@@ -29,23 +29,13 @@
       "required": true
     },
     "APP_ADMIN_USERNAME": {
-      "description": "Admin username for dashboard login (change after deployment)",
+      "description": "Admin username for dashboard login (stored in config vars for security)",
       "value": "admin",
       "required": true
     },
     "APP_ADMIN_PASSWORD": {
-      "description": "Admin password - CHANGE THIS IMMEDIATELY after deployment",
+      "description": "Admin password - CHANGE THIS IMMEDIATELY after deployment. Additional users can be created by admin in the UI.",
       "value": "changeme-admin-password",
-      "required": true
-    },
-    "APP_GENERAL_USERNAME": {
-      "description": "General user username for read-only dashboard access",
-      "value": "general",
-      "required": true
-    },
-    "APP_GENERAL_PASSWORD": {
-      "description": "General user password - CHANGE THIS after deployment",
-      "value": "changeme-general-password",
       "required": true
     },
     "HEROKU_API_TOKEN": {
