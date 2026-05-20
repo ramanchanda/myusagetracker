@@ -8,6 +8,20 @@ import PrintableDashboard from './components/PrintableDashboard';
 import EnterpriseReport from './components/reports/EnterpriseReport';
 import './App.css';
 
+// Global axios interceptor for session timeout handling
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle 401 Unauthorized (session expired)
+    if (error.response && error.response.status === 401) {
+      console.log('[App] Session expired - redirecting to login');
+      // Force full page reload to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 function AppContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
