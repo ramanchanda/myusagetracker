@@ -144,8 +144,8 @@ function EnterpriseLicenseManagement() {
 
   const canEditAccount = (accountId) => {
     const account = accounts.find(a => a.id === accountId);
-    // Can only edit if user is admin AND account has billing access
-    return isAdmin && account?.has_billing_access !== false;
+    // Can edit if user is admin or editor AND account has billing access
+    return (currentUser?.role === 'admin' || currentUser?.role === 'editor') && account?.has_billing_access !== false;
   };
 
   const getStatusColor = (status) => {
@@ -172,6 +172,7 @@ function EnterpriseLicenseManagement() {
   };
 
   const isAdmin = currentUser?.role === 'admin';
+  const canEdit = currentUser?.role === 'admin' || currentUser?.role === 'editor';
 
   if (loading) {
     return (
@@ -198,9 +199,9 @@ function EnterpriseLicenseManagement() {
         <p className="elm-section-desc">
           Configure license capacity limits and monitoring thresholds for each Enterprise Account
         </p>
-        {!isAdmin && (
+        {!canEdit && (
           <div className="elm-readonly-notice">
-            <span className="elm-icon">👁️</span> Read-only mode - Admin access required to edit licenses
+            <span className="elm-icon">👁️</span> Read-only mode - Editor or Admin access required to edit licenses
           </div>
         )}
       </div>

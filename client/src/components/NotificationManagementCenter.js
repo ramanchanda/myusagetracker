@@ -1015,7 +1015,7 @@ function NotificationManagementCenter({ currentUser }) {
               <div>
                 <h2 className="nmc-section-title">Email Configuration</h2>
               </div>
-              {!editingEmail && currentUser && currentUser.role === 'admin' && (
+              {!editingEmail && currentUser && (currentUser.role === 'admin' || currentUser.role === 'editor') && (
                 <button onClick={startEditingEmail} className="nmc-btn nmc-btn-primary">
                   Edit Configuration
                 </button>

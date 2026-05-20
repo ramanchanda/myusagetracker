@@ -96,10 +96,30 @@ function requireAdmin(req, res, next) {
   res.status(403).json({ error: 'Admin access required' });
 }
 
+/**
+ * Check if user has editor or admin role (can configure notifications/licenses)
+ */
+function requireEditor(req, res, next) {
+  if (!req.session || !req.session.authenticated) {
+    console.log('[Auth] Not authenticated - cannot check editor role');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const role = req.session.user?.role;
+  if (role === 'admin' || role === 'editor') {
+    console.log(`[Auth] Editor/Admin access granted for: ${req.session.user.username} (${role})`);
+    return next();
+  }
+
+  console.log('[Auth] Editor access denied - insufficient permissions (role:', role, ')');
+  res.status(403).json({ error: 'Editor or Admin access required' });
+}
+
 module.exports = {
   isAuthenticated,
   redirectIfAuthenticated,
   checkSessionTimeout,
   requireAdmin,
+  requireEditor,
   getSessionTimeout
 };

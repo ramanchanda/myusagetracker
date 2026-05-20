@@ -23,7 +23,7 @@ const reportsRouter = require('./routes/reports');
 const enterpriseLicenseService = require('./services/enterpriseLicenseService');
 const loginHistoryService = require('./services/loginHistoryService');
 const userService = require('./services/userService');
-const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin, getSessionTimeout } = require('./middleware/authMiddleware');
+const { isAuthenticated, redirectIfAuthenticated, checkSessionTimeout, requireAdmin, requireEditor, getSessionTimeout } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -555,8 +555,8 @@ app.get('/api/notifications/config', async (req, res) => {
   }
 });
 
-// Update full notification configuration
-app.put('/api/notifications/config', async (req, res) => {
+// Update full notification configuration (requires editor or admin)
+app.put('/api/notifications/config', requireEditor, async (req, res) => {
   try {
     const updatedBy = req.session?.user?.username || 'anonymous';
     const config = await configService.updateConfig(req.body, updatedBy);
@@ -669,8 +669,8 @@ app.get('/api/notifications/email-config', async (req, res) => {
   }
 });
 
-// Update email configuration
-app.put('/api/notifications/email-config', async (req, res) => {
+// Update email configuration (requires editor or admin)
+app.put('/api/notifications/email-config', requireEditor, async (req, res) => {
   try {
     const emailConfig = await configService.updateEmailConfig(req.body);
     res.json(emailConfig);
@@ -717,8 +717,8 @@ app.get('/api/notifications/schedule', async (req, res) => {
   }
 });
 
-// Update trigger schedule
-app.put('/api/notifications/schedule', async (req, res) => {
+// Update trigger schedule (requires editor or admin)
+app.put('/api/notifications/schedule', requireEditor, async (req, res) => {
   try {
     const schedule = await configService.updateTriggerSchedule(req.body);
     res.json(schedule);
@@ -941,8 +941,8 @@ app.get('/api/licenses/enterprise/:accountId', async (req, res) => {
   }
 });
 
-// Update license config (admin only)
-app.put('/api/licenses/enterprise/:accountId', requireAdmin, async (req, res) => {
+// Update license config (requires editor or admin)
+app.put('/api/licenses/enterprise/:accountId', requireEditor, async (req, res) => {
   try {
     const { accountId } = req.params;
 
@@ -965,8 +965,8 @@ app.put('/api/licenses/enterprise/:accountId', requireAdmin, async (req, res) =>
   }
 });
 
-// Bulk update license configs (admin only)
-app.post('/api/licenses/enterprise/bulk', requireAdmin, async (req, res) => {
+// Bulk update license configs (requires editor or admin)
+app.post('/api/licenses/enterprise/bulk', requireEditor, async (req, res) => {
   try {
     const { configs } = req.body;
     const updatedBy = req.session.user.username;
