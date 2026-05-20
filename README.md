@@ -241,19 +241,50 @@ curl -X POST https://your-app.herokuapp.com/api/notifications/send-test
 
 ## 🌐 Heroku Deployment
 
-### 1. Create Heroku App
+### Option 1: One-Click Deploy (Recommended)
+
+The fastest way to deploy - click the button below for automatic setup:
+
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+**What happens automatically:**
+- ✅ PostgreSQL database provisioned (Essential-0 plan)
+- ✅ Web and Clock dynos configured (Basic plan)
+- ✅ Database migrations run automatically
+- ✅ Session secret auto-generated
+- ✅ Environment variables prompted during setup
+- ✅ Application ready to use immediately
+
+**You'll be prompted to configure:**
+1. **HEROKU_API_TOKEN** (required) - Get from: https://dashboard.heroku.com/account/applications
+2. **Admin credentials** (change after deployment)
+3. **Email settings** (optional - configure in UI after login)
+
+**After deployment:**
+1. **IMMEDIATELY change default passwords** (admin/general)
+2. Configure email notifications in Notification Management UI
+3. Set licensed capacity for your enterprise accounts
+4. Enable/configure schedules as needed
+
+---
+
+### Option 2: Manual Deployment
+
+For advanced users or custom configurations:
+
+#### 1. Create Heroku App
 
 ```bash
 heroku create your-app-name
 ```
 
-### 2. Add PostgreSQL Database
+#### 2. Add PostgreSQL Database
 
 ```bash
-heroku addons:create heroku-postgresql:mini
+heroku addons:create heroku-postgresql:essential-0
 ```
 
-### 3. Set Environment Variables
+#### 3. Set Environment Variables
 
 ```bash
 # Security (CRITICAL)
@@ -276,31 +307,31 @@ heroku config:set MAILGUN_DOMAIN=mg.yourdomain.com
 heroku config:set NODE_ENV=production
 ```
 
-### 4. Scale Clock Dyno (for scheduled notifications)
+#### 4. Scale Clock Dyno (for scheduled notifications)
 
 ```bash
 heroku ps:scale clock=1
 ```
 
-### 5. Deploy
+#### 5. Deploy
 
 ```bash
 git push heroku main
 ```
 
-### 6. Run Database Migrations
+#### 6. Run Database Migrations
 
 ```bash
 heroku run npm run migrate
 ```
 
-### 7. Open Dashboard
+#### 7. Open Dashboard
 
 ```bash
 heroku open
 ```
 
-### 8. Configure Notifications
+#### 8. Configure Notifications
 
 1. Log in with admin credentials
 2. Navigate to **Notification Management**
@@ -308,6 +339,36 @@ heroku open
 4. Configure schedules in **Schedule** tab
 5. Configure licenses in **Licenses** tab
 6. Test configuration with **Send Test Email** button
+
+---
+
+### Deployment Notes
+
+**Dyno Sizing:**
+- Recommended: Basic dynos for web and clock (included in app.json)
+- Minimum: Eco dynos work but may sleep (not recommended for production)
+- For high-volume: Standard-1X or higher
+
+**Database Sizing:**
+- Essential-0: Good for up to 10 enterprise accounts
+- Essential-1: Good for up to 50 enterprise accounts
+- Premium plans: For larger deployments with extensive history
+
+**Cost Estimate (Monthly):**
+- Basic web dyno: $7
+- Basic clock dyno: $7
+- PostgreSQL Essential-0: $5
+- **Total: ~$19/month**
+
+**Upgrading dynos:**
+```bash
+# Upgrade to Standard dynos
+heroku ps:type web=standard-1x
+heroku ps:type clock=standard-1x
+
+# Upgrade database
+heroku addons:upgrade DATABASE=essential-1
+```
 
 ---
 

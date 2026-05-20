@@ -1,59 +1,135 @@
 {
-  "name": "Heroku Usage Tracker",
-  "description": "Track Heroku resource usage and get notified about overages",
-  "repository": "https://github.com/yourusername/heroku-usage-tracker",
-  "keywords": ["heroku", "monitoring", "usage", "notifications", "dashboard"],
+  "name": "Heroku Enterprise Usage Tracker",
+  "description": "Production-grade usage tracking, license management, and intelligent notification system for Heroku Enterprise Accounts. Monitor resource utilization, receive smart alerts, and manage licensed capacity across multiple enterprise accounts.",
+  "keywords": [
+    "heroku",
+    "enterprise",
+    "monitoring",
+    "usage",
+    "reporting",
+    "notifications",
+    "license-management",
+    "dashboard"
+  ],
+  "repository": "https://github.com/ramanchanda/myusagetracker",
+  "logo": "https://www.herokucdn.com/deploy/button.svg",
+  "success_url": "/",
+  "scripts": {
+    "postdeploy": "npm run migrate"
+  },
   "env": {
-    "HEROKU_API_KEY": {
-      "description": "Your Heroku API key (get it with: heroku auth:token)",
-      "required": true
-    },
-    "HEROKU_ACCOUNT_EMAIL": {
-      "description": "Your Heroku account email address",
-      "required": true
-    },
-    "NOTIFICATION_EMAIL": {
-      "description": "Email address to receive notifications",
-      "required": true
-    },
-    "SMTP_HOST": {
-      "description": "SMTP server hostname (e.g., smtp.gmail.com)",
-      "value": "smtp.gmail.com"
-    },
-    "SMTP_PORT": {
-      "description": "SMTP server port",
-      "value": "587"
-    },
-    "SMTP_USER": {
-      "description": "SMTP username (email address)",
-      "required": true
-    },
-    "SMTP_PASS": {
-      "description": "SMTP password or app password",
-      "required": true
-    },
-    "DYNO_THRESHOLD": {
-      "description": "Dyno usage percentage threshold for alerts",
-      "value": "80"
-    },
-    "CONNECT_THRESHOLD": {
-      "description": "Connect usage percentage threshold for alerts",
-      "value": "80"
-    },
     "NODE_ENV": {
-      "description": "Node environment",
-      "value": "production"
+      "description": "Node environment (production for Heroku deployment)",
+      "value": "production",
+      "required": true
+    },
+    "APP_SESSION_SECRET": {
+      "description": "Secure random string for session encryption (auto-generated)",
+      "generator": "secret",
+      "required": true
+    },
+    "APP_ADMIN_USERNAME": {
+      "description": "Admin username for dashboard login (change after deployment)",
+      "value": "admin",
+      "required": true
+    },
+    "APP_ADMIN_PASSWORD": {
+      "description": "Admin password - CHANGE THIS IMMEDIATELY after deployment",
+      "value": "changeme-admin-password",
+      "required": true
+    },
+    "APP_GENERAL_USERNAME": {
+      "description": "General user username for read-only dashboard access",
+      "value": "general",
+      "required": true
+    },
+    "APP_GENERAL_PASSWORD": {
+      "description": "General user password - CHANGE THIS after deployment",
+      "value": "changeme-general-password",
+      "required": true
+    },
+    "HEROKU_API_TOKEN": {
+      "description": "Heroku OAuth token with billing access to enterprise accounts (get from: https://dashboard.heroku.com/account/applications)",
+      "required": true
+    },
+    "MAILGUN_API_KEY": {
+      "description": "Mailgun API key for email notifications (get from: https://app.mailgun.com/app/account/security/api_keys)",
+      "required": false
+    },
+    "MAILGUN_DOMAIN": {
+      "description": "Mailgun verified domain (e.g., mg.yourdomain.com)",
+      "required": false
+    },
+    "MAILGUN_SMTP_SERVER": {
+      "description": "SMTP server for email fallback (default: smtp.mailgun.org)",
+      "value": "smtp.mailgun.org",
+      "required": false
+    },
+    "MAILGUN_SMTP_PORT": {
+      "description": "SMTP port for email fallback (default: 587)",
+      "value": "587",
+      "required": false
+    },
+    "MAILGUN_SMTP_LOGIN": {
+      "description": "SMTP login username (e.g., postmaster@mg.yourdomain.com)",
+      "required": false
+    },
+    "MAILGUN_SMTP_PASSWORD": {
+      "description": "SMTP password for email fallback",
+      "required": false
+    },
+    "SESSION_TIMEOUT_MINUTES": {
+      "description": "Session timeout in minutes (default: 480 = 8 hours)",
+      "value": "480",
+      "required": false
+    },
+    "CORS_ORIGIN": {
+      "description": "CORS origin for API requests (optional - auto-configured)",
+      "required": false
+    },
+    "LOG_ALL_QUERIES": {
+      "description": "Log all database queries for debugging (default: false - only logs slow queries)",
+      "value": "false",
+      "required": false
     }
   },
   "formation": {
     "web": {
       "quantity": 1,
-      "size": "eco"
+      "size": "basic"
+    },
+    "clock": {
+      "quantity": 1,
+      "size": "basic"
     }
   },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0",
+      "as": "DATABASE"
+    }
+  ],
   "buildpacks": [
     {
       "url": "heroku/nodejs"
     }
-  ]
+  ],
+  "environments": {
+    "test": {
+      "formation": {
+        "web": {
+          "quantity": 1,
+          "size": "basic"
+        },
+        "clock": {
+          "quantity": 0
+        }
+      },
+      "addons": [
+        {
+          "plan": "heroku-postgresql:essential-0"
+        }
+      ]
+    }
+  }
 }

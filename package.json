@@ -10,6 +10,7 @@
     "build": "cd client && npm run build",
     "heroku-postbuild": "cd client && npm install && npm run build",
     "migrate": "node server/scripts/run-migrations.js",
+    "setup": "node server/scripts/postdeploy-setup.js",
     "lint:syntax": "node scripts/validate-syntax.js",
     "validate": "npm run lint:syntax",
     "predeploy": "npm run validate",
