@@ -906,3 +906,11 @@ For issues and questions, please open an issue on the GitHub repository.
 - ✅ Clock dyno scheduler with dynamic configuration
 
 See `AUDIT_COMPLETE.md` for detailed analysis and optimization recommendations.
+
+---
+
+## ⚠️ Disclaimer
+
+The author of this article makes no warranties regarding the completeness, reliability, or accuracy of the information provided. Any action you take based on the information in this website/repository is strictly at your own risk, and the author will not be liable for any losses or damages arising from the use of the website and the information provided.
+
+None of the items included in this repository constitute or form part of the official Heroku Services.
