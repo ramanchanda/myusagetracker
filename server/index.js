@@ -567,9 +567,8 @@ app.put('/api/notifications/config', requireEditor, async (req, res) => {
   }
 });
 
-// Restart clock dyno (requires admin)
-// Scale clock dyno (enable/disable scheduling)
-app.post('/api/scheduler/scale', requireAdmin, async (req, res) => {
+// Scale clock dyno (enable/disable scheduling) - requires editor or admin
+app.post('/api/scheduler/scale', requireEditor, async (req, res) => {
   try {
     const { enabled } = req.body;
     const herokuToken = process.env.HEROKU_API_TOKEN || process.env.HEROKU_API_KEY;
@@ -616,8 +615,8 @@ app.post('/api/scheduler/scale', requireAdmin, async (req, res) => {
   }
 });
 
-// Restart clock dyno
-app.post('/api/scheduler/restart', requireAdmin, async (req, res) => {
+// Restart clock dyno - requires editor or admin
+app.post('/api/scheduler/restart', requireEditor, async (req, res) => {
   try {
     const herokuToken = process.env.HEROKU_API_TOKEN || process.env.HEROKU_API_KEY;
     const appName = process.env.HEROKU_APP_NAME || 'herokuusagetracker';

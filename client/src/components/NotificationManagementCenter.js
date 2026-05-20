@@ -1393,7 +1393,7 @@ function NotificationManagementCenter({ currentUser }) {
               )}
             </div>
 
-            {config.schedulingEnabled !== false && currentUser && currentUser.role === 'admin' && (
+            {config.schedulingEnabled !== false && canEdit && (
               <div className="nmc-schedule-notice">
                 <Info size={16} className="nmc-schedule-notice-icon" />
                 <div className="nmc-schedule-notice-content">
