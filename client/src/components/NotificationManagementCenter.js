@@ -43,10 +43,26 @@ function NotificationManagementCenter({ currentUser }) {
   });
   const [newRecipient, setNewRecipient] = useState('');
 
+  // User management state
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userForm, setUserForm] = useState({
+    username: '',
+    password: '',
+    fullName: '',
+    email: '',
+    role: 'viewer'
+  });
+
   useEffect(() => {
     fetchData();
     fetchEnterpriseUsage();
     fetchCooldownStatus();
+    if (currentUser && currentUser.role === 'admin') {
+      fetchUsers();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -181,6 +197,119 @@ function NotificationManagementCenter({ currentUser }) {
     } catch (error) {
       console.error('Error fetching cooldown status:', error);
       // Fail silently - assume no cooldown if can't fetch
+    }
+  };
+
+  // User Management Functions
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      const response = await axios.get('/api/users');
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      showMessage('error', 'Failed to load users');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const openUserModal = (user = null) => {
+    if (user) {
+      setEditingUser(user);
+      setUserForm({
+        username: user.username,
+        password: '', // Don't populate password on edit
+        fullName: user.full_name || '',
+        email: user.email || '',
+        role: user.role
+      });
+    } else {
+      setEditingUser(null);
+      setUserForm({
+        username: '',
+        password: '',
+        fullName: '',
+        email: '',
+        role: 'viewer'
+      });
+    }
+    setShowUserModal(true);
+  };
+
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setEditingUser(null);
+    setUserForm({
+      username: '',
+      password: '',
+      fullName: '',
+      email: '',
+      role: 'viewer'
+    });
+  };
+
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      if (editingUser) {
+        // Update existing user
+        const updates = {
+          fullName: userForm.fullName,
+          email: userForm.email,
+          role: userForm.role
+        };
+
+        // Only include password if it was changed
+        if (userForm.password) {
+          updates.password = userForm.password;
+        }
+
+        await axios.put(`/api/users/${editingUser.username}`, updates);
+        showMessage('success', 'User updated successfully');
+      } else {
+        // Create new user
+        if (!userForm.username || !userForm.password) {
+          showMessage('error', 'Username and password are required');
+          return;
+        }
+
+        await axios.post('/api/users', userForm);
+        showMessage('success', 'User created successfully');
+      }
+
+      closeUserModal();
+      fetchUsers();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      showMessage('error', error.response?.data?.error || 'Failed to save user');
+    }
+  };
+
+  const handleDeleteUser = async (username) => {
+    if (!window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/users/${username}`);
+      showMessage('success', 'User deleted successfully');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showMessage('error', error.response?.data?.error || 'Failed to delete user');
+    }
+  };
+
+  const toggleUserStatus = async (username, currentStatus) => {
+    try {
+      await axios.put(`/api/users/${username}`, { isActive: !currentStatus });
+      showMessage('success', `User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      showMessage('error', 'Failed to update user status');
     }
   };
 
@@ -970,6 +1099,106 @@ function NotificationManagementCenter({ currentUser }) {
               </div>
             </div>
 
+            {/* User Management (Admin Only) */}
+            {currentUser && currentUser.role === 'admin' && (
+              <div className="nmc-section">
+                <div className="nmc-section-header">
+                  <h2 className="nmc-section-title">User Management</h2>
+                  <button
+                    onClick={() => openUserModal()}
+                    className="nmc-btn nmc-btn-primary"
+                  >
+                    + Add User
+                  </button>
+                </div>
+
+                {usersLoading ? (
+                  <div className="nmc-loading">Loading users...</div>
+                ) : (
+                  <div className="nmc-users-table-wrap">
+                    <table className="nmc-users-table">
+                      <thead>
+                        <tr>
+                          <th>Username</th>
+                          <th>Full Name</th>
+                          <th>Email</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th>Last Login</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                              No users created yet. Click "Add User" to create your first user.
+                            </td>
+                          </tr>
+                        ) : (
+                          users.map((user) => (
+                            <tr key={user.username}>
+                              <td><strong>{user.username}</strong></td>
+                              <td>{user.full_name || '—'}</td>
+                              <td>{user.email || '—'}</td>
+                              <td>
+                                <span className={`nmc-role-badge ${user.role}`}>
+                                  {user.role}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`nmc-status-badge ${user.is_active ? 'active' : 'inactive'}`}>
+                                  {user.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td>
+                                {user.last_login_at
+                                  ? new Date(user.last_login_at).toLocaleDateString()
+                                  : 'Never'}
+                              </td>
+                              <td>
+                                <div className="nmc-user-actions">
+                                  <button
+                                    onClick={() => openUserModal(user)}
+                                    className="nmc-btn-icon"
+                                    title="Edit user"
+                                  >
+                                    ✎
+                                  </button>
+                                  <button
+                                    onClick={() => toggleUserStatus(user.username, user.is_active)}
+                                    className="nmc-btn-icon"
+                                    title={user.is_active ? 'Deactivate' : 'Activate'}
+                                  >
+                                    {user.is_active ? '🔓' : '🔒'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteUser(user.username)}
+                                    className="nmc-btn-icon nmc-btn-danger"
+                                    title="Delete user"
+                                  >
+                                    🗑
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="nmc-info-box" style={{ marginTop: '1rem' }}>
+                  <Info size={16} />
+                  <div>
+                    <strong>Note:</strong> Admin user (from config vars) is not shown here.
+                    Viewer role = read-only access. Editor role = can configure notifications/licenses.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Recent Activity */}
             <div className="nmc-section">
               <h2 className="nmc-section-title">Recent Activity</h2>
@@ -1554,6 +1783,103 @@ function NotificationManagementCenter({ currentUser }) {
           </div>
         )}
       </div>
+
+      {/* User Modal */}
+      {showUserModal && (
+        <div className="nmc-modal-overlay" onClick={closeUserModal}>
+          <div className="nmc-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="nmc-modal-header">
+              <h3>{editingUser ? 'Edit User' : 'Create New User'}</h3>
+              <button onClick={closeUserModal} className="nmc-modal-close">&times;</button>
+            </div>
+
+            <form onSubmit={handleUserSubmit} className="nmc-modal-body">
+              <div className="nmc-form-group">
+                <label htmlFor="username">Username *</label>
+                <input
+                  id="username"
+                  type="text"
+                  value={userForm.username}
+                  onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                  disabled={editingUser !== null}
+                  required
+                  className="nmc-input"
+                  placeholder="johndoe"
+                />
+                {editingUser && (
+                  <small style={{ color: '#666' }}>Username cannot be changed</small>
+                )}
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="password">
+                  Password {editingUser ? '(leave blank to keep current)' : '*'}
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  required={!editingUser}
+                  className="nmc-input"
+                  placeholder={editingUser ? 'Leave blank to keep current password' : 'Enter password'}
+                />
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="fullName">Full Name</label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={userForm.fullName}
+                  onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                  className="nmc-input"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  className="nmc-input"
+                  placeholder="john@example.com"
+                />
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="role">Role *</label>
+                <select
+                  id="role"
+                  value={userForm.role}
+                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                  required
+                  className="nmc-input"
+                >
+                  <option value="viewer">Viewer (Read-only)</option>
+                  <option value="editor">Editor (Can configure)</option>
+                </select>
+                <small style={{ color: '#666', marginTop: '0.25rem', display: 'block' }}>
+                  Viewer: Read-only dashboard access<br/>
+                  Editor: Can configure notifications, licenses, and schedules
+                </small>
+              </div>
+
+              <div className="nmc-modal-footer">
+                <button type="button" onClick={closeUserModal} className="nmc-btn nmc-btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="nmc-btn nmc-btn-primary">
+                  {editingUser ? 'Update User' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

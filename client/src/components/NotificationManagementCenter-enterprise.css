@@ -1654,3 +1654,232 @@ body {
   border-bottom: none;
   padding-bottom: 0;
 }
+
+/* ========================================================================
+   USER MANAGEMENT STYLES
+   ======================================================================== */
+
+.nmc-users-table-wrap {
+  overflow-x: auto;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e7eaf3;
+}
+
+.nmc-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.nmc-users-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e7eaf3;
+}
+
+.nmc-users-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.nmc-users-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e7eaf3;
+  color: #2d3748;
+}
+
+.nmc-users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.nmc-users-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.nmc-role-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.nmc-role-badge.viewer {
+  background: #e0e7ff;
+  color: #5b21b6;
+}
+
+.nmc-role-badge.editor {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.nmc-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.nmc-status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nmc-status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.nmc-user-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nmc-btn-icon {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  color: #4a5568;
+}
+
+.nmc-btn-icon:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.nmc-btn-icon.nmc-btn-danger:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Modal Styles */
+.nmc-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.nmc-modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.nmc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e7eaf3;
+}
+
+.nmc-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1d29;
+}
+
+.nmc-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.nmc-modal-close:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.nmc-modal-body {
+  padding: 24px;
+}
+
+.nmc-form-group {
+  margin-bottom: 20px;
+}
+
+.nmc-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.nmc-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.nmc-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.nmc-input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.nmc-modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid #e7eaf3;
+}
+
+.nmc-btn-secondary {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.nmc-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
