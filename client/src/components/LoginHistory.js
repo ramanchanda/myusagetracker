@@ -606,7 +606,7 @@ function LoginHistory({ currentUser }) {
                   disabled={editingUser !== null}
                   required
                   className="lh-input"
-                  placeholder="johndoe"
+                  placeholder="Enter username"
                 />
                 {editingUser && (
                   <small style={{ color: '#666' }}>Username cannot be changed</small>
@@ -636,7 +636,7 @@ function LoginHistory({ currentUser }) {
                   value={userForm.fullName}
                   onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
                   className="lh-input"
-                  placeholder="John Doe"
+                  placeholder="Enter full name"
                 />
               </div>
 
@@ -648,7 +648,7 @@ function LoginHistory({ currentUser }) {
                   value={userForm.email}
                   onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
                   className="lh-input"
-                  placeholder="john@example.com"
+                  placeholder="Enter email address"
                 />
               </div>
 
