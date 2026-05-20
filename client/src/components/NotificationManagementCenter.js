@@ -56,6 +56,15 @@ function NotificationManagementCenter({ currentUser }) {
     role: 'viewer'
   });
 
+  // Password change state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordChanging, setPasswordChanging] = useState(false);
+
   useEffect(() => {
     fetchData();
     fetchEnterpriseUsage();
@@ -310,6 +319,63 @@ function NotificationManagementCenter({ currentUser }) {
     } catch (error) {
       console.error('Error toggling user status:', error);
       showMessage('error', 'Failed to update user status');
+    }
+  };
+
+  // Password Change Functions
+  const openPasswordModal = () => {
+    setPasswordForm({
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setShowPasswordModal(true);
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordForm({
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      showMessage('error', 'All fields are required');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showMessage('error', 'New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      showMessage('error', 'New password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setPasswordChanging(true);
+
+      await axios.post('/api/users/change-password', {
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword
+      });
+
+      showMessage('success', 'Password changed successfully');
+      closePasswordModal();
+    } catch (error) {
+      console.error('Error changing password:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to change password';
+      showMessage('error', errorMessage);
+    } finally {
+      setPasswordChanging(false);
     }
   };
 
@@ -1099,6 +1165,33 @@ function NotificationManagementCenter({ currentUser }) {
               </div>
             </div>
 
+            {/* Change Password (Non-Admin Users) */}
+            {currentUser && currentUser.role !== 'admin' && (
+              <div className="nmc-section">
+                <div className="nmc-section-header">
+                  <h2 className="nmc-section-title">Account Security</h2>
+                  <button
+                    onClick={openPasswordModal}
+                    className="nmc-btn nmc-btn-primary"
+                  >
+                    Change Password
+                  </button>
+                </div>
+
+                <div className="nmc-info-box">
+                  <Info size={16} />
+                  <div>
+                    <strong>Password Policy:</strong>
+                    <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.25rem' }}>
+                      <li>You can change your password if you remember your current password</li>
+                      <li>Minimum password length: 6 characters</li>
+                      <li>If you forget your password, contact the administrator to reset it</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* User Management (Admin Only) */}
             {currentUser && currentUser.role === 'admin' && (
               <div className="nmc-section">
@@ -1874,6 +1967,85 @@ function NotificationManagementCenter({ currentUser }) {
                 </button>
                 <button type="submit" className="nmc-btn nmc-btn-primary">
                   {editingUser ? 'Update User' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="nmc-modal-overlay" onClick={closePasswordModal}>
+          <div className="nmc-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="nmc-modal-header">
+              <h3>Change Password</h3>
+              <button onClick={closePasswordModal} className="nmc-modal-close">&times;</button>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="nmc-modal-body">
+              <div className="nmc-info-box" style={{ marginBottom: '1.5rem' }}>
+                <Info size={16} />
+                <div>
+                  <strong>Note:</strong> You need your current password to change it.
+                  If you've forgotten your current password, please contact the administrator.
+                </div>
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="oldPassword">Current Password *</label>
+                <input
+                  id="oldPassword"
+                  type="password"
+                  value={passwordForm.oldPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                  required
+                  className="nmc-input"
+                  placeholder="Enter current password"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="newPassword">New Password *</label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  required
+                  minLength="6"
+                  className="nmc-input"
+                  placeholder="Enter new password (min. 6 characters)"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="nmc-form-group">
+                <label htmlFor="confirmPassword">Confirm New Password *</label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  required
+                  minLength="6"
+                  className="nmc-input"
+                  placeholder="Re-enter new password"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="nmc-modal-footer">
+                <button type="button" onClick={closePasswordModal} className="nmc-btn nmc-btn-secondary">
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="nmc-btn nmc-btn-primary"
+                  disabled={passwordChanging}
+                >
+                  {passwordChanging ? 'Changing...' : 'Change Password'}
                 </button>
               </div>
             </form>

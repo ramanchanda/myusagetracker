@@ -216,7 +216,7 @@ async function authenticateUser(username, password) {
 }
 
 /**
- * Change user password
+ * Change user password (admin force reset - no old password required)
  */
 async function changePassword(username, newPassword) {
   try {
@@ -227,10 +227,45 @@ async function changePassword(username, newPassword) {
       [passwordHash, username]
     );
 
-    console.log(`${LOG_PREFIX} Password changed for user: ${username}`);
+    console.log(`${LOG_PREFIX} Password changed for user: ${username} (admin reset)`);
     return true;
   } catch (error) {
     console.error(`${LOG_PREFIX} Error changing password for ${username}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Change own password (requires old password verification)
+ * Used for self-service password change
+ */
+async function changeOwnPassword(username, oldPassword, newPassword) {
+  try {
+    const user = await getUserByUsername(username);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Verify old password
+    const isValid = await bcrypt.compare(oldPassword, user.password_hash);
+
+    if (!isValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash and update new password
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    await db.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE username = $2',
+      [passwordHash, username]
+    );
+
+    console.log(`${LOG_PREFIX} Password changed for user: ${username} (self-service)`);
+    return true;
+  } catch (error) {
+    console.error(`${LOG_PREFIX} Error changing own password for ${username}:`, error);
     throw error;
   }
 }
@@ -242,5 +277,6 @@ module.exports = {
   updateUser,
   deleteUser,
   authenticateUser,
-  changePassword
+  changePassword,
+  changeOwnPassword
 };

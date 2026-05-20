@@ -1096,6 +1096,42 @@ app.delete('/api/users/:username', requireAdmin, async (req, res) => {
   }
 });
 
+// Change own password (requires old password)
+app.post('/api/users/change-password', isAuthenticated, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const username = req.session.user.username;
+
+    // Admin cannot change password this way (they use config vars)
+    if (req.session.user.role === 'admin') {
+      return res.status(400).json({
+        error: 'Admin password is managed through config vars (APP_ADMIN_PASSWORD)'
+      });
+    }
+
+    // Validation
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Old password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    await userService.changeOwnPassword(username, oldPassword, newPassword);
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error.message);
+
+    // Return specific error message
+    if (error.message === 'Current password is incorrect') {
+      res.status(401).json({ error: 'Current password is incorrect' });
+    } else {
+      res.status(500).json({ error: 'Failed to change password' });
+    }
+  }
+});
+
 // Production: Serve React app
 if (process.env.NODE_ENV === 'production') {
   // Serve static assets EXCEPT index.html (JS, CSS, images, etc.)
